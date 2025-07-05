@@ -1,0 +1,19 @@
+Checks: >
+        -*,
+        bugprone-*,
+        cert-*,
+        clang-*,
+        cppcoreguidelines-*,
+        google-*,
+        hicpp-*,
+        llvm-*,
+        misc-*,
+        modernize-*,
+        mpi-*,
+        objc-*,
+        performance-*,
+        readability-*,
+        boost-use-to-string,
+        -llvm-header-guard
+
+HeaderFilterRegex: 'build.*(?!moc_).*$'
