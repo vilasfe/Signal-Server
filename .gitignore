@@ -15,3 +15,7 @@ data/SRTM3/*
 
 # antenna radiation pattern diagrams
 antenna/*
+
+build/*
+.kdev4/*
+*.kdev4
