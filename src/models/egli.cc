@@ -20,9 +20,11 @@ Distance 1 to 50km
 http://people.seas.harvard.edu/~jones/es151/prop_models/propagation.html#pel
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+
+#include "../common.h"
 
 //static float fcmin = 30.0;
 //static float fcmax = 1000.0;
@@ -31,15 +33,11 @@ http://people.seas.harvard.edu/~jones/es151/prop_models/propagation.html#pel
 //static float h1min = 1.0;
 //static float h2min = 1.0;
 
-static __inline float _10log10f(float x)
-{
-  return(4.342944f*logf(x));
-}
-
-double EgliPathLoss(float f, float h1, float h2, float d)
+auto EgliPathLoss(float f, float h1, float h2, float d) -> double
 {
   double Lp50 = NAN;
-  float C1, C2;
+  float C1 = 0.0;
+  float C2 = 0.0;
 
 /*  if ((f >= fcmin) && (f <= fcmax) &&
       (h1 >= h1min) && (h2 >= h2min))
@@ -69,7 +67,7 @@ double EgliPathLoss(float f, float h1, float h2, float d)
       C2 = 1.0;
     } // end if
 
-    Lp50 += 4.0f*_10log10f(d) + 2.0f*_10log10f(f) - C1*_10log10f(h1) - C2*_10log10f(h2);
+    Lp50 += 4.0F*_10log10f(d) + 2.0F*_10log10f(f) - C1*_10log10f(h1) - C2*_10log10f(h2);
   /*}
   else
   {
