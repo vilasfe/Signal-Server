@@ -25,7 +25,7 @@
 constexpr auto SoilPathLoss(float f, float d, float terdic) -> double
 {
     const auto soil = (120/terdic);
-    return(6.4 + _20log10f(d) + _20log10f(f)+(8.69*soil));
+    return(6.4 + _20log10(d) + _20log10(f)+(8.69*soil));
 }
 
 #endif /* _SOIL_HH_ */

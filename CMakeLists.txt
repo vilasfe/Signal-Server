@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.29)
-
-PROJECT(SignalServer23)
+set(CMAKE_CXX_COMPILER clang++)
+PROJECT(SignalServer23 LANGUAGES CXX)
 
 #include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 #conan_basic_setup()

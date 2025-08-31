@@ -239,7 +239,7 @@ void PlotLOSPath(struct site source, struct site destination, char mask_value,
 
 	char block;
 	int x, y;
-	register double cos_xmtr_angle, cos_test_angle, test_alt;
+	double cos_xmtr_angle, cos_test_angle, test_alt;
 	double distance, rx_alt, tx_alt;
 
 	ReadPath(source, destination);
@@ -893,7 +893,7 @@ void PlotPath(struct site source, struct site destination, char mask_value)
 
 	char block;
 	int x, y;
-	register double cos_xmtr_angle, cos_test_angle, test_alt;
+	double cos_xmtr_angle, cos_test_angle, test_alt;
 	double distance, rx_alt, tx_alt;
 
 	ReadPath(source, destination);

@@ -128,4 +128,16 @@ extern struct region region;
 
 extern int debug;
 
+constexpr auto _10log10(auto x)
+{
+	return(4.342944f*std::log(x));
+}
+
+// use call with log/ln as this may be faster
+// use constant of value 20.0/log(10.0)
+constexpr auto _20log10(auto x)
+{
+	return(8.685889f*std::log(x));
+}
+
 #endif /* _COMMON_H_ */

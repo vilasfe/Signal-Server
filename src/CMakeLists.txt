@@ -33,7 +33,6 @@ set(LIBSOURCES
     models/hata.cc
     models/itwom3.0.cc
     models/los.cc
-    models/soil.cc
     models/sui.cc
 )
 
@@ -47,10 +46,9 @@ target_link_libraries(libsignalserver PUBLIC
     ZLIB::ZLIB
 )
 
-## TODO: Fix this
-#target_compile_options(libsignalserver
-#    "-ffast-math -Wall"
-#)
+target_compile_options(libsignalserver PUBLIC
+    "-ffast-math"
+)
 # target_compile_definitions(libsignalserver CROPPING)
 
 # CFLAGS    = -ffast-math -DCROPPING
