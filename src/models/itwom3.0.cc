@@ -113,38 +113,6 @@ struct propa_type {
 	double tha;
 };
 
-int mymin(const int &i, const int &j)
-{
-	if (i < j)
-		return i;
-	else
-		return j;
-}
-
-int mymax(const int &i, const int &j)
-{
-	if (i > j)
-		return i;
-	else
-		return j;
-}
-
-double mymin(const double &a, const double &b)
-{
-	if (a < b)
-		return a;
-	else
-		return b;
-}
-
-double mymax(const double &a, const double &b)
-{
-	if (a > b)
-		return a;
-	else
-		return b;
-}
-
 double FORTRAN_DIM(const double &x, const double &y)
 {
 	/* This performs the FORTRAN DIM function.  Result is x-y
@@ -300,7 +268,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 				ctip = (hone - prop.cch + hc) / ucrpc;
 				tip = acos(ctip);
 				tic = tip + tde;
-				tic = mymax(0.0, tic);
+				tic = std::max(0.0, tic);
 				stic = sin(tic);
 				sta = (ensa / encca) * stic;
 				ttc = asin(sta);
@@ -323,7 +291,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 			   transmitter, extending the crpc and d1a. Estimating the d1a: */
 
 			if (ssnps <= 0.0) {
-				d1a = mymin(0.1 * pd, 600.0);
+				d1a = std::min(0.1 * pd, 600.0);
 				crpc = d1a;
 				/* hone must be redefined as being barely above
 				   the canopy height with respect to the receiver
@@ -366,7 +334,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 				}
 			}
 			/* tvsr is defined as tx ant height above receiver ant height */
-			tvsr = mymax(0.0, prop.tgh + prop.tsgh - prop.rch[1]);
+			tvsr = std::max(0.0, prop.tgh + prop.tsgh - prop.rch[1]);
 
 			if (d1a < 50.0) {
 				arte = 0.0195 * crpc - 20 * log10(tsp);
@@ -385,7 +353,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 
 					arte =
 					    q + (0.7 * pdk -
-						 mymax(0.01,
+						 std::max(0.01,
 						       log10(prop.wn * 47.7) -
 						       2)) * (prop.hg[1] /
 							      hone);
@@ -408,14 +376,14 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 						q = (pdk -
 						     zi) * 10.2 *
 						    ((sqrt
-						      (mymax
+						      (std::max
 						       (0.01,
 							log10(prop.wn * 47.7) -
 							2.0))) / (100 - zi));
 					} else {
 						q = ((zi -
 						      pdk) / zi) * (-20.0 *
-								    mymax(0.01,
+								    std::max(0.01,
 									  log10
 									  (prop.
 									   wn *
@@ -440,7 +408,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 			arte = q + 1.34795 * 20 * log10(pd + 1.0);
 			arte =
 			    arte -
-			    (mymax(0.01, log10(prop.wn * 47.7) - 2)) *
+			    (std::max(0.01, log10(prop.wn * 47.7) - 2)) *
 			    (prop.hg[1] / prop.tgh);
 		}
 		saalosv = arte;
@@ -466,7 +434,7 @@ double adiff(double d, prop_type & prop, propa_type & propa)
 		q = (1.0 - 0.8 * exp(-propa.dlsa / 50e3)) * prop.dh;
 		q *= 0.78 * exp(-pow(q / 16.0, 0.25));
 		afo =
-		    mymin(15.0,
+		    std::min(15.0,
 			  2.171 * log(1.0 +
 				      4.77e-4 * prop.hg[0] * prop.hg[1] *
 				      prop.wn * q));
@@ -501,8 +469,7 @@ double adiff(double d, prop_type & prop, propa_type & propa)
 		q = (1.607 - pk) * 151.0 * wa * th + xht;
 		ar = 0.05751 * q - 4.343 * log(q) - aht;
 		q = (wd1 +
-		     xd1 / d) * mymin(((1.0 - 0.8 * exp(-d / 50e3)) * prop.dh *
-				       prop.wn), 6283.2);
+		     xd1 / d) * std::min(((1.0 - 0.8 * exp(-d / 50e3)) * prop.dh * prop.wn), 6283.2);
 		wd = 25.1 / (25.1 + sqrt(q));
 		adiffv = ar * wd + (1.0 - wd) * adiffv + afo;
 	}
@@ -569,7 +536,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 	else {
 		th = propa.tha + d * prop.gme;
 
-		dsl = mymax(d - propa.dla, 0.0);
+		dsl = std::max(d - propa.dla, 0.0);
 		ds = d - propa.dla;
 		a = ds / th;
 		wa = pow(a * prop.wn, THIRD);
@@ -654,8 +621,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 
 				/* knife edge vs round weighting */
 				q = (1.0 - 0.8 * exp(-d / 50e3)) * prop.dh;
-				q = (wd1 + xd1 / d) * mymin((q * prop.wn),
-							    6283.2);
+				q = (wd1 + xd1 / d) * std::min((q * prop.wn), 6283.2);
 				/* wd=25.1/(25.1+sqrt(q)); */
 
 				q = 0.6365 * prop.wn;
@@ -686,7 +652,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 					}
 					/* finally, add clutter loss */
 					closs = saalos(rd, prop, propa);
-					adiffv2 += mymin(22.0, closs);
+					adiffv2 += std::min(22.0, closs);
 
 				} else {	/* rcvr site too close to 2nd obs */
 
@@ -720,7 +686,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 						}
 						adiffv2 += aknfe(vv);
 						closs = saalos(rd, prop, propa);
-						adiffv2 += mymin(closs, 22.0);
+						adiffv2 += std::min(closs, 22.0);
 					} else {	/* rcvr very close to bare cliff or skyscraper */
 
 						adiffv2 = 5.8 + 25.0;
@@ -788,7 +754,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 								       sin
 								       (pd)));
 						}
-						/*csd=mymax(csd,0.0009); limits maximum loss value to 30.45 db */
+						/*csd=std::max(csd,0.0009); limits maximum loss value to 30.45 db */
 						adiffv2 =
 						    -3.71 - 10 * log10(csd);
 					} else {
@@ -796,7 +762,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 					}
 					/* finally, add clutter loss */
 					closs = saalos(rd, prop, propa);
-					adiffv2 += mymin(closs, 22.0);
+					adiffv2 += std::min(closs, 22.0);
 				} else {	/* receive grazing angle too high */
 
 					if (prop.the[1] < 1.22) {
@@ -812,7 +778,7 @@ double adiff2(double d, prop_type & prop, propa_type & propa)
 							adiffv2 = aknfe(vv);
 						}
 						closs = saalos(rd, prop, propa);
-						adiffv2 += mymin(22.0, closs);
+						adiffv2 += std::min(22.0, closs);
 					} else {	/* receiver very close to bare cliff or skyscraper */
 
 						adiffv2 = 5.8 + 25.0;
@@ -861,19 +827,19 @@ double ascat(double d, prop_type & prop, propa_type & propa)
 
 			ss = (d - ad) / (d + ad);
 			q = rr / ss;
-			ss = mymax(0.1, ss);
-			q = mymin(mymax(0.1, q), 10.0);
+			ss = std::max(0.1, ss);
+			q = std::clamp(q, 0.1, 10.0);
 			z0 = (d - ad) * (d + ad) * th * 0.25 / d;
-			/* et=(etq*exp(-pow(mymin(1.7,z0/8.0e3),6.0))+1.0)*z0/1.7556e3; */
+			/* et=(etq*exp(-pow(std::min(1.7,z0/8.0e3),6.0))+1.0)*z0/1.7556e3; */
 
-			temp = mymin(1.7, z0 / 8.0e3);
+			temp = std::min(1.7, z0 / 8.0e3);
 			temp = temp * temp * temp * temp * temp * temp;
 			et = (etq * exp(-temp) + 1.0) * z0 / 1.7556e3;
 
-			ett = mymax(et, 1.0);
+			ett = std::max(et, 1.0);
 			h0 = (h0f(r1, ett) + h0f(r2, ett)) * 0.5;
 			h0 +=
-			    mymin(h0,
+			    std::min(h0,
 				  (1.38 - log(ett)) * log(ss) * log(q) * 0.49);
 			h0 = FORTRAN_DIM(h0, 0.0);
 
@@ -917,7 +883,7 @@ double qerfi(double q)
 	double d3 = 0.001308;
 
 	x = 0.5 - q;
-	t = mymax(0.5 - fabs(x), 0.000001);
+	t = std::max(0.5 - fabs(x), 0.000001);
 	t = sqrt(-2.0 * log(t));
 	v = t - ((c2 * t + c1) * t + c0) / (((d3 * t + d2) * t + d1) * t + 1.0);
 
@@ -962,7 +928,7 @@ double alos(double d, prop_type & prop, propa_type & propa)
 	if (d == 0.0) {
 		wls =
 		    0.021 / (0.021 +
-			     prop.wn * prop.dh / mymax(10e3, propa.dlsa));
+			     prop.wn * prop.dh / std::max(10e3, propa.dlsa));
 		alosv = 0.0;
 	}
 
@@ -972,7 +938,7 @@ double alos(double d, prop_type & prop, propa_type & propa)
 		q = prop.he[0] + prop.he[1];
 		sps = q / sqrt(d * d + q * q);
 		r = (sps - prop_zgnd) / (sps +
-					 prop_zgnd) * exp(-mymin(10.0,
+					 prop_zgnd) * exp(-std::min(10.0,
 								 prop.wn * s *
 								 sps));
 		q = abq_alos(r);
@@ -1041,22 +1007,22 @@ double alos2(double d, prop_type & prop, propa_type & propa)
 			}
 
 			if ((sps < 0.05) && (prop.cch > hrg) && (prop.dist < prop.dl[0])) {	/* if far from transmitter and receiver below canopy */
-				cd = mymax(0.01,
+				cd = std::max(0.01,
 					   pd * (prop.cch - hrg) / (htg - hrg));
-				cr = mymax(0.01,
+				cr = std::max(0.01,
 					   pd - dr + dr * (prop.cch -
 							   drh) / htg);
 				q = ((1.0 -
 				      0.8 * exp(-pd / 50e3)) * prop.dh *
-				     (mymin(-20 * log10(cd / cr), 1.0)));
+				     (std::min(-20 * log10(cd / cr), 1.0)));
 			}
 		}
 
 		s = 0.78 * q * exp(-pow(q / 16.0, 0.25));
-		q = exp(-mymin(10.0, prop.wn * s * sps));
+		q = exp(-std::min(10.0, prop.wn * s * sps));
 		r = q * (sps - prop_zgnd) / (sps + prop_zgnd);
 		q = abq_alos(r);
-		q = mymin(q, 1.0);
+		q = std::min(q, 1.0);
 
 		if (q < 0.25 || q < sps) {
 			r = r * sqrt(sps / q);
@@ -1092,7 +1058,7 @@ double alos2(double d, prop_type & prop, propa_type & propa)
 			}
 		}
 	}
-	alosv = mymin(22.0, alosv);
+	alosv = std::min(22.0, alosv);
 	return alosv;
 }
 
@@ -1115,26 +1081,26 @@ void qlra(int kst[], int klimx, int mdvarx, prop_type & prop,
 
 			prop.he[j] =
 			    prop.hg[j] + (1.0 +
-					  q) * exp(-mymin(20.0,
+					  q) * exp(-std::min(20.0,
 							  2.0 * prop.hg[j] /
-							  mymax(1e-3,
+							  std::max(1e-3,
 								prop.dh)));
 		}
 
 		q = sqrt(2.0 * prop.he[j] / prop.gme);
 		prop.dl[j] =
-		    q * exp(-0.07 * sqrt(prop.dh / mymax(prop.he[j], 5.0)));
+		    q * exp(-0.07 * sqrt(prop.dh / std::max(prop.he[j], 5.0)));
 		prop.the[j] =
 		    (0.65 * prop.dh * (q / prop.dl[j] - 1.0) -
 		     2.0 * prop.he[j]) / q;
 	}
 
 	prop.mdp = 1;
-	propv.lvar = mymax(propv.lvar, 3);
+	propv.lvar = std::max(propv.lvar, 3);
 
 	if (mdvarx >= 0) {
 		propv.mdvar = mdvarx;
-		propv.lvar = mymax(propv.lvar, 4);
+		propv.lvar = std::max(propv.lvar, 4);
 	}
 
 	if (klimx > 0) {
@@ -1162,22 +1128,22 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 		propa.dlsa = propa.dls[0] + propa.dls[1];
 		propa.dla = prop.dl[0] + prop.dl[1];
 		propa.tha =
-		    mymax(prop.the[0] + prop.the[1], -propa.dla * prop.gme);
+		    std::max(prop.the[0] + prop.the[1], -propa.dla * prop.gme);
 		wlos = false;
 		wscat = false;
 
 		if (prop.wn < 0.838 || prop.wn > 210.0)
-			prop.kwx = mymax(prop.kwx, 1);
+			prop.kwx = std::max(prop.kwx, 1);
 
 		for (j = 0; j < 2; j++)
 			if (prop.hg[j] < 1.0 || prop.hg[j] > 1000.0)
-				prop.kwx = mymax(prop.kwx, 1);
+				prop.kwx = std::max(prop.kwx, 1);
 
 		for (j = 0; j < 2; j++)
 			if (abs(prop.the[j]) > 200e-3
 			    || prop.dl[j] < 0.1 * propa.dls[j]
 			    || prop.dl[j] > 3.0 * propa.dls[j])
-				prop.kwx = mymax(prop.kwx, 3);
+				prop.kwx = std::max(prop.kwx, 3);
 
 		if (prop.ens < 250.0 || prop.ens > 400.0 || prop.gme < 75e-9
 		    || prop.gme > 250e-9
@@ -1193,7 +1159,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 		q = adiff(0.0, prop, propa);
 		/* xae=pow(prop.wn*pow(prop.gme,2.),-THIRD); -- JDM made argument 2 a double */
 		xae = pow(prop.wn * (prop.gme * prop.gme), -THIRD);	/* No 2nd pow() */
-		d3 = mymax(propa.dlsa, 1.3787 * xae + propa.dla);
+		d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
 		d4 = d3 + 2.7574 * xae;
 		a3 = adiff(d3, prop, propa);
 		a4 = adiff(d4, prop, propa);
@@ -1208,10 +1174,10 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 
 	if (prop.dist > 0.0) {
 		if (prop.dist > 1000e3)
-			prop.kwx = mymax(prop.kwx, 1);
+			prop.kwx = std::max(prop.kwx, 1);
 
 		if (prop.dist < dmin)
-			prop.kwx = mymax(prop.kwx, 3);
+			prop.kwx = std::max(prop.kwx, 3);
 
 		if (prop.dist < 1e3 || prop.dist > 2000e3)
 			prop.kwx = 4;
@@ -1225,12 +1191,12 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 			d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
 
 			if (propa.aed >= 0.0) {
-				d0 = mymin(d0, 0.5 * propa.dla);
+				d0 = std::min(d0, 0.5 * propa.dla);
 				d1 = d0 + 0.25 * (propa.dla - d0);
 			}
 
 			else
-				d1 = mymax(-propa.aed / propa.emd,
+				d1 = std::max(-propa.aed / propa.emd,
 					   0.25 * propa.dla);
 
 			a1 = alos(d1, prop, propa);
@@ -1240,7 +1206,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 				a0 = alos(d0, prop, propa);
 				q = log(d2 / d0);
 				propa.ak2 =
-				    mymax(0.0,
+				    std::max(0.0,
 					  ((d2 - d0) * (a1 - a0) -
 					   (d1 - d0) * (a2 - a0)) / ((d2 -
 								      d0) *
@@ -1304,8 +1270,8 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 			if (a5 < 1000.0) {
 				propa.ems = (a6 - a5) / 200e3;
 				propa.dx =
-				    mymax(propa.dlsa,
-					  mymax(propa.dla +
+				    std::max(propa.dlsa,
+					  std::max(propa.dla +
 						0.3 * xae * log(47.7 * prop.wn),
 						(a5 - propa.aed -
 						 propa.ems * d5) / (propa.emd -
@@ -1331,7 +1297,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 			prop.aref = propa.aed + propa.emd * prop.dist;
 	}
 
-	prop.aref = mymax(prop.aref, 0.0);
+	prop.aref = std::max(prop.aref, 0.0);
 }
 
 void lrprop2(double d, prop_type & prop, propa_type & propa)
@@ -1356,31 +1322,31 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 			propa.dls[j] = sqrt(2.0 * prop.he[j] / prop.gme);
 
 		propa.dlsa = propa.dls[0] + propa.dls[1];
-		propa.dlsa = mymin(propa.dlsa, 1000000.0);
+		propa.dlsa = std::min(propa.dlsa, 1000000.0);
 		propa.dla = prop.dl[0] + prop.dl[1];
 		propa.tha =
-		    mymax(prop.the[0] + prop.the[1], -propa.dla * prop.gme);
+		    std::max(prop.the[0] + prop.the[1], -propa.dla * prop.gme);
 		wlos = false;
 		wscat = false;
 
 		/*checking for parameters-in-range, error codes set if not */
 
 		if (prop.wn < 0.838 || prop.wn > 210.0)
-			prop.kwx = mymax(prop.kwx, 1);
+			prop.kwx = std::max(prop.kwx, 1);
 
 		for (j = 0; j < 2; j++)
 			if (prop.hg[j] < 1.0 || prop.hg[j] > 1000.0)
-				prop.kwx = mymax(prop.kwx, 1);
+				prop.kwx = std::max(prop.kwx, 1);
 
 		if (abs(prop.the[0]) > 200e-3)
-			prop.kwx = mymax(prop.kwx, 3);
+			prop.kwx = std::max(prop.kwx, 3);
 
 		if (abs(prop.the[1]) > 1.220)
-			prop.kwx = mymax(prop.kwx, 3);
+			prop.kwx = std::max(prop.kwx, 3);
 
 		/*for (j=0; j<2; j++)
 		   if (prop.dl[j]<0.1*propa.dls[j] || prop.dl[j]>3.0*propa.dls[j])
-		   prop.kwx=mymax(prop.kwx,3);  */
+		   prop.kwx=std::max(prop.kwx,3);  */
 
 		if (prop.ens < 250.0 || prop.ens > 400.0 || prop.gme < 75e-9
 		    || prop.gme > 250e-9
@@ -1396,7 +1362,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		dmin = abs(prop.he[0] - prop.he[1]) / 200e-3;
 		q = adiff2(0.0, prop, propa);
 		xae = pow(prop.wn * (prop.gme * prop.gme), -THIRD);
-		d3 = mymax(propa.dlsa, 1.3787 * xae + propa.dla);
+		d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
 		d4 = d3 + 2.7574 * xae;
 		a3 = adiff2(d3, prop, propa);
 		a4 = adiff2(d4, prop, propa);
@@ -1411,10 +1377,10 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 
 	if (prop.dist > 0.0) {
 		if (prop.dist > 1000e3)	/* prop.dist being in meters, if greater than 1000 km, kwx=1 */
-			prop.kwx = mymax(prop.kwx, 1);
+			prop.kwx = std::max(prop.kwx, 1);
 
 		if (prop.dist < dmin)
-			prop.kwx = mymax(prop.kwx, 3);
+			prop.kwx = std::max(prop.kwx, 3);
 
 		if (prop.dist < 1e3 || prop.dist > 2000e3)
 			prop.kwx = 4;
@@ -1435,12 +1401,12 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 					    propa.aed + propa.emd * prop.dist;
 				} else {
 					if (propa.aed == 0.0) {
-						d0 = mymin(d0, 0.5 * propa.dla);
+						d0 = std::min(d0, 0.5 * propa.dla);
 						d1 = d0 + 0.25 * (propa.dla -
 								  d0);
 					} else {	/* aed less than zero */
 
-						d1 = mymax(-propa.aed /
+						d1 = std::max(-propa.aed /
 							   propa.emd,
 							   0.25 * propa.dla);
 					}
@@ -1449,12 +1415,12 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 
 					if (d0 < d1) {
 						a0 = alos2(d0, prop, propa);
-						a2 = mymin(a2,
+						a2 = std::min(a2,
 							   alos2(d2, prop,
 								 propa));
 						q = log(d2 / d0);
 						propa.ak2 =
-						    mymax(0.0,
+						    std::max(0.0,
 							  ((d2 - d0) * (a1 -
 									a0) -
 							   (d1 - d0) * (a2 -
@@ -1542,8 +1508,8 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 				if (a5 < 1000.0) {
 					propa.ems = (a6 - a5) / 200e3;
 					propa.dx =
-					    mymax(propa.dlsa,
-						  mymax(propa.dla +
+					    std::max(propa.dlsa,
+						  std::max(propa.dla +
 							0.3 * xae * log(47.7 *
 									prop.
 									wn),
@@ -1591,7 +1557,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 			}
 		}
 	}
-	prop.aref = mymax(prop.aref, 0.0);
+	prop.aref = std::max(prop.aref, 0.0);
 }
 
 double curve(double const &c1, double const &c2, double const &x1,
@@ -1661,7 +1627,7 @@ double avar(double zzt, double zzl, double zzc, prop_type & prop,
 			if (propv.klim <= 0 || propv.klim > 7) {
 				propv.klim = 5;
 				temp_klim = 4;
-				prop.kwx = mymax(prop.kwx, 2);
+				prop.kwx = std::max(prop.kwx, 2);
 			}
 
 			cv1 = bv1[temp_klim];
@@ -1702,7 +1668,7 @@ double avar(double zzt, double zzl, double zzc, prop_type & prop,
 
 			if (kdv < 0 || kdv > 3) {
 				kdv = 0;
-				prop.kwx = mymax(prop.kwx, 2);
+				prop.kwx = std::max(prop.kwx, 2);
 			}
 
 		case 3:
@@ -1771,7 +1737,7 @@ double avar(double zzt, double zzl, double zzc, prop_type & prop,
 	}
 
 	if (fabs(zt) > 3.1 || fabs(zl) > 3.1 || fabs(zc) > 3.1)
-		prop.kwx = mymax(prop.kwx, 1);
+		prop.kwx = std::max(prop.kwx, 1);
 
 	if (zt < 0.0)
 		sgt = sgtm;
@@ -1904,7 +1870,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 				prop.los = 0;
 				prop.the[0] += q / sa;
 				prop.dl[0] = sa;
-				prop.the[0] = mymin(prop.the[0], 1.569);
+				prop.the[0] = std::min(prop.the[0], 1.569);
 				prop.hht = pfl[j + 2];
 				wq = false;
 			}
@@ -1918,11 +1884,11 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 				    (prop.dist - sb) - zb;
 				if (q > 0.0) {
 					prop.the[1] += q / (prop.dist - sb);
-					prop.the[1] = mymin(prop.the[1], 1.57);
+					prop.the[1] = std::min(prop.the[1], 1.57);
 					prop.the[1] =
-					    mymax(prop.the[1], -1.568);
+					    std::max(prop.the[1], -1.568);
 					prop.hhr = pfl[np + 2 - i];
-					prop.dl[1] = mymax(0.0, prop.dist - sb);
+					prop.dl[1] = std::max(0.0, prop.dist - sb);
 				}
 			}
 			prop.the[0] =
@@ -2041,7 +2007,7 @@ double qtile(const int &nn, double a[], const int &ir)
 
 	m = 0;
 	n = nn;
-	k = mymin(mymax(0, ir), n);
+	k = std::clamp(ir, 0, n);
 
 	while (!done) {
 		if (goto10) {
@@ -2136,7 +2102,7 @@ double d1thx(double pfl[], const double &x1, const double &x2)
 		return d1thxv;
 
 	ka = (int)(0.1 * (xb - xa + 8.0));
-	ka = mymin(mymax(4, ka), 25);
+	ka = std::clamp(ka, 4, 25);
 	n = 10 * ka - 5;
 	kb = n - ka + 1;
 	sn = n - 1;
@@ -2188,8 +2154,8 @@ double d1thx2(double pfl[], const double &x1, const double &x2,
 		return d1thx2v;
 
 	ka = (int)(0.1 * (xb - xa + 8.0));
-	kmx = mymax(25, (int)(83350 / (pfl[1])));
-	ka = mymin(mymax(4, ka), kmx);
+	kmx = std::max(25, (int)(83350 / (pfl[1])));
+	ka = std::clamp(ka, 4, kmx);
 	n = 10 * ka - 5;
 	kb = n - ka + 1;
 	sn = n - 1;
@@ -2235,7 +2201,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	hzns(pfl, prop);
 
 	for (j = 0; j < 2; j++)
-		xl[j] = mymin(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
+		xl[j] = std::min(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
 
 	xl[1] = prop.dist - xl[1];
 	prop.dh = d1thx(pfl, xl[0], xl[1]);
@@ -2250,7 +2216,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 			    sqrt(2.0 * prop.he[j] / prop.gme) * exp(-0.07 *
 								    sqrt(prop.
 									 dh /
-									 mymax
+									 std::max
 									 (prop.
 									  he[j],
 									  5.0)));
@@ -2267,7 +2233,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 				prop.dl[j] =
 				    sqrt(2.0 * prop.he[j] / prop.gme) *
 				    exp(-0.07 *
-					sqrt(prop.dh / mymax(prop.he[j], 5.0)));
+					sqrt(prop.dh / std::max(prop.he[j], 5.0)));
 			}
 		}
 
@@ -2287,11 +2253,11 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	prop.mdp = -1;
-	propv.lvar = mymax(propv.lvar, 3);
+	propv.lvar = std::max(propv.lvar, 3);
 
 	if (mdvarx >= 0) {
 		propv.mdvar = mdvarx;
-		propv.lvar = mymax(propv.lvar, 4);
+		propv.lvar = std::max(propv.lvar, 4);
 	}
 
 	if (klimx > 0) {
@@ -2316,7 +2282,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	prop.rch[1] = prop.hg[1] + pfl[np + 2];
 
 	for (j = 0; j < 2; j++)
-		xl[j] = mymin(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
+		xl[j] = std::min(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
 
 	xl[1] = prop.dist - xl[1];
 	prop.dh = d1thx2(pfl, xl[0], xl[1], propa);
@@ -2340,7 +2306,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 				prop.dl[j] =
 				    sqrt(2.0 * prop.he[j] / prop.gme) *
 				    exp(-0.07 *
-					sqrt(prop.dh / mymax(prop.he[j], 5.0)));
+					sqrt(prop.dh / std::max(prop.he[j], 5.0)));
 
 			/* for one or more obstructions only NOTE buried as in ITM FORTRAN and DLL, not functional  */
 			if ((prop.dl[0] + prop.dl[1]) <= prop.dist) {
@@ -2354,7 +2320,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 				prop.dl[j] =
 				    sqrt(2.0 * prop.he[j] / prop.gme) *
 				    exp(-0.07 *
-					sqrt(prop.dh / mymax(prop.he[j], 5.0)));
+					sqrt(prop.dh / std::max(prop.he[j], 5.0)));
 			}
 
 			/* this sets (or resets) prop.the, and is not in The Guide FORTRAN QLRPFL */
@@ -2388,16 +2354,16 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 		}
 
 		prop.thenr =
-		    atan(mymax(0.0, (pfl[np + 2] - pfl[np + 1])) / pfl[1]);
+		    atan(std::max(0.0, (pfl[np + 2] - pfl[np + 1])) / pfl[1]);
 
 	}
 
 	prop.mdp = -1;
-	propv.lvar = mymax(propv.lvar, 3);
+	propv.lvar = std::max(propv.lvar, 3);
 
 	if (mdvarx >= 0) {
 		propv.mdvar = mdvarx;
-		propv.lvar = mymax(propv.lvar, 4);
+		propv.lvar = std::max(propv.lvar, 4);
 	}
 
 	if (klimx > 0) {
