@@ -67,7 +67,7 @@ auto EgliPathLoss(float f, float h1, float h2, float d) -> double
       C2 = 1.0;
     } // end if
 
-    Lp50 += 4.0F*_10log10f(d) + 2.0F*_10log10f(f) - C1*_10log10f(h1) - C2*_10log10f(h2);
+    Lp50 += 4.0F*_10log10(d) + 2.0F*_10log10(f) - C1*_10log10(h1) - C2*_10log10(h2);
   /*}
   else
   {
