@@ -1,17 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <numbers>
 
+#include "../common.h"
 
-// use call with log/ln as this may be faster
-// use constant of value 20.0/log(10.0)
-static __inline float _20log10f(float x)
-{
-  return(8.685889f*logf(x));
-}
+#include "sui.hh"
 
-
-double SUIpathLoss(double f, double TxH, double RxH, double d, int mode)
+auto SUIpathLoss(double f, double TxH, double RxH, double d, int mode) -> double
 {
         /*
            f = Frequency (MHz) 1900 to 11000
@@ -33,7 +29,7 @@ double SUIpathLoss(double f, double TxH, double RxH, double d, int mode)
         float a = 4.6;
         float b = 0.0075;
         float c = 12.6;
-        float s = 8.2; // Optional fading value. 8.2 to 10.6dB
+        constexpr float s = 8.2; // Optional fading value. 8.2 to 10.6dB
         float XhCF = -10.8;
 
         if (mode == 2) { // Suburban
@@ -48,18 +44,18 @@ double SUIpathLoss(double f, double TxH, double RxH, double d, int mode)
                 c = 20;
                 XhCF = -20;
         }
-        float d0 = 100.0;
-        float A = _20log10f((4 * M_PI * d0) / (300.0 / f));
-        float y = a - (b * TxH) + (c / TxH);
+        constexpr double d0 = 100.0;
+        const double A = _20log10((4 * std::numbers::pi * d0) / (300.0 / f));
+        const double y = a - (b * TxH) + (c / TxH);
 
 	// Assume 2.4GHz
-        float Xf = 0;
-        float Xh = 0;
+        double Xf = 0;
+        double Xh = 0;
 
         //Correction factors for > 2GHz
 	if(f>2000){
-		Xf=6.0 * log10(f / 2.0);
-		Xh=XhCF * log10(RxH / 2.0);
+		Xf=6.0 * std::log10(f * 0.5);
+		Xh=XhCF * std::log10(RxH * 0.5);
 	}
-        return A + (10 * y) * (log10(d / d0)) + Xf + Xh + s;
+        return A + (10 * y) * (std::log10(d / d0)) + Xf + Xh + s;
 }
