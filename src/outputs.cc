@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <print>
 #include <bzlib.h>
 #include <zlib.h>
 
@@ -37,7 +38,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if( (success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0 ){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		std::println(stderr,"Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -59,7 +60,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			std::println(stderr,"Error creating file name");
 			exit(1);
 		}
 
@@ -88,9 +89,8 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
+		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
 			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
-		fflush(stderr);
 	}
 
 	for (y = 0, lat = north; y < (int)height;
@@ -280,7 +280,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if((success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		std::println(stderr,"Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -290,7 +290,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 			one_over_gamma);
 
 	if( (success = LoadSignalColors(xmtr[0])) != 0 ){
-		fprintf(stderr,"Error loading signal colors\n");
+		std::println(stderr,"Error loading signal colors");
 		//exit(success);
 	}
 
@@ -309,8 +309,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 		fd = fopen(mapfile,"wb");
 
 	} else {
-
-		fprintf(stderr,"Writing to stdout\n");
+		std::println(stderr,"Writing to stdout");
 		fd = stdout;
 
 	}
@@ -328,9 +327,8 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
-			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
-		fflush(stderr);
+		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
+			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));		fflush(stderr);
 	}
 
 	for (y = 0, lat = north; y < (int)height;
@@ -531,7 +529,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if( (success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0 ){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		std::println(stderr,"Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -540,8 +538,8 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
 
-	if( (success = LoadDBMColors(xmtr[0])) != 0 ){
-		fprintf(stderr,"Error loading DBM colors\n");
+	if( success = LoadDBMColors(xmtr[0]); success != 0 ){
+		std::println(stderr,"Error loading DBM colors");
 		exit(success);  //Now a fatal error!
 	}
 
@@ -553,17 +551,15 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			std::println(stderr,"Error creating file name");
 			exit(1);
 		}
 
 		fd = fopen(mapfile,"wb");
 
 	} else {
-
-		fprintf(stderr,"Writing to stdout\n");
+		std::println(stderr,"Writing to stdout");
 		fd = stdout;
-
 	}
 
 	minwest = ((double)min_west) + dpp;
@@ -579,9 +575,8 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
+		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
 			(filename != nullptr ? mapfile : "to stdout"), width, (kml ? height : height));
-		fflush(stderr);
 	}
 
 	// Draw image of x by y pixels
@@ -743,7 +738,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		std::println(stderr,"Error writing image");
 		exit(success);
 	}
 
@@ -777,7 +772,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if((success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		std::println(stderr,"Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -794,7 +789,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			std::println(stderr,"Error creating file name");
 			exit(1);
 		}
 
@@ -820,9 +815,8 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
-			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
-		fflush(stderr);
+		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
+			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));		fflush(stderr);
 	}
 
 	for (y = 0, lat = north; y < (int)height;
@@ -989,7 +983,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		std::println(stderr,"Error writing image");
 		exit(success);
 	}
 
@@ -1031,40 +1025,39 @@ void PathReport(struct site source, struct site destination, char *name,
 
 	fd2 = fopen(report_name, "w");
 
-	fprintf(fd2, "\n\t\t--==[ Path Profile Analysis ]==--\n\n");
-	fprintf(fd2, "Transmitter site: %s\n", source.name);
+	std::println(fd2, "\n\t\t--==[ Path Profile Analysis ]==--\n");
+	std::println(fd2, "Transmitter site: {}", source.name);
 
 	if (source.lat >= 0.0) {
 
 		if (source.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",source.lat, source.lon);
+			std::println(fd2, "Site location: {:.4f}, -{:.4f}",source.lat, source.lon);
 		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",source.lat, 360 - source.lon);
+			std::println(fd2, "Site location: {:.4f}, {:.4f}",source.lat, 360 - source.lon);
 		}
 	}
 
 	else {
 
 		if (source.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",source.lat, source.lon);
+			std::println(fd2, "Site location: {:.4f}, -{:.4f}",source.lat, source.lon);
 		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",source.lat, 360 - source.lon);
+			std::println(fd2, "Site location: {:.4f}, {:.4f}",source.lat, 360 - source.lon);
 		}
 	}
 
 	if (metric) {
-		fprintf(fd2, "Ground elevation: %.2f meters AMSL\n",
+		std::println(fd2, "Ground elevation: {:.2f} meters AMSL",
 			METERS_PER_FOOT * GetElevation(source));
-		fprintf(fd2,
-			"Antenna height: %.2f meters AGL / %.2f meters AMSL\n",
+		std::println(fd2,
+			"Antenna height: {:.2f} meters AGL / {:.2f} meters AMSL",
 			METERS_PER_FOOT * source.alt,
 			METERS_PER_FOOT * (source.alt + GetElevation(source)));
 	}
 
 	else {
-		fprintf(fd2, "Ground elevation: %.2f feet AMSL\n",
-			GetElevation(source));
-		fprintf(fd2, "Antenna height: %.2f feet AGL / %.2f feet AMSL\n",
+		std::println(fd2, "Ground elevation: {:.2f} feet AMSL", GetElevation(source));
+		std::println(fd2, "Antenna height: {:.2f} feet AGL / {:.2f} feet AMSL",
 			source.alt, source.alt + GetElevation(source));
 	}
 
@@ -1082,237 +1075,236 @@ void PathReport(struct site source, struct site destination, char *name,
 		patterndB = 20.0 * log10(pattern);
 	}
 
-	if (metric)
-		fprintf(fd2, "Distance to %s: %.2f kilometers\n",
-			destination.name, KM_PER_MILE * Distance(source,
-								 destination));
+	if (metric) {
+		std::println(fd2, "Distance to {}: {:.2f} kilometers",
+			destination.name, KM_PER_MILE * Distance(source, destination));
+	}
+	else {
+		std::println(fd2, "Distance to {}: {:.2f} miles", destination.name, Distance(source, destination));
+	}
 
-	else
-		fprintf(fd2, "Distance to %s: %.2f miles\n", destination.name,
-			Distance(source, destination));
-
-	fprintf(fd2, "Azimuth to %s: %.2f degrees grid\n", destination.name,
-		azimuth);
+	std::println(fd2, "Azimuth to {}: {:.2f} degrees grid", destination.name, azimuth);
 
 
-	fprintf(fd2, "Downtilt angle to %s: %+.4f degrees\n",
-		destination.name, angle1);
+	fprintf(fd2, "Downtilt angle to %s: %+.4f degrees\n", destination.name, angle1);
 
 
 
 	/* Receiver */
 
-	fprintf(fd2, "\nReceiver site: %s\n", destination.name);
+	std::println(fd2, "\nReceiver site: {}", destination.name);
 
 	if (destination.lat >= 0.0) {
 
 		if (destination.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",destination.lat, destination.lon);
+			std::println(fd2, "Site location: {:.4f}, -{:.4f}",destination.lat, destination.lon);
 		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",destination.lat, 360 - destination.lon);
+			std::println(fd2, "Site location: {:.4f}, {:.4f}",destination.lat, 360 - destination.lon);
 		}
 	}
 
 	else {
 
 		if (destination.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",destination.lat, destination.lon);
+			std::println(fd2, "Site location: {:.4f}, -{:.4f}",destination.lat, destination.lon);
 		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",destination.lat, 360 - destination.lon);
+			std::println(fd2, "Site location: {:.4f}, {:.4f}",destination.lat, 360 - destination.lon);
 		}
 	}
 
 	if (metric) {
-		fprintf(fd2, "Ground elevation: %.2f meters AMSL\n",
+		std::println(fd2, "Ground elevation: {:.2f} meters AMSL",
 			METERS_PER_FOOT * GetElevation(destination));
-		fprintf(fd2,
-			"Antenna height: %.2f meters AGL / %.2f meters AMSL\n",
+		std::println(fd2,
+			"Antenna height: {:.2f} meters AGL / {:.2f} meters AMSL",
 			METERS_PER_FOOT * destination.alt,
 			METERS_PER_FOOT * (destination.alt +
 					   GetElevation(destination)));
 	}
 
 	else {
-		fprintf(fd2, "Ground elevation: %.2f feet AMSL\n",
+		std::println(fd2, "Ground elevation: {:.2f} feet AMSL",
 			GetElevation(destination));
-		fprintf(fd2, "Antenna height: %.2f feet AGL / %.2f feet AMSL\n",
+		std::println(fd2, "Antenna height: {:.2f} feet AGL / {:.2f} feet AMSL",
 			destination.alt,
 			destination.alt + GetElevation(destination));
 	}
 
-	if (metric)
-		fprintf(fd2, "Distance to %s: %.2f kilometers\n", source.name,
+	if (metric) {
+		std::println(fd2, "Distance to {}: {:.2f} kilometers", source.name,
 			KM_PER_MILE * Distance(source, destination));
-
-	else
-		fprintf(fd2, "Distance to %s: %.2f miles\n", source.name,
+	}
+	else {
+		std::println(fd2, "Distance to {}: {:.2f} miles", source.name,
 			Distance(source, destination));
+	}
 
 	azimuth = Azimuth(destination, source);
 
 	angle1 = ElevationAngle(destination, source);
 	angle2 = ElevationAngle2(destination, source, earthradius);
 
-	fprintf(fd2, "Azimuth to %s: %.2f degrees grid\n", source.name, azimuth);
+	std::println(fd2, "Azimuth to {}: {:.2f} degrees grid", source.name, azimuth);
 
 
-	fprintf(fd2, "Downtilt angle to %s: %+.4f degrees\n",
-		source.name, angle1);
+	std::println(fd2, "Downtilt angle to {}: {:+.4f} degrees", source.name, angle1);
 
 	if (LR.frq_mhz > 0.0) {
-		fprintf(fd2, "\n\nPropagation model: ");
+		std::print(fd2, "\n\nPropagation model: ");
 
 		switch (propmodel) {
 		case 1:
-			fprintf(fd2, "Irregular Terrain Model\n");
+			std::print(fd2, "Irregular Terrain Model");
 			break;
 		case 2:
-			fprintf(fd2, "Line of sight\n");
+			std::println(fd2, "Line of sight");
 			break;
 		case 3:
-			fprintf(fd2, "Okumura-Hata\n");
+			std::println(fd2, "Okumura-Hata");
 			break;
 		case 4:
-			fprintf(fd2, "ECC33 (ITU-R P.529)\n");
+			std::println(fd2, "ECC33 (ITU-R P.529)");
 			break;
 		case 5:
-			fprintf(fd2, "Stanford University Interim\n");
+			std::println(fd2, "Stanford University Interim");
 			break;
 		case 6:
-			fprintf(fd2, "COST231-Hata\n");
+			std::println(fd2, "COST231-Hata");
 			break;
 		case 7:
-			fprintf(fd2, "Free space path loss (ITU-R.525)\n");
+			std::println(fd2, "Free space path loss (ITU-R.525)");
 			break;
 		case 8:
-			fprintf(fd2, "ITWOM 3.0\n");
+			std::println(fd2, "ITWOM 3.0");
 			break;
 		case 9:
-			fprintf(fd2, "Ericsson\n");
+			std::println(fd2, "Ericsson");
 			break;
 		}
 
-		fprintf(fd2, "Model sub-type: ");
+		std::print(fd2, "Model sub-type: ");
 
 		switch (pmenv) {
 		case 1:
-			fprintf(fd2, "City / Conservative\n");
+			std::println(fd2, "City / Conservative");
 			break;
 		case 2:
-			fprintf(fd2, "Suburban / Average\n");
+			std::println(fd2, "Suburban / Average");
 			break;
 		case 3:
-			fprintf(fd2, "Rural / Optimistic\n");
+			std::println(fd2, "Rural / Optimistic");
 			break;
 		}
-		fprintf(fd2, "Earth's Dielectric Constant: %.3lf\n",
-			LR.eps_dielect);
-		fprintf(fd2, "Earth's Conductivity: %.3lf Siemens/meter\n",
-			LR.sgm_conductivity);
-		fprintf(fd2,
-			"Atmospheric Bending Constant (N-units): %.3lf ppm\n",
-			LR.eno_ns_surfref);
-		fprintf(fd2, "Frequency: %.3lf MHz\n", LR.frq_mhz);
-		fprintf(fd2, "Radio Climate: %d (", LR.radio_climate);
+		std::println(fd2, "Earth's Dielectric Constant: {:.3f}", LR.eps_dielect);
+		std::println(fd2, "Earth's Conductivity: {:.3f} Siemens/meter", LR.sgm_conductivity);
+		std::println(fd2, "Atmospheric Bending Constant (N-units): {:.3f} ppm", LR.eno_ns_surfref);
+		std::println(fd2, "Frequency: {:.3f} MHz", LR.frq_mhz);
+		std::print(fd2, "Radio Climate: {} (", LR.radio_climate);
 
 		switch (LR.radio_climate) {
 		case 1:
-			fprintf(fd2, "Equatorial");
+			std::print(fd2, "Equatorial");
 			break;
 
 		case 2:
-			fprintf(fd2, "Continental Subtropical");
+			std::print(fd2, "Continental Subtropical");
 			break;
 
 		case 3:
-			fprintf(fd2, "Maritime Subtropical");
+			std::print(fd2, "Maritime Subtropical");
 			break;
 
 		case 4:
-			fprintf(fd2, "Desert");
+			std::print(fd2, "Desert");
 			break;
 
 		case 5:
-			fprintf(fd2, "Continental Temperate");
+			std::print(fd2, "Continental Temperate");
 			break;
 
 		case 6:
-			fprintf(fd2, "Maritime Temperate, Over Land");
+			std::print(fd2, "Maritime Temperate, Over Land");
 			break;
 
 		case 7:
-			fprintf(fd2, "Maritime Temperate, Over Sea");
+			std::print(fd2, "Maritime Temperate, Over Sea");
 			break;
 
 		default:
-			fprintf(fd2, "Unknown");
+			std::print(fd2, "Unknown");
 		}
 
-		fprintf(fd2, ")\nPolarisation: %d (", LR.pol);
+		std::print(fd2, ")\nPolarisation: {} (", LR.pol);
 
-		if (LR.pol == 0)
-			fprintf(fd2, "Horizontal");
+		if (LR.pol == 0) {
+			std::print(fd2, "Horizontal");
+		}
 
-		if (LR.pol == 1)
-			fprintf(fd2, "Vertical");
+		if (LR.pol == 1) {
+			std::print(fd2, "Vertical");
+		}
 
-		fprintf(fd2, ")\nFraction of Situations: %.1lf%c\n",
-			LR.conf * 100.0, 37);
-		fprintf(fd2, "Fraction of Time: %.1lf%c\n", LR.rel * 100.0, 37);
+		std::println(fd2, ")\nFraction of Situations: {:.1f}{:c}", LR.conf * 100.0, 37);
+		std::println(fd2, "Fraction of Time: {:.1f}{:c}", LR.rel * 100.0, 37);
 
 		if (LR.erp != 0.0) {
-			fprintf(fd2, "\nReceiver gain: %.1f dBd / %.1f dBi\n", rxGain, rxGain+2.14);
-			fprintf(fd2, "Transmitter ERP plus Receiver gain: ");
+			std::println(fd2, "\nReceiver gain: {:.1f} dBd / {:.1f} dBi", rxGain, rxGain+2.14);
+			std::print(fd2, "Transmitter ERP plus Receiver gain: ");
 
-			if (LR.erp < 1.0)
-				fprintf(fd2, "%.1lf milliwatts",
-					1000.0 * LR.erp);
+			if (LR.erp < 1.0) {
+				std::print(fd2, "{:.1f} milliwatts", 1000.0 * LR.erp);
+			}
 
-			if (LR.erp >= 1.0 && LR.erp < 10.0)
-				fprintf(fd2, "%.1lf Watts", LR.erp);
+			if (LR.erp >= 1.0 && LR.erp < 10.0) {
+				std::print(fd2, "{:.1f} Watts", LR.erp);
+			}
 
-			if (LR.erp >= 10.0 && LR.erp < 10.0e3)
-				fprintf(fd2, "%.0lf Watts", LR.erp);
+			if (LR.erp >= 10.0 && LR.erp < 10.0e3) {
+				std::print(fd2, "{:.0f} Watts", LR.erp);
+			}
 
-			if (LR.erp >= 10.0e3)
-				fprintf(fd2, "%.3lf kilowatts", LR.erp / 1.0e3);
+			if (LR.erp >= 10.0e3) {
+				std::print(fd2, "{:.3f} kilowatts", LR.erp / 1.0e3);
+			}
 
-			dBm = 10.0 * (log10(LR.erp * 1000.0));
-			fprintf(fd2, " (%+.2f dBm)\n", dBm);
-			fprintf(fd2, "Transmitter ERP minus Receiver gain: %.2f dBm\n", dBm-rxGain);
+			dBm = 10.0 * (std::log10(LR.erp * 1000.0));
+			std::println(fd2, " ({:+.2f} dBm)", dBm);
+			std::println(fd2, "Transmitter ERP minus Receiver gain: {:.2f} dBm", dBm-rxGain);
 
 			/* EIRP = ERP + 2.14 dB */
 
-			fprintf(fd2, "Transmitter EIRP plus Receiver gain: ");
+			std::print(fd2, "Transmitter EIRP plus Receiver gain: ");
 
 			eirp = LR.erp * 1.636816521;
 
-			if (eirp < 1.0)
-				fprintf(fd2, "%.1lf milliwatts", 1000.0 * eirp);
+			if (eirp < 1.0) {
+				std::print(fd2, "{:.1f} milliwatts", 1000.0 * eirp);
+			}
 
-			if (eirp >= 1.0 && eirp < 10.0)
-				fprintf(fd2, "%.1lf Watts", eirp);
+			if (eirp >= 1.0 && eirp < 10.0) {
+				std::print(fd2, "{:.1f} Watts", eirp);
+			}
 
-			if (eirp >= 10.0 && eirp < 10.0e3)
+			if (eirp >= 10.0 && eirp < 10.0e3) {
 				fprintf(fd2, "%.0lf Watts", eirp);
+			}
 
 			if (eirp >= 10.0e3)
 				fprintf(fd2, "%.3lf kilowatts", eirp / 1.0e3);
 
-			dBm = 10.0 * (log10(eirp * 1000.0));
-			fprintf(fd2, " (%+.2f dBm)\n", dBm);
+			dBm = 10.0 * (std::log10(eirp * 1000.0));
+			std::println(fd2, " ({:+.2f} dBm)", dBm);
 
 			// Rx gain
-			fprintf(fd2, "Transmitter EIRP minus Receiver gain: %.2f dBm\n", dBm-rxGain);
+			std::println(fd2, "Transmitter EIRP minus Receiver gain: {:.2f} dBm", dBm-rxGain);
 		}
 
-		fprintf(fd2, "\nSummary for the link between %s and %s:\n\n",
-			source.name, destination.name);
+		std::println(fd2, "\nSummary for the link between {} and {}:\n", source.name, destination.name);
 
-		if (patterndB != 0.0)
-		        fprintf(fd2, "%s antenna pattern towards %s: %.3f (%.2f dB)\n",
-				source.name, destination.name, pattern,
-				patterndB);
+		if (patterndB != 0.0) {
+			std::println(fd2, "{} antenna pattern towards {}: {:.3f} ({:.2f} dB)",
+				source.name, destination.name, pattern, patterndB);
+		}
 
 		ReadPath(source, destination);	/* source=TX, destination=RX */
 
@@ -1532,29 +1524,27 @@ void PathReport(struct site source, struct site destination, char *name,
 
 		if (distance != 0.0) {
 			free_space_loss =
-			    36.6 + (20.0 * log10(LR.frq_mhz)) +
-			    (20.0 * log10(distance));
-			fprintf(fd2, "Free space path loss: %.2f dB\n",
-				free_space_loss);
+			    36.6 + (20.0 * std::log10(LR.frq_mhz)) +
+			    (20.0 * std::log10(distance));
+			std::println(fd2, "Free space path loss: {:.2f} dB", free_space_loss);
 		}
 
-		fprintf(fd2, "Computed path loss: %.2f dB\n", loss);
+		std::println(fd2, "Computed path loss: {:.2f} dB", loss);
 
 
-                if((loss*1.5) < free_space_loss){
-			fprintf(fd2,"Model error! Computed loss of %.1fdB is greater than free space loss of %.1fdB. Check your inuts for model %d\n",loss,free_space_loss,propmodel);
-                        fprintf(stderr,"Model error! Computed loss of %.1fdB is greater than free space loss of %.1fdB. Check your inuts for model %d\n",loss,free_space_loss,propmodel);
-                        return;
-                }
+		if((loss*1.5) < free_space_loss) {
+			std::println(fd2,"Model error! Computed loss of {:.1f}dB is greater than free space loss of {:.1f}dB. Check your inuts for model {}",loss,free_space_loss,propmodel);
+			std::println(stderr,"Model error! Computed loss of {:.1f}dB is greater than free space loss of {:.1f}dB. Check your inuts for model {}",loss,free_space_loss,propmodel);
+			return;
+		}
 
-		if (free_space_loss != 0.0)
-			fprintf(fd2,
-				"Attenuation due to terrain shielding: %.2f dB\n",
-				loss - free_space_loss);
+		if (free_space_loss != 0.0) {
+			std::println(fd2, "Attenuation due to terrain shielding: {:.2f} dB", loss - free_space_loss);
+		}
 
-		if (patterndB != 0.0)
-		        fprintf(fd2,"Total path loss including %s antenna pattern: %.2f dB\n",
-				source.name, total_loss);
+		if (patterndB != 0.0) {
+			std::println(fd2,"Total path loss including {} antenna pattern: {:.2f} dB", source.name, total_loss);
+		}
 
 		if (LR.erp != 0.0) {
 			field_strength =
@@ -1573,50 +1563,35 @@ void PathReport(struct site source, struct site destination, char *name,
 			power_density /= (4.0 * PI * distance * distance *
 					  2589988.11);
 
-			fprintf(fd2, "Field strength at %s: %.2f dBuV/meter\n",
-				destination.name, field_strength);
-			fprintf(fd2, "Signal power level at %s: %+.2f dBm\n",
-				destination.name, dBm);
-			fprintf(fd2,
-				"Signal power density at %s: %+.2f dBW per square meter\n",
-				destination.name, 10.0 * log10(power_density));
+			std::println(fd2, "Field strength at {}: {:.2f} dBuV/meter", destination.name, field_strength);
+			fprintf(fd2, "Signal power level at %s: %+.2f dBm\n", destination.name, dBm);
+			fprintf(fd2, "Signal power density at %s: %+.2f dBW per square meter\n", destination.name, 10.0 * std::log10(power_density));
 			voltage =
-			    1.0e6 * sqrt(50.0 *
+			    1.0e6 * std::sqrt(50.0 *
 					 (eirp /
-					  (pow
-					   (10.0,
-					    (total_loss - 2.14) / 10.0))));
-			fprintf(fd2,
-				"Voltage across 50 ohm dipole at %s: %.2f uV (%.2f dBuV)\n",
-				destination.name, voltage,
-				20.0 * log10(voltage));
+					  (std::pow(10.0, (total_loss - 2.14) / 10.0))));
+			std::println(fd2, "Voltage across 50 ohm dipole at {}: {:.2f} uV ({:.2f} dBuV)",
+				destination.name, voltage, 20.0 * std::log10(voltage));
 
 			voltage =
-			    1.0e6 * sqrt(75.0 *
+			    1.0e6 * std::sqrt(75.0 *
 					 (eirp /
-					  (pow
-					   (10.0,
-					    (total_loss - 2.14) / 10.0))));
-			fprintf(fd2,
-				"Voltage across 75 ohm dipole at %s: %.2f uV (%.2f dBuV)\n",
-				destination.name, voltage,
-				20.0 * log10(voltage));
+					  (std::pow(10.0, (total_loss - 2.14) / 10.0))));
+			std::println(fd2, "Voltage across 75 ohm dipole at {}: {:.2f} uV ({:.2f} dBuV)",
+				destination.name, voltage, 20.0 * std::log10(voltage));
 		}
 
 		if (propmodel == 1) {
-			fprintf(fd2, "Longley-Rice model error number: %d",
-				errnum);
+			std::print(fd2, "Longley-Rice model error number: {}",	errnum);
 
 			switch (errnum) {
 			case 0:
-				fprintf(fd2, " (No error)\n");
+				std::println(fd2, " (No error)");
 				break;
 
 			case 1:
-				fprintf(fd2,
-					"\n  Warning: Some parameters are nearly out of range.\n");
-				fprintf(fd2,
-					"  Results should be used with caution.\n");
+				std::println(fd2, "\n  Warning: Some parameters are nearly out of range.");
+				std::println(fd2, "  Results should be used with caution.");
 				break;
 
 			case 2:
@@ -1697,35 +1672,38 @@ void PathReport(struct site source, struct site destination, char *name,
 
 		fd = fopen("ppa.gp", "w");
 
-		fprintf(fd, "set grid\n");
-		fprintf(fd, "set yrange [%2.3f to %2.3f]\n", minloss, maxloss);
-		fprintf(fd, "set encoding iso_8859_1\n");
-		fprintf(fd, "set term %s\n", term);
-		fprintf(fd,
-			"set title \"Path Loss Profile Along Path Between %s and %s (%.2f%c azimuth)\"\n",
+		std::println(fd, "set grid");
+		std::println(fd, "set yrange [{:2.3f} to {:2.3f}]", minloss, maxloss);
+		std::println(fd, "set encoding iso_8859_1");
+		std::println(fd, "set term {}", term);
+		std::println(fd,
+			"set title \"Path Loss Profile Along Path Between {} and {} ({:.2f}{:c} azimuth)\"",
 			destination.name, source.name, Azimuth(destination,
 							       source), 176);
 
-		if (metric)
-			fprintf(fd,
-				"set xlabel \"Distance Between %s and %s (%.2f kilometers)\"\n",
+		if (metric) {
+			std::println(fd,
+				"set xlabel \"Distance Between {} and {} ({:.2f} kilometers)\"",
 				destination.name, source.name,
 				KM_PER_MILE * Distance(destination, source));
-		else
-			fprintf(fd,
-				"set xlabel \"Distance Between %s and %s (%.2f miles)\"\n",
+		}
+		else {
+			std::println(fd,
+				"set xlabel \"Distance Between {} and {} ({:.2f} miles)\"",
 				destination.name, source.name,
 				Distance(destination, source));
+		}
 
-		if (got_azimuth_pattern || got_elevation_pattern)
-			fprintf(fd,
+		if (got_azimuth_pattern || got_elevation_pattern) {
+			std::print(fd,
 				"set ylabel \"Total Path Loss (including TX antenna pattern) (dB)");
-		else
-			fprintf(fd, "set ylabel \"Longley-Rice Path Loss (dB)");
+		}
+		else {
+			std::print(fd, "set ylabel \"Longley-Rice Path Loss (dB)");
+		}
 
-		fprintf(fd, "\"\nset output \"%s.%s\"\n", basename, ext);
-		fprintf(fd,
-			"plot \"profile.gp\" title \"Path Loss\" with lines\n");
+		std::println(fd, "\"\nset output \"{}.{}\"", basename, ext);
+		std::println(fd, "plot \"profile.gp\" title \"Path Loss\" with lines");
 
 		fclose(fd);
 
@@ -1740,9 +1718,10 @@ void PathReport(struct site source, struct site destination, char *name,
 
 		}
 
-		else
-			fprintf(stderr,
-				"\n*** ERROR: Error occurred invoking gnuplot!\n");
+		else {
+			std::println(stderr,
+				"\n*** ERROR: Error occurred invoking gnuplot!");
+		}
 	}
 
 }
@@ -1770,8 +1749,7 @@ void SeriesData(struct site source, struct site destination, char *name,
 	b = GetElevation(destination) + destination.alt + earthradius;
 
 	if (debug) {
-	        fprintf(stderr, "SeriesData: az = %lf, dist = %lf, ref = %lf, b = %lf\n", azimuth, distance, refangle, b);
-		fflush(stderr);
+		std::println(stderr, "SeriesData: az = {:f}, dist = {:f}, ref = {:f}, b = {:f}", azimuth, distance, refangle, b);
 	}
 	
 	if (fresnel_plot) {
@@ -1858,57 +1836,42 @@ void SeriesData(struct site source, struct site destination, char *name,
 
 		if (metric) {
 			if (METERS_PER_FOOT * height > 0) {
-				fprintf(fd, "%.3f %.3f\n",
-					KM_PER_MILE * path.distance[x],
-					METERS_PER_FOOT * height);
+				std::println(fd, "{:.3f} {:.3f}", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * height);
 			}
 
-			if (fd1 != nullptr && x > 0 && x < path.length - 2)
-				fprintf(fd1, "%.3f %.3f\n",
-					KM_PER_MILE * path.distance[x],
-					METERS_PER_FOOT * (terrain ==
-							   0.0 ? height
-							   : (height +
-							      clutter)));
+			if (fd1 != nullptr && x > 0 && x < path.length - 2) {
+				std::println(fd1, "{:.3f} {:.3f}", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * (terrain == 0.0 ? height : (height + clutter)));
+			}
 
-			fprintf(fd2, "%.3f %.3f\n",
-				KM_PER_MILE * path.distance[x],
-				METERS_PER_FOOT * r);
-			fprintf(fd5, "%.3f %.3f\n",
-				KM_PER_MILE * path.distance[x],
-				METERS_PER_FOOT * (height - terrain));
-
+			std::println(fd2, "{:.3f} {:.3f}", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * r);
+			std::println(fd5, "{:.3f} {:.3f}", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * (height - terrain));
 		}
 
 		else {
-			fprintf(fd, "%.3f %.3f\n", path.distance[x], height);
+			std::println(fd, "{:.3f} {:.3f}", path.distance[x], height);
 
 			if (fd1 != nullptr && x > 0 && x < path.length - 2)
-				fprintf(fd1, "%.3f %.3f\n", path.distance[x],
+				std::println(fd1, "{:.3f} {:.3f}", path.distance[x],
 					(terrain ==
 					 0.0 ? height : (height + clutter)));
 
-			fprintf(fd2, "%.3f %.3f\n", path.distance[x], r);
-			fprintf(fd5, "%.3f %.3f\n", path.distance[x],
-				height - terrain);
+			std::println(fd2, "{:.3f} {:.3f}", path.distance[x], r);
+			std::println(fd5, "{:.3f} {:.3f}", path.distance[x], height - terrain);
 		}
 
 		if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0)
 		    && fresnel_plot) {
 			if (metric) {
-				fprintf(fd3, "%.3f %.3f\n",
+				std::println(fd3, "{:.3f} {:.3f}",
 					KM_PER_MILE * path.distance[x],
 					METERS_PER_FOOT * f_zone);
-				fprintf(fd4, "%.3f %.3f\n",
+				std::println(fd4, "{:.3f} {:.3f}",
 					KM_PER_MILE * path.distance[x],
 					METERS_PER_FOOT * fpt6_zone);
 			}
-
 			else {
-				fprintf(fd3, "%.3f %.3f\n", path.distance[x],
-					f_zone);
-				fprintf(fd4, "%.3f %.3f\n", path.distance[x],
-					fpt6_zone);
+				std::println(fd3, "{:.3f} {:.3f}", path.distance[x], f_zone);
+				std::println(fd4, "{:.3f} {:.3f}", path.distance[x], fpt6_zone);
 			}
 
 			if (f_zone < minheight)
@@ -1937,33 +1900,31 @@ void SeriesData(struct site source, struct site destination, char *name,
 		r = 0.0;
 
 	if (metric) {
-		fprintf(fd, "%.3f %.3f",
+		std::print(fd, "{:.3f} {:.3f}",
 			KM_PER_MILE * path.distance[path.length - 1],
 			METERS_PER_FOOT * r);
-		fprintf(fd2, "%.3f %.3f",
+		std::print(fd2, "{:.3f} {:.3f}",
 			KM_PER_MILE * path.distance[path.length - 1],
 			METERS_PER_FOOT * r);
 	}
-
 	else {
-		fprintf(fd, "%.3f %.3f", path.distance[path.length - 1], r);
-		fprintf(fd2, "%.3f %.3f", path.distance[path.length - 1], r);
+		std::print(fd, "{:.3f} {:.3f}", path.distance[path.length - 1], r);
+		std::print(fd2, "{:.3f} {:.3f}", path.distance[path.length - 1], r);
 	}
 
 	if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
 		if (metric) {
-			fprintf(fd3, "%.3f %.3f",
+			std::print(fd3, "{:.3f} {:.3f}",
 				KM_PER_MILE * path.distance[path.length - 1],
 				METERS_PER_FOOT * r);
-			fprintf(fd4, "%.3f %.3f",
+			std::print(fd4, "{:.3f} {:.3f}",
 				KM_PER_MILE * path.distance[path.length - 1],
 				METERS_PER_FOOT * r);
 		}
-
 		else {
-			fprintf(fd3, "%.3f %.3f",
+			std::print(fd3, "{:.3f} {:.3f}",
 				path.distance[path.length - 1], r);
-			fprintf(fd4, "%.3f %.3f",
+			std::print(fd4, "{:.3f} {:.3f}",
 				path.distance[path.length - 1], r);
 		}
 	}
@@ -2018,7 +1979,5 @@ void SeriesData(struct site source, struct site destination, char *name,
 		}
 	}
 
-	fprintf(stderr, "\n");
-	fflush(stderr);
-
+	std::println(stderr, "");
 }

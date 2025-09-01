@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <print>
 #include <math.h>
 #include "tiles.hh"
 #include "common.h"
@@ -44,9 +45,8 @@ int tile_load_lidar(tile_t *tile, char *filename){
 
 	tile->datastart = ftell(fd);
 
-	if(debug){
-		fprintf(stderr,"w:%d h:%d s:%lf\n", tile->width, tile->height, tile->cellsize);
-		fflush(stderr);
+	if(debug) {
+		std::println(stderr, "w:{} h:{} s:{:f}", tile->width, tile->height, tile->cellsize);
 	}
 
 	/* Set the filename */
@@ -61,8 +61,9 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	if (tile->xll < westoffset)
 		westoffset = tile->xll;
 
-	 if (debug)
-	 	fprintf(stderr,"%d, %d, %.7f, %.7f, %.7f, %.7f, %.7f\n",tile->width,tile->height,tile->xll,tile->yll,tile->cellsize,tile->yur,tile->xur);
+	 if (debug) {
+	 	std::println(stderr,"{}, {} {:.7f}, {:.7f}, {:.7f}, {:.7f}, {:.7f}",tile->width,tile->height,tile->xll,tile->yll,tile->cellsize,tile->yur,tile->xur);
+	 }
 
 	// Greenwich straddling hack
 	/* if (tile->xll <= 0 && tile->xur > 0) {
@@ -127,8 +128,9 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	tile->ppdx = tile->width / tile->width_deg;
 	tile->ppdy = tile->height / tile->height_deg;
 
-	if (debug)
-		fprintf(stderr,"Pixels loaded: %zu/%d (PPD %dx%d, Res %f (%.2f))\n", loaded, tile->width*tile->height, tile->ppdx, tile->ppdy, tile->precise_resolution, tile->resolution);
+	if (debug) {
+		std::print(stderr,"Pixels loaded: {}/{} (PPD {}x{}, Res {:f} ({:.2f}))", loaded, tile->width*tile->height, tile->ppdx, tile->ppdy, tile->precise_resolution, tile->resolution);
+	}
 
 	/* All done, close the LIDAR file */
 	fclose(fd);
