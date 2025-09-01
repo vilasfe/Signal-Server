@@ -1,6 +1,8 @@
 #include <cmath>
 #include <cstdlib>
 
+#include "ecc33.hh"
+
 auto ECC33pathLoss(float f, float TxH, float RxH, float d, int mode) -> double
 {
 

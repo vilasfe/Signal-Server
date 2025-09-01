@@ -26,6 +26,8 @@ http://people.seas.harvard.edu/~jones/es151/prop_models/propagation.html#pel
 
 #include "../common.h"
 
+#include "egli.hh"
+
 //static float fcmin = 30.0;
 //static float fcmax = 1000.0;
 //static float dmin  = 1.0;
@@ -35,9 +37,10 @@ http://people.seas.harvard.edu/~jones/es151/prop_models/propagation.html#pel
 
 auto EgliPathLoss(float f, float h1, float h2, float d) -> double
 {
-  double Lp50 = NAN;
-  float C1 = 0.0;
-  float C2 = 0.0;
+  // default to both antenna heights below 10 metres
+  double Lp50 = 66.7;
+  float C1 = 1.0;
+  float C2 = 1.0;
 
 /*  if ((f >= fcmin) && (f <= fcmax) &&
       (h1 >= h1min) && (h2 >= h2min))
@@ -59,12 +62,6 @@ auto EgliPathLoss(float f, float h1, float h2, float d) -> double
       Lp50 = 76.3;
       C1 = 1.0;
       C2 = 2.0;
-    }
-    else // both antenna heights below 10 metres
-    {
-      Lp50 = 66.7;
-      C1 = 1.0;
-      C2 = 1.0;
     } // end if
 
     Lp50 += 4.0F*_10log10(d) + 2.0F*_10log10(f) - C1*_10log10(h1) - C2*_10log10(h2);
