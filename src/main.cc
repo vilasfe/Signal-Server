@@ -20,8 +20,9 @@ double version = 3.21;
 *                                                                            *
 \****************************************************************************/
 
+#include <algorithm>
 #include <stdio.h>
-#include <math.h>
+#include <cmath>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -29,8 +30,7 @@ double version = 3.21;
 #include <errno.h>
 #include <limits.h>
 #include <print>
-#include <bzlib.h>
-#include <zlib.h>
+#include <string>
 
 #include "common.h"
 #include "inputs.hh"
@@ -45,7 +45,8 @@ int MAXPAGES = 10*10;
 int IPPD = 1200;
 int ARRAYSIZE = (MAXPAGES * IPPD) + 10;
 
-char sdf_path[255], opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = nullptr;
+std::string sdf_path;
+char opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = nullptr;
 
 double earthradius, max_range = 0.0, forced_erp, dpp, ppd, yppd,
     fzone_clearance = 0.6, forced_freq, clutter, lat, lon, txh, tercon, terdic,
@@ -198,14 +199,10 @@ int GetMask(double lat, double lon)
 void PutSignal(double lat, double lon, unsigned char signal)
 {
 	int x = 0, y = 0, indx;
-	char found, dotfile[260], basename[255];
+	char found;
 
 	/* This function writes a signal level (0-255)
 	   at the specified location for later recall. */
-
-	snprintf(basename, 255, "%s", tx_site[0].filename);
-	strcpy(dotfile, basename);
-	strcat(dotfile, ".dot");
 
 	if (signal > hottest)	// dBm, dBuV
 		hottest = signal;
@@ -622,7 +619,7 @@ double ElevationAngle2(struct site_t source, struct site_t destination, double e
 	return elevation;
 }
 
-double ReadBearing(char *input)
+auto ReadBearing(std::string_view input) -> double
 {
 	/* This function takes numeric input in the form of a character
 	   string, and returns an equivalent bearing in degrees as a
@@ -633,59 +630,50 @@ double ReadBearing(char *input)
 	   embedded within the numbers expressed in the
 	   input string.  Decimal seconds are permitted. */
 
-	double seconds, bearing = 0.0;
-	char string[20];
-	int a, b, length, degrees, minutes;
+	double bearing = 0.0;
+	std::string outstr;
 
 	/* Copy "input" to "string", and ignore any extra
 	   spaces that might be present in the process. */
+	auto length = input.length();
 
-	string[0] = 0;
-	length = strlen(input);
-
-	for (a = 0, b = 0; a < length && a < 18; a++) {
-		if ((input[a] != 32 && input[a] != '\n')
-		    || (input[a] == 32 && input[a + 1] != 32
-			&& input[a + 1] != '\n' && b != 0)) {
-			string[b] = input[a];
-			b++;
+	for (int a = 0; a < length && a < 18; a++) {
+		if ((input[a] != 32 && input[a] != '\n') || (input[a] == 32 && input[a + 1] != 32 && input[a + 1] != '\n' && !outstr.empty())) {
+			outstr += input[a];
 		}
 	}
 
-	string[b] = 0;
-
 	/* Count number of spaces in the clean string. */
+	auto num_spaces = std::ranges::count(outstr, 32);
 
-	length = strlen(string);
+	if (num_spaces == 0) {		/* Decimal Format (40.139722) */
+		std::from_chars(outstr.data(), outstr.data() + outstr.size(), bearing);
+	}
 
-	for (a = 0, b = 0; a < length; a++)
-		if (string[a] == 32)
-			b++;
+	else if (num_spaces == 2) {		/* Degree, Minute, Second Format (40 08 23.xx) */
+		int degrees = 0;
+		int minutes = 0;
+		double seconds = 0.0;
+		sscanf(outstr.data(), "%d %d %lf", &degrees, &minutes, &seconds);
 
-	if (b == 0)		/* Decimal Format (40.139722) */
-		sscanf(string, "%lf", &bearing);
+		bearing = std::fabs(static_cast<double>(degrees));
+		bearing += std::fabs(static_cast<double>(minutes) / 60.0);
+		bearing += std::fabs(seconds / 3600.0);
 
-	if (b == 2) {		/* Degree, Minute, Second Format (40 08 23.xx) */
-		sscanf(string, "%d %d %lf", &degrees, &minutes, &seconds);
-
-		bearing = fabs((double)degrees);
-		bearing += fabs(((double)minutes) / 60.0);
-		bearing += fabs(seconds / 3600.0);
-
-		if ((degrees < 0) || (minutes < 0) || (seconds < 0.0))
+		if ((degrees < 0) || (minutes < 0) || (seconds < 0.0)) {
 			bearing = -bearing;
+		}
 	}
 
 	/* Anything else returns a 0.0 */
-
-	if (bearing > 360.0 || bearing < -360.0)
+	if (bearing > 360.0 || bearing < -360.0) {
 		bearing = 0.0;
+	}
 
 	return bearing;
 }
 
-void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f,
-			 FILE *outfile)
+void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE *outfile)
 {
 	/* Perform an obstruction analysis along the
 	   path between receiver and transmitter. */
@@ -695,9 +683,9 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f,
 	double h_r, h_t, h_x, h_r_orig, cos_tx_angle, cos_test_angle,
 	    cos_tx_angle_f1, cos_tx_angle_fpt6, d_tx, d_x,
 	    h_r_f1, h_r_fpt6, h_f, h_los, lambda = 0.0;
-	std::string outstr;
 	std::string string_fpt6;
 	std::string string_f1;
+	std::string outstr;
 
 	ReadPath(xmtr, rcvr);
 	h_r = GetElevation(rcvr) + rcvr.alt + earthradius;
@@ -932,11 +920,8 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f,
 
 void free_dem(void)
 {
-	int i;
-	int j;
-
-	for (i = 0; i < MAXPAGES; i++) {
-		for (j = 0; j < IPPD; j++) {
+	for (int i = 0; i < MAXPAGES; i++) {
+		for (int j = 0; j < IPPD; j++) {
 			delete [] dem[i].data[j];
 			delete [] dem[i].mask[j];
 			delete [] dem[i].signal[j];
@@ -967,15 +952,12 @@ void alloc_elev(void)
 
 void alloc_dem(void)
 {
-	int i;
-	int j;
-
 	dem = new struct dem[MAXPAGES];
-	for (i = 0; i < MAXPAGES; i++) {
+	for (int i = 0; i < MAXPAGES; i++) {
 		dem[i].data = new short *[IPPD];
 		dem[i].mask = new unsigned char *[IPPD];
 		dem[i].signal = new unsigned char *[IPPD];
-		for (j = 0; j < IPPD; j++) {
+		for (int j = 0; j < IPPD; j++) {
 			dem[i].data[j] = new short[IPPD];
 			dem[i].mask[j] = new unsigned char[IPPD];
 			dem[i].signal[j] = new unsigned char[IPPD];
@@ -993,13 +975,12 @@ void alloc_path(void)
 
 void do_allocs(void)
 {
-	int i;
 
 	alloc_elev();
 	alloc_dem();
 	alloc_path();
 
-	for (i = 0; i < MAXPAGES; i++) {
+	for (int i = 0; i < MAXPAGES; i++) {
 		dem[i].min_el = 32768;
 		dem[i].max_el = -32768;
 		dem[i].min_north = 90;
@@ -1022,15 +1003,22 @@ int main(int argc, char *argv[])
 	unsigned char LRmap = 0, txsites = 0, topomap = 0, geo = 0, kml =
 	    0, area_mode = 0, max_txsites, ngs = 0;
 
-	char mapfile[255], ano_filename[255], lidar_tiles[27000], clutter_file[255];
+	// TODO: convert string filenames to std::filesystem
+	std::string mapfile;
+	std::string ano_filename;
+	std::string lidar_tiles;
+	lidar_tiles.resize(27000);
+	std::string clutter_file;
 	std::string antenna_file;
-	char *az_filename, *el_filename, *udt_file = nullptr;
+	std::string az_filename;
+	std::string el_filename;
+	char *udt_file = nullptr;
 
 	double altitude = 0.0, altitudeLR = 0.0, tx_range = 0.0,
 	    rx_range = 0.0, deg_range = 0.0, deg_limit = 0.0, deg_range_lon;
 
 	if (strstr(argv[0], "signalserverHD")) {
-	        MAXPAGES = 32;  // was 9
+		MAXPAGES = 32;  // was 9
 		ARRAYSIZE = 115210;  // was 32410
 		IPPD = 3600;
 	}
@@ -1041,7 +1029,7 @@ int main(int argc, char *argv[])
 		IPPD = 6000; // will be overridden based upon file header...
 	}
 
-	strncpy(ss_name, "Signal Server\0", 14);
+	std::string ss_name = "Signal Server";
 
 	if (argc == 1) {
 		std::println(stdout, "Version: {} {:.2f} (Built for {} DEM tiles at {} pixels)", ss_name, version,MAXPAGES, IPPD);
@@ -1146,7 +1134,7 @@ int main(int argc, char *argv[])
 	area_mode = 1;
 	ippd = IPPD;		// default resolution
 
-	sscanf("0.1", "%lf", &altitudeLR);
+	altitudeLR = 0.1;
 
 	// Defaults
 	LR.eps_dielect = 15.0;	// Farmland
@@ -1162,7 +1150,7 @@ int main(int argc, char *argv[])
 	antenna_rotation = -1;  // unique defaults to test usage
 	antenna_downtilt = 99.0; // don't mess with them!
 	antenna_dt_direction = -1;
-	antenna_file[0] = '\0';
+	antenna_file = "";
 
 	tx_site[0].lat = 91.0;
 	tx_site[0].lon = 361.0;
@@ -1197,7 +1185,7 @@ int main(int argc, char *argv[])
 			z = x + 1;
 
 			if (z <= y && argv[z][0] && argv[z][0] != '-') {
-				strncpy(clutter_file, argv[z], 253);
+				clutter_file = argv[z];
 			}
 		}
 
@@ -1252,35 +1240,35 @@ int main(int argc, char *argv[])
 			z = x + 1;
 
 			if (z <= y && argv[z][0] && argv[z][0] != '-') {
-				strncpy(mapfile, argv[z], 253);
+				mapfile = argv[z];
 				strncpy(tx_site[0].name, "Tx", 2);
-				strncpy(tx_site[0].filename, argv[z], 253);
+				tx_site[0].filename = argv[z];
 				/* Antenna pattern files have the same basic name as the output file
 				 * but with a different extension. If they exist, load them now */
-				if( (az_filename = (char*) calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == nullptr )
-					return ENOMEM;
-				if (! antenna_file.empty())
-				        strcpy(az_filename, antenna_file.data());
-				else
-				        strcpy(az_filename, argv[z]);
-				strcat(az_filename, AZ_FILE_SUFFIX);
-
-				if( (el_filename = (char*) calloc(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1, sizeof(char))) == nullptr ){
-					free(az_filename);
-					return ENOMEM;
+				az_filename.reserve(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1);
+				if (!antenna_file.empty()) {
+				        az_filename = antenna_file;
 				}
-				if (!antenna_file.empty())
-				        strcpy(el_filename, antenna_file.data());
-				else
-				        strcpy(el_filename, argv[z]);
-				strcat(el_filename, EL_FILE_SUFFIX);
+				else {
+				        az_filename = argv[z];
+				}
+				az_filename += AZ_FILE_SUFFIX;
+
+				el_filename.reserve(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1);
+				if (!antenna_file.empty()) {
+				        el_filename = antenna_file;
+				}
+				else {
+				        el_filename = argv[z];
+				}
+				el_filename += EL_FILE_SUFFIX;
 
 				if(result = LoadPAT(az_filename,el_filename); result != 0 ){
 					std::println(stderr,"Permissions error reading antenna pattern file");
 					exit(result);
 				}
-				free(az_filename);
-				free(el_filename);
+				az_filename.clear();
+				el_filename.clear();
 			} else if (z <= y && argv[z][0] && argv[z][0] == '-' && argv[z][1] == '\0' ) {
 				/* Handle writing image data to stdout */
 				to_stdout = true;
@@ -1321,15 +1309,16 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[x], "-sdf") == 0) {
 			z = x + 1;
 
-			if (z <= y && argv[z][0] && argv[z][0] != '-')
-				strncpy(sdf_path, argv[z], 253);
+			if (z <= y && argv[z][0] && argv[z][0] != '-') {
+				sdf_path = argv[z];
+			}
 		}
 		
 		if (strcmp(argv[x], "-lid") == 0) {
 			z = x + 1;
 			lidar=1;
 			if (z <= y && argv[z][0] && argv[z][0] != '-')
-				strncpy(lidar_tiles, argv[z], 27000); // 900 tiles!
+				lidar_tiles = argv[z];
 		}
 
 		if (strcmp(argv[x], "-res") == 0) {
@@ -1712,13 +1701,8 @@ int main(int argc, char *argv[])
 
 	/* Ensure a trailing '/' is present in sdf_path */
 
-	if (sdf_path[0]) {
-		x = strlen(sdf_path);
-
-		if (sdf_path[x - 1] != '/' && x != 0) {
-			sdf_path[x] = '/';
-			sdf_path[x + 1] = 0;
-		}
+	if (! sdf_path.ends_with('/') && !sdf_path.empty()) {
+		sdf_path += '/';
 	}
 
 	x = 0;
@@ -1777,8 +1761,7 @@ int main(int argc, char *argv[])
 		yppd=ppd;
 		
 		if (debug) {
-			fprintf(stderr,"ppd %lf, yppd %lf, %.4lf,%.4lf,%.4lf,%.4lf,%d x %d\n",ppd,yppd,max_north,min_west,min_north,max_west,width,height);
-			fflush(stderr);
+			std::println(stderr,"ppd {:f}, yppd {:f}, {:.4f},{:.4f},{:.4f},{:.4f},{} x {}",ppd,yppd,max_north,min_west,min_north,max_west,width,height);
 		}
 
 		if (yppd < ppd/4) {
@@ -1910,7 +1893,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Enrich with Clutter
-	if(strlen(clutter_file) > 1){
+	if(!clutter_file.empty()){
 		/*
 		Clutter tiles cover 16 x 12 degs but we only need a fraction of that area.
 		Limit by max_range / miles per degree (at equator)
@@ -1976,7 +1959,7 @@ int main(int argc, char *argv[])
 			if (LR.erp == 0.0)
 				DoPathLoss(mapfile, geo, kml, ngs, tx_site, txsites);
 			else if (dbm)
-				DoRxdPwr((to_stdout == true ? nullptr : mapfile), geo, kml, ngs, tx_site, txsites);
+				DoRxdPwr((to_stdout ? "" : mapfile), geo, kml, ngs, tx_site, txsites);
 			else
 			        if ((result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites)) != 0)
 					return result;

@@ -1,6 +1,8 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <string>
+
 #define GAMMA 		2.5
 
 #ifndef PI
@@ -42,7 +44,7 @@ struct site_t {
 	double lon;
 	float alt;
 	char name[50];
-	char filename[255];
+	std::string filename;
 };
 
 struct path {
@@ -112,8 +114,7 @@ extern double delta;
 extern double cropLat;
 extern double cropLon;
 
-extern char string[];
-extern char sdf_path[];
+extern std::string sdf_path;
 extern char gpsav;
 
 extern unsigned char got_elevation_pattern;

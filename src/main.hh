@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <string_view>
 
 #include "common.h"
 
@@ -50,7 +51,7 @@ double Azimuth(struct site_t source, struct site_t destination);
 double ElevationAngle(struct site_t source, struct site_t destination);
 void ReadPath(struct site_t source, struct site_t destination);
 double ElevationAngle2(struct site_t source, struct site_t destination, double er);
-double ReadBearing(char *input);
+double ReadBearing(std::string_view input);
 void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE *outfile);
 void free_elev(void);
 void free_path(void);

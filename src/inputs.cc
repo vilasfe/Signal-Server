@@ -5,6 +5,7 @@
 #include <math.h>
 #include <errno.h>
 #include <limits.h>
+#include <memory>
 #include <print>
 #include "common.h"
 #include "main.hh"
@@ -27,7 +28,7 @@ extern long bzbuf_pointer, bzbytes_read, gzbuf_pointer, gzbytes_read;
 extern double antenna_rotation,antenna_downtilt,antenna_dt_direction;
 
 
-int loadClutter(char *filename, double radius, struct site_t tx)
+auto loadClutter(std::string_view filename, double radius, struct site_t tx) -> int
 {
 	/* This function reads a MODIS 17-class clutter file in ASCII Grid format.
 	   The nominal heights it applies to each value, eg. 5 (Mixed forest) = 15m are 
@@ -42,7 +43,7 @@ int loadClutter(char *filename, double radius, struct site_t tx)
 	char *s, *pch = nullptr;
 	FILE *fd;
 
-	if ((fd = fopen(filename, "rb")) == nullptr)
+	if ((fd = fopen(filename.data(), "rb")) == nullptr)
 		return errno;
 
 	if (fgets(line, 19, fd) != nullptr) {
@@ -173,35 +174,36 @@ int averageHeight(int height, int width, int x, int y){
 	}
 }
 
-int loadLIDAR(char *filenames, int resample)
+auto loadLIDAR(const std::string& filenames, int resample) -> int
 {
-	char *filename;
-	char *files[900]; // 20x20=400, 16x16=256 tiles
-	int indx = 0, fc = 0, success;
-	double avgCellsize = 0, smCellsize = 0;
-	tile_t *tiles;
+	std::array<std::string, 900> files; // 20x20=400, 16x16=256 tiles
+	int fc = 0;
+	double avgCellsize = 0;
+	double smCellsize = 0;
 
 	// Initialize global variables before processing files
 	min_west = 361; // any value will be lower than this
 	max_west = 0;   // any value will be higher than this
 
 	// test for multiple files
-	filename = strtok(filenames, " ,");
-	while (filename != nullptr) {
+	std::string::size_type startToken = 0;
+	std::string::size_type endToken = filenames.find_first_of(" ,");
+	while (endToken != std::string::npos) {
+		const std::string filename = filenames.substr(startToken, endToken - startToken);
 		files[fc] = filename;
-		filename = strtok(nullptr, " ,");
-		fc++;
+		++fc;
+		startToken = endToken + 1;
+		endToken = filenames.find_first_of(" ,", startToken);
 	}
+	// remember to grab the last filename
+	files[fc] = filenames.substr(startToken);
+	++fc;
 
 	/* Allocate the tile array */
-	if( (tiles = (tile_t*) calloc(fc+1, sizeof(tile_t))) == nullptr ) {
-		if (debug)
-			std::print(stderr,"Could not allocate {}\n tiles",fc+1);
-		return ENOMEM;
-	}
+	auto tiles = std::make_unique<tile_t[]>(fc+1);
 
 	/* Load each tile in turn */
-	for (indx = 0; indx < fc; indx++) {
+	for (int indx = 0; indx < fc; indx++) {
 
 		/* Grab the tile metadata */
 		if( const int success = tile_load_lidar(&tiles[indx], files[indx]); success != 0 ){
@@ -254,7 +256,8 @@ int loadLIDAR(char *filenames, int resample)
 	/* Iterate through all of the tiles to find the smallest resolution. We will
 	 * need to rescale every tile from here on out to this value */
 	float smallest_res = 0;
-	for (size_t i = 0; i < (unsigned)fc; i++) {
+	//TODO: std::ranges and filter_view
+	for (size_t i = 0; i < static_cast<unsigned>(fc); i++) {
 		if ( smallest_res == 0 || tiles[i].resolution < smallest_res ){
 			smallest_res = tiles[i].resolution;
 		}
@@ -370,7 +373,6 @@ int loadLIDAR(char *filenames, int resample)
 			fprintf(stderr,"Could not allocate %zu bytes\n", new_tile_alloc);
 			fflush(stderr);
 		}
-		free(tiles);
 		return ENOMEM;
 	}
 	if (debug) {
@@ -469,10 +471,11 @@ int loadLIDAR(char *filenames, int resample)
 		std::println(stderr, "fc {} WIDTH {} HEIGHT {} ippd {} minN {:.5f} maxN {:.5f} minW {:.5f} maxW {:.5f} avgCellsize {:.5f}", fc, width, height, ippd,min_north,max_north,min_west,max_west,avgCellsize);
 	}
 
-	if ( tiles != nullptr )
-	        for (size_t i = 0; i < (unsigned)fc-1; i++)
+	if ( tiles ) {
+		for (size_t i = 0; i < static_cast<unsigned>(fc-1); i++) {
 			tile_destroy(&tiles[i]);
-	free(tiles);
+		}
+	}
 
 	return 0;
 }
@@ -487,8 +490,8 @@ int LoadSDF_SDF(char *name)
 	   NOTE: On error, this function returns a negative errno */
 
 	int x, y, data = 0, indx, minlat, minlon, maxlat, maxlon, j;
-	char found, free_page = 0, line[20], jline[20], sdf_file[255],
-	    path_plus_name[PATH_MAX];
+	char found, free_page = 0, line[20], jline[20], sdf_file[255];
+	std::string path_plus_name;
 
 	FILE *fd;
 
@@ -532,15 +535,14 @@ int LoadSDF_SDF(char *name)
 	if (free_page && found == 0 && indx >= 0 && indx < MAXPAGES) {
 		/* Search for SDF file in current working directory first */
 
-		strncpy(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
+		path_plus_name = sdf_file;
 
-		if( (fd = fopen(path_plus_name, "rb")) == nullptr ){
+		if( (fd = fopen(path_plus_name.data(), "rb")) == nullptr ){
 			/* Next, try loading SDF file from path specified
 			   in $HOME/.ss_path file or by -d argument */
 
-			strncpy(path_plus_name, sdf_path, sizeof(path_plus_name)-1);
-			strncat(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
-			if( (fd = fopen(path_plus_name, "rb")) == nullptr ){
+			path_plus_name = sdf_path + sdf_file;
+			if( (fd = fopen(path_plus_name.data(), "rb")) == nullptr ){
 				return -errno;
 			}
 		}
@@ -728,8 +730,9 @@ int LoadSDF_BZ(char *name)
 
         int x, y, found, data = 0, indx, minlat, minlon, maxlat, maxlon, j,
 	  success, pos;
-	char free_page = 0, line[20], jline[20], sdf_file[255],
-	  path_plus_name[PATH_MAX], bzline[20], *posn;
+	char free_page = 0, line[20], jline[20], sdf_file[255];
+	std::string  path_plus_name;
+	char bzline[20], *posn;
 
 	FILE *fd;
 	BZFILE *bzfd;
@@ -778,11 +781,11 @@ int LoadSDF_BZ(char *name)
 	if (free_page && found == 0 && indx >= 0 && indx < MAXPAGES) {
 		/* Search for SDF file in current working directory first */
 
-		strncpy(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
+		path_plus_name = sdf_file;
 
 
 		success = 0;
-		fd = fopen(path_plus_name, "rb");
+		fd = fopen(path_plus_name.data(), "rb");
 		bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,nullptr,0);
 
 		if (fd != nullptr && bzerror == BZ_OK)
@@ -791,9 +794,8 @@ int LoadSDF_BZ(char *name)
 		  /* Next, try loading SDF file from path specified
 		     in $HOME/.ss_path file or by -d argument */
 
-		        strncpy(path_plus_name, sdf_path, sizeof(path_plus_name)-1);
-			strncat(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
-			fd = fopen(path_plus_name, "rb");
+			path_plus_name = sdf_path + sdf_file;
+			fd = fopen(path_plus_name.data(), "rb");
 			bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,nullptr,0);
 			if (fd != nullptr && bzerror == BZ_OK)
 			        success = 1;
@@ -1011,8 +1013,9 @@ int LoadSDF_GZ(char *name)
 
         int x, y, found, data = 0, indx, minlat, minlon, maxlat, maxlon, j,
 	  success, pos;
-	char free_page = 0, line[20], jline[20], sdf_file[255],
-	  path_plus_name[PATH_MAX], gzline[20], *posn;
+	char free_page = 0, line[20], jline[20], sdf_file[255];
+	std::string path_plus_name;
+	char gzline[20], *posn;
 	const char *errmsg;
 
 	gzFile gzfd;
@@ -1061,11 +1064,11 @@ int LoadSDF_GZ(char *name)
 	if (free_page && found == 0 && indx >= 0 && indx < MAXPAGES) {
 		/* Search for SDF file in current working directory first */
 
-		strncpy(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
+		path_plus_name = sdf_file;
 
 
 		success = 0;
-		gzfd = gzopen(path_plus_name, "rb");
+		gzfd = gzopen(path_plus_name.data(), "rb");
 
 		if (gzfd != nullptr)
 		        success = 1;
@@ -1073,9 +1076,8 @@ int LoadSDF_GZ(char *name)
 		  /* Next, try loading SDF file from path specified
 		     in $HOME/.ss_path file or by -d argument */
 
-		        strncpy(path_plus_name, sdf_path, sizeof(path_plus_name)-1);
-			strncat(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
-			gzfd = gzopen(path_plus_name, "rb");
+			path_plus_name = sdf_path + sdf_file;
+			gzfd = gzopen(path_plus_name.data(), "rb");
 
 			if (gzfd != nullptr)
 			        success = 1;
@@ -1380,7 +1382,7 @@ int LoadSDF(char *name)
 	return return_value;
 }
 
-int LoadPAT(char *az_filename, char *el_filename)
+auto LoadPAT(std::string_view az_filename, std::string_view el_filename) -> int
 {
 	/* This function reads and processes antenna pattern (.az
 	   and .el) files that may correspond in name to previously
@@ -1403,7 +1405,7 @@ int LoadPAT(char *az_filename, char *el_filename)
 
 	/* Load .az antenna pattern file */
 
-	if( az_filename != nullptr && (fd = fopen(az_filename, "r")) == nullptr && errno != ENOENT )
+	if( !az_filename.empty() && (fd = fopen(az_filename.data(), "r")) == nullptr && errno != ENOENT )
 		/* Any error other than file not existing is an error */
 		return errno;
 
@@ -1547,7 +1549,7 @@ int LoadPAT(char *az_filename, char *el_filename)
 
 	/* Read and process .el file */
 
-	if( el_filename != nullptr && (fd = fopen(el_filename, "r")) == nullptr && errno != ENOENT )
+	if( !el_filename.empty() && (fd = fopen(el_filename.data(), "r")) == nullptr && errno != ENOENT )
 		/* Any error other than file not existing is an error */
 		return errno;
 
@@ -2328,7 +2330,7 @@ int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
 	return 0;
 }
 
-int LoadUDT(char *filename)
+auto LoadUDT(std::string_view filename) -> int
 {
 	/* This function reads a file containing User-Defined Terrain
 	   features for their addition to the digital elevation model
@@ -2346,7 +2348,7 @@ int LoadUDT(char *filename)
 
 	strcpy(tempname, "/tmp/XXXXXX");
 
-	if( (fd1 = fopen(filename, "r")) == nullptr )
+	if( (fd1 = fopen(filename.data(), "r")) == nullptr )
 		return errno;
 
 	if( (fd = mkstemp(tempname)) == -1 )

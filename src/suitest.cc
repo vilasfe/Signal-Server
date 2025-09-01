@@ -1,16 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <numbers>
 
+#include "../common.h"
 
-// use call with log/ln as this may be faster
-// use constant of value 20.0/log(10.0)
-static __inline float _20log10f(float x)
-{
-  return(8.685889f*logf(x));
-}
-
-double SUIpathLoss(double f, double TxH, double RxH, double d, int mode)
+auto SUIpathLoss(double f, double TxH, double RxH, double d, int mode) -> double
 {
         /*
            f = Frequency (MHz) 1900 to 11000
@@ -44,7 +39,7 @@ double SUIpathLoss(double f, double TxH, double RxH, double d, int mode)
                 XhCF = -20;
         }
         float d0 = 100;
-        float A = _20log10f((4 * M_PI * d0) / (300.0 / f));
+        float A = _20log10f((4 * std::numbers::pi * d0) / (300.0 / f));
         float y = a - (b * TxH) + (c / TxH);
         //Correction factors
         float Xf = 6.0 * log10(f / 2000.0);

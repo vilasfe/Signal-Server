@@ -1,15 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <math.h>
+#include <cctype>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <print>
-#include <bzlib.h>
-#include <zlib.h>
+#include <string>
 
 #include "common.h"
-#include "main.hh"
+#include "image.hh"
 #include "inputs.hh"
+#include "main.hh"
+#include "outputs.hh"
+
 #include "models/cost.hh"
 #include "models/ecc33.hh"
 #include "models/ericsson.hh"
@@ -17,9 +19,8 @@
 #include "models/hata.hh"
 #include "models/itwom3.0.hh"
 #include "models/sui.hh"
-#include "image.hh"
 
-void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
+void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 		unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
@@ -28,7 +29,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	   90 degrees from its representation in dem[][] so that north
 	   points up and east points right in the image generated. */
 
-	char mapfile[255];
+	std::string mapfile;
 	unsigned red, green, blue, terrain = 0;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z, x0 = 0, y0 = 0, loss, match;
@@ -48,15 +49,15 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 			one_over_gamma);
 
 	if( (success = LoadLossColors(xmtr[0])) != 0 ){
-		fprintf(stderr,"Error loading loss colors\n");
+		std::println(stderr,"Error loading loss colors");
 		exit(success);  // Now a fatal error!
 	}
 
-	if( filename != nullptr ) {
+	if( !filename.empty() ) {
 
 		if (filename[0] == 0) {
-			strncpy(filename, xmtr[0].filename, 254);
-			filename[strlen(filename) - 4] = 0;	/* Remove .qth */
+			filename = xmtr[0].filename;
+			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
@@ -64,13 +65,12 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 			exit(1);
 		}
 
-		fd = fopen(mapfile,"wb");
+		fd = fopen(mapfile.data(),"wb");
 
 	} else {
 
-		fprintf(stderr,"Writing to stdout\n");
+		std::println(stderr,"Writing to stdout");
 		fd = stdout;
-
 	}
 
 	minwest = ((double)min_west) + dpp;
@@ -90,7 +90,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
-			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
+			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
 	for (y = 0, lat = north; y < (int)height;
@@ -248,20 +248,20 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		std::println(stderr,"Error writing image");
 		exit(success);
 	}
 
 	image_free(&ctx);
 
-	if( filename != nullptr ) {
+	if( !filename.empty() ) {
 		fclose(fd);
 		fd = nullptr;
 	}
 
 }
 
-int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
+int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
@@ -270,7 +270,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	   90 degrees from its representation in dem[][] so that north
 	   points up and east points right in the image generated. */
 
-	char mapfile[255];
+	std::string mapfile;
 	unsigned terrain, red, green, blue;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z = 1, x0 = 0, y0 = 0, signal, match;
@@ -294,24 +294,21 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 		//exit(success);
 	}
 
-	if( filename != nullptr ) {
-
+	if( !filename.empty() ) {
 		if (filename[0] == 0) {
-			strncpy(filename, xmtr[0].filename, 254);
-			filename[strlen(filename) - 4] = 0;	/* Remove .qth */
+			filename = xmtr[0].filename;
+			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			std::println(stderr,"Error creating file name");
 			exit(1);
 		}
 
-		fd = fopen(mapfile,"wb");
-
+		fd = fopen(mapfile.data(),"wb");
 	} else {
 		std::println(stderr,"Writing to stdout");
 		fd = stdout;
-
 	}
 
 	minwest = ((double)min_west) + dpp;
@@ -328,7 +325,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
-			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));		fflush(stderr);
+			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
 	for (y = 0, lat = north; y < (int)height;
@@ -497,20 +494,20 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		std::println(stderr,"Error writing image");
 		exit(success);
 	}
 
 	image_free(&ctx);
 
-	if( filename != nullptr ) {
+	if( !filename.empty() ) {
 		fclose(fd);
 		fd = nullptr;
 	}
 	return 0;
 }
 
-void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
+void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
@@ -519,12 +516,12 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	   90 degrees from its representation in dem[][] so that north
 	   points up and east points right in the image generated. */
 
-	char mapfile[255];
+	std::string mapfile;
 	unsigned terrain, red, green, blue;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z = 1, x0 = 0, y0 = 0, dBm, match;
 	double conversion, one_over_gamma, lat, lon, minwest;
-	FILE *fd;
+	FILE *fd = stdout;
 	image_ctx_t ctx;
 	int success;
 
@@ -543,11 +540,11 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 		exit(success);  //Now a fatal error!
 	}
 
-	if( filename != nullptr ) {
+	if( !filename.empty() ) {
 
 		if (filename[0] == 0) {
-			strncpy(filename, xmtr[0].filename, 254);
-			filename[strlen(filename) - 4] = 0;	/* Remove .qth */
+			filename = xmtr[0].filename;
+			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
@@ -555,11 +552,10 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 			exit(1);
 		}
 
-		fd = fopen(mapfile,"wb");
+		fd = fopen(mapfile.data(),"wb");
 
 	} else {
 		std::println(stderr,"Writing to stdout");
-		fd = stdout;
 	}
 
 	minwest = ((double)min_west) + dpp;
@@ -576,7 +572,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
-			(filename != nullptr ? mapfile : "to stdout"), width, (kml ? height : height));
+			(!filename.empty() ? mapfile : "to stdout"), width, (kml ? height : height));
 	}
 
 	// Draw image of x by y pixels
@@ -746,14 +742,14 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 
 	image_free(&ctx);
 
-	if( filename != nullptr ) {
+	if( !filename.empty() ) {
 		fclose(fd);
 		fd = nullptr;
 	}
 
 }
 
-void DoLOS(char *filename, unsigned char geo, unsigned char kml,
+void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 	   unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
@@ -762,7 +758,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	   90 degrees from its representation in dem[][] so that north
 	   points up and east points right in the image generated. */
 
-	char mapfile[255];
+	std::string mapfile;
 	unsigned terrain;
 	unsigned char found, mask;
 	int indx, x, y, x0 = 0, y0 = 0;
@@ -781,11 +777,11 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
 
-	if( filename != nullptr ){
+	if( !filename.empty() ){
 
 		if (filename[0] == 0) {
-			strncpy(filename, xmtr[0].filename, 254);
-			filename[strlen(filename) - 4] = 0;	/* Remove .qth */
+			filename = xmtr[0].filename;
+			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
@@ -793,11 +789,11 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 			exit(1);
 		}
 
-		fd = fopen(mapfile,"wb");
+		fd = fopen(mapfile.data(),"wb");
 
 	} else {
 		
-		fprintf(stderr,"Writing to stdout\n");
+		std::println(stderr,"Writing to stdout");
 		fd = stdout;
 
 	}
@@ -816,7 +812,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
-			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));		fflush(stderr);
+			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
 	for (y = 0, lat = north; y < (int)height;
@@ -989,14 +985,14 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 
 	image_free(&ctx);
 
-	if( filename != nullptr) {
+	if( !filename.empty() ) {
 		fclose(fd);
 		fd = nullptr;
 	}
 
 }
 
-void PathReport(struct site_t source, struct site_t destination, char *name,
+void PathReport(struct site_t source, struct site_t destination, std::string& name,
 		char graph_it, int propmodel, int pmenv, double rxGain)
 {
 	/* This function writes a PPA Path Report (name.txt) to
@@ -1008,10 +1004,11 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 	   terminal setting and output file type.  If no extension is
 	   found, .png is assumed. */
 
-	int x, y, z, errnum;
-	char basename[255], term[30], ext[15];
+	int errnum;
+	std::string basename;
+	char term[30], ext[15],
+	    report_name[80], block = 0;
 	std::string strmode;
-	char report_name[80], block = 0;
 	double maxloss = -100000.0, minloss = 100000.0, angle1, angle2,
 	    azimuth, pattern = 1.0, patterndB = 0.0,
 	    total_loss = 0.0, cos_xmtr_angle, cos_test_angle = 0.0,
@@ -1019,12 +1016,12 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 	    distance, elevation, four_thirds_earth,
 	    free_space_loss = 0.0, eirp =
 	    0.0, voltage, rxp, power_density, dkm;
-	FILE *fd = nullptr, *fd2 = nullptr;
+	FILE *fd = nullptr;
 
-	snprintf(report_name, 80, "%s.txt%c", name, 0);
+	snprintf(report_name, 80, "%s.txt%c", name.data(), 0);
 	four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
 
-	fd2 = fopen(report_name, "w");
+	FILE* fd2 = fopen(report_name, "w");
 
 	std::println(fd2, "\n\t\t--==[ Path Profile Analysis ]==--\n");
 	std::println(fd2, "Transmitter site: {}", source.name);
@@ -1067,7 +1064,7 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 	angle2 = ElevationAngle2(source, destination, earthradius);
 
 	if (got_azimuth_pattern || got_elevation_pattern) {
-		x = (int)rint(10.0 * (10.0 - angle2));
+		int x = (int)rint(10.0 * (10.0 - angle2));
 
 		if (x >= 0 && x <= 1000)
 			pattern =
@@ -1312,7 +1309,7 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 		/* Copy elevations plus clutter along
 		   path into the elev[] array. */
 
-		for (x = 1; x < path.length - 1; x++)
+		for (int x = 1; x < path.length - 1; x++)
 			elev[x + 2] =
 			    METERS_PER_FOOT * (path.elevation[x] ==
 					       0.0 ? path.
@@ -1328,7 +1325,7 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 
 		azimuth = rint(Azimuth(source, destination));
 
-		for (y = 2; y < (path.length - 1); y++) {	/* path.length-1 avoids LR error */
+		for (int y = 2; y < (path.length - 1); y++) {	/* path.length-1 avoids LR error */
 			distance = FEET_PER_MILE * path.distance[y];
 
 			source_alt = four_thirds_earth + source.alt + path.elevation[0];
@@ -1349,7 +1346,7 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 				   following code determines the elevation angle to
 				   the first obstruction along the path. */
 
-				for (x = 2, block = 0; x < y && block == 0; x++) {
+				for (int x = 2, block = 0; x < y && block == 0; x++) {
 					distance =
 					    FEET_PER_MILE * (path.distance[y] -
 						      path.distance[x]);
@@ -1496,7 +1493,7 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 			/* Integrate the antenna's radiation
 			   pattern into the overall path loss. */
 
-			x = (int)rint(10.0 * (10.0 - elevation));
+			int x = (int)rint(10.0 * (10.0 - elevation));
 
 			if (x >= 0 && x <= 1000) {
 				pattern =
@@ -1630,7 +1627,7 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 		if (name[0] == '.') {
 			/* Default filename and output file type */
 
-			strncpy(basename, "profile\0", 8);
+			basename = "profile";
 			strncpy(term, "png\0", 4);
 			strncpy(ext, "png\0", 4);
 		}
@@ -1639,14 +1636,15 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 			/* Extract extension and terminal type from "name" */
 
 			ext[0] = 0;
-			y = strlen(name);
-			strncpy(basename, name, 254);
+			const int y = name.length();
+			basename = name;
 
-			for (x = y - 1; x > 0 && name[x] != '.'; x--) ;
+			int x = y - 1;
+			for (; x > 0 && name[x] != '.'; x--) {}
 
 			if (x > 0) {	/* Extension found */
-				for (z = x + 1; z <= y && (z - (x + 1)) < 10;
-				     z++) {
+				int z = x + 1;
+				for (; z <= y && (z - (x + 1)) < 10; z++) {
 					ext[z - (x + 1)] = tolower(name[z]);
 					term[z - (x + 1)] = name[z];
 				}
@@ -1703,12 +1701,12 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 			std::print(fd, "set ylabel \"Longley-Rice Path Loss (dB)");
 		}
 
-		std::println(fd, "\"\nset output \"{}.{}\"", basename, ext);
+		std::println(fd, "\"\nset output \"{}.{}\"", basename.data(), ext);
 		std::println(fd, "plot \"profile.gp\" title \"Path Loss\" with lines");
 
 		fclose(fd);
 
-		x = system("gnuplot ppa.gp");
+		const int x = system("gnuplot ppa.gp");
 
 		if (x != -1) {
 			if (gpsav == 0) {
@@ -1727,21 +1725,19 @@ void PathReport(struct site_t source, struct site_t destination, char *name,
 
 }
 
-void SeriesData(struct site_t source, struct site_t destination, char *name,
+void SeriesData(struct site_t source, struct site_t destination, const std::string& name,
 		unsigned char fresnel_plot, unsigned char normalised)
 {
 	int x, y, z;
-	char basename[255], term[30], ext[15], profilename[255],
-	    referencename[255], cluttername[255], curvaturename[255],
-	    fresnelname[255], fresnel60name[255];
+	std::string basename;
+	char term[30], ext[15];
 	double a, b, c, height = 0.0, refangle, cangle, maxheight =
 	    -100000.0, minheight = 100000.0, lambda = 0.0, f_zone =
 	    0.0, fpt6_zone = 0.0, nm = 0.0, nb = 0.0, ed = 0.0, es = 0.0, r =
 	    0.0, d = 0.0, d1 = 0.0, terrain, azimuth, distance, minterrain =
 	    100000.0, minearth = 100000.0;
 	struct site_t remote;
-	FILE *fd = nullptr, *fd1 = nullptr, *fd2 = nullptr, *fd3 = nullptr, *fd4 =
-	    nullptr, *fd5 = nullptr;
+	FILE *fd1 = nullptr, *fd3 = nullptr, *fd4 = nullptr;
 
 	ReadPath(destination, source);
 	azimuth = Azimuth(destination, source);
@@ -1765,28 +1761,23 @@ void SeriesData(struct site_t source, struct site_t destination, char *name,
 		nm = (-source.alt - es - nb) / (path.distance[path.length - 1]);
 	}
 
-	strcpy(profilename, name);
-	strcat(profilename, "_profile\0");
-	strcpy(referencename, name);
-	strcat(referencename, "_reference\0");
-	strcpy(cluttername, name);
-	strcat(cluttername, "_clutter\0");
-	strcpy(curvaturename, name);
-	strcat(curvaturename, "_curvature\0");
-	strcpy(fresnelname, name);
-	strcat(fresnelname, "_fresnel\0");
-	strcpy(fresnel60name, name);
-	strcat(fresnel60name, "_fresnel60\0");
+	std::string profilename = name + "_profile";
+	std::string referencename = name + "_reference";
+	std::string cluttername = name + "_clutter";
+	std::string curvaturename = name + "_curvature";
+	std::string fresnelname = name + "_fresnel";
+	std::string fresnel60name = name + "_fresnel60";
 
-	fd = fopen(profilename, "wb");
-	if (clutter > 0.0)
-		fd1 = fopen(cluttername, "wb");
-	fd2 = fopen(referencename, "wb");
-	fd5 = fopen(curvaturename, "wb");
+	FILE* fd = fopen(profilename.data(), "wb");
+	if (clutter > 0.0) {
+		fd1 = fopen(cluttername.data(), "wb");
+	}
+	FILE* fd2 = fopen(referencename.data(), "wb");
+	FILE* fd5 = fopen(curvaturename.data(), "wb");
 
 	if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
-		fd3 = fopen(fresnelname, "wb");
-		fd4 = fopen(fresnel60name, "wb");
+		fd3 = fopen(fresnelname.data(), "wb");
+		fd4 = fopen(fresnel60name.data(), "wb");
 	}
 
 	for (x = 0; x < path.length - 1; x++) {
@@ -1950,7 +1941,7 @@ void SeriesData(struct site_t source, struct site_t destination, char *name,
 	}
 
 	if (name[0] == '.') {
-		strncpy(basename, "profile\0", 8);
+		basename = "profile";
 		strncpy(term, "png\0", 4);
 		strncpy(ext, "png\0", 4);
 	}
@@ -1958,8 +1949,8 @@ void SeriesData(struct site_t source, struct site_t destination, char *name,
 	else {
 
 		ext[0] = 0;
-		y = strlen(name);
-		strncpy(basename, name, 254);
+		y = name.length();
+		basename = name;
 
 		for (x = y - 1; x > 0 && name[x] != '.'; x--) ;
 

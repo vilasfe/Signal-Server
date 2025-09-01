@@ -1,7 +1,8 @@
 #ifndef _IMAGE_HH_
 #define _IMAGE_HH_
 
-#include <stdint.h>
+#include <cstdint>
+#include <string>
 
 #define RGB_SIZE  3
 #define RGBA_SIZE 4
@@ -50,7 +51,7 @@ int image_init(image_ctx_t*, const size_t, const size_t, const int, const int);
 int image_add_pixel(image_ctx_t* ctx, const uint8_t, const uint8_t, const uint8_t, const uint8_t);
 int image_set_pixel(image_ctx_t* ctx, const size_t, const size_t, const uint8_t, const uint8_t, const uint8_t, const uint8_t);
 int image_get_pixel(image_ctx_t* ctx,const size_t,const size_t, uint8_t const*, uint8_t const*, uint8_t const*, uint8_t const*);
-int image_get_filename(image_ctx_t*, char*, size_t, char*);
+int image_get_filename(image_ctx_t*, std::string& out, size_t, std::string in);
 int image_write(image_ctx_t*, FILE*);
 void image_free(image_ctx_t*);
 int image_set_library(char*);

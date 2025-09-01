@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <print>
 #include "image.hh"
 #include "image-ppm.hh"
 
@@ -140,8 +141,7 @@ void image_free(image_ctx_t *ctx){
  * by the user. If the extension is already correct, return
  * that; if not append if there is space
  */
-int image_get_filename(image_ctx_t *ctx, char *out, size_t len_out, char *in){
-	size_t len_src;
+int image_get_filename(image_ctx_t *ctx, std::string& out, size_t len_out, std::string in){
 	size_t len_ext;
 	int success = 0;
 
@@ -149,30 +149,29 @@ int image_get_filename(image_ctx_t *ctx, char *out, size_t len_out, char *in){
 		return EINVAL;
 
 	/* Get various lengths */
-	len_src = strlen(in);
+	size_t len_src = in.length();
 	len_ext = strlen(ctx->extension);
 
 	if(len_src == 0){
-		in = (char*)"output";
+		in = "output";
 		len_src = 6;
 	}
 
-	if(len_src > len_ext && strcmp(in+len_src-len_ext,ctx->extension) == 0){
+	if(len_src > len_ext && in.ends_with(ctx->extension)){
 		/* Already has correct extension and fits in buffer */
 		if(len_src < len_out)
-			strncpy(in,out,len_out);
+			in = out;
 		else
 			success = ENOMEM;
 	}else if(len_src > len_ext){
 		/* Doesn't have correct extension and fits */
 		if(len_src + len_ext < len_out){
-			strncpy(out,in,len_out);
-			strncat(out,ctx->extension,len_out);
+			out = in + ctx->extension;
 		}else
 			success = ENOMEM;
 	}else{
 		/* The input buffer plus an extension cannot fit in the output buffer */
-		fprintf(stderr,"Error building image output filename\n");
+		std::println(stderr,"Error building image output filename");
 		success = ENOMEM;
 	}
 	return success;
