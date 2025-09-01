@@ -29,39 +29,39 @@ int ReadSRTM(char *filename)
 {
 	int x, y, infile, byte=0, bytes_read;
 	unsigned char error, buffer[2];
-	char north[3], west[4], *base=NULL, blw_filename[255];
+	char north[3], west[4], *base=nullptr, blw_filename[255];
 	double cell_size, deg_north, deg_west;
-	FILE *fd=NULL;
+	FILE *fd=nullptr;
 
-	if (strstr(filename, ".zip")!=NULL)
+	if (strstr(filename, ".zip")!=nullptr)
 	{
 		fprintf(stderr, "*** Error: \"%s\" must be uncompressed\n",filename);
 		return -1;
 
 	}
 
-	if (strstr(filename, ".tgz")!=NULL)
+	if (strstr(filename, ".tgz")!=nullptr)
 	{
 		fprintf(stderr, "*** Error: \"%s\" must be uncompressed\n",filename);
 		return -1;
 
 	}
 
-	if ((strstr(filename, ".hgt")==NULL) && (strstr(filename, ".bil")==NULL))
+	if ((strstr(filename, ".hgt")==nullptr) && (strstr(filename, ".bil")==nullptr))
 	{
 		fprintf(stderr, "*** Error: \"%s\" does not have the correct extension (.hgt or .bil)\n",filename);
 		return -1;
 	}
 
-	if (strstr(filename, ".hgt")!=NULL)
+	if (strstr(filename, ".hgt")!=nullptr)
 		hgt=1;
 
-	if (strstr(filename, ".bil")!=NULL)
+	if (strstr(filename, ".bil")!=nullptr)
 		bil=1;
 
 	base=strrchr(filename, '/');
 
-	if (base==NULL)
+	if (base==nullptr)
 		base=filename;
 	else
 		base+=1;
@@ -119,7 +119,7 @@ int ReadSRTM(char *filename)
 
 			fd=fopen(blw_filename,"rb");
 
-			if (fd!=NULL)
+			if (fd!=nullptr)
 			{
 				n=fscanf(fd,"%lf",&cell_size);
 
@@ -265,7 +265,7 @@ int LoadSDF_SDF(char *name)
 
 	infile=fopen(path_plus_name,"rb");
 
-	if (infile==NULL)
+	if (infile==nullptr)
 		return 0;
 
 	n=fscanf(infile,"%d", &dummy);
@@ -291,8 +291,8 @@ char *BZfgets(BZFILE *bzfd, unsigned length)
 	   of characters from a bz2 compressed file whose file descriptor
 	   is pointed to by *bzfd.  In operation, a buffer is filled with
 	   uncompressed data (size = BZBUFFER), which is then parsed
-	   and doled out as NULL terminated character strings every time
-	   this function is invoked.  A NULL string indicates an EOF
+	   and doled out as nullptr terminated character strings every time
+	   this function is invoked.  A nullptr string indicates an EOF
 	   or error condition. */
 
 	static int x, y, nBuf;
@@ -371,9 +371,9 @@ int LoadSDF_BZ(char *name)
 	strncat(path_plus_name,sdf_file,254);
 
 	fd=fopen(path_plus_name,"rb");
-	bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,NULL,0);
+	bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,nullptr,0);
 
-	if (fd!=NULL && bzerror==BZ_OK)
+	if (fd!=nullptr && bzerror==BZ_OK)
 	{
 		printf("\nReading %s... ",path_plus_name);
 		fflush(stdout);
@@ -604,10 +604,10 @@ void WriteSDF(char *filename)
 int main(int argc, char **argv)
 {
 	int x, y, z=0;
-	char *env=NULL, string[255], *s=NULL;
+	char *env=nullptr, string[255], *s=nullptr;
 	FILE *fd;
 
-	if (strstr(argv[0], "srtm2sdf-hd")!=NULL)
+	if (strstr(argv[0], "srtm2sdf-hd")!=nullptr)
 	{
 		ippd=3600;	/* High Definition (1 arc-sec) Mode */
 		strncpy(string,"srtm2sdf-hd\0",12);
@@ -670,7 +670,7 @@ int main(int argc, char **argv)
 
 	/* If no SDF path was specified on the command line (-d), check
 	   for a path specified in the $HOME/.splat_path file.  If the
-	   file is not found, then sdf_path[] remains NULL, and a data
+	   file is not found, then sdf_path[] remains nullptr, and a data
 	   merge will not be attempted if voids are found in the SRTM file. */
 
 	if (sdf_path[0]==0)
@@ -681,7 +681,7 @@ int main(int argc, char **argv)
 
 		fd=fopen(string,"r");
 
-		if (fd!=NULL)
+		if (fd!=nullptr)
 		{
 			s=fgets(string,253,fd);
 

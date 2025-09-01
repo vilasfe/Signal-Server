@@ -38,21 +38,21 @@ int loadClutter(char *filename, double radius, struct site tx)
 	int x, y, z, h = 0, w = 0;
 	double clh, xll, yll, cellsize, cellsize2, xOffset, yOffset, lat, lon;
 	char line[100000];
-	char *s, *pch = NULL;
+	char *s, *pch = nullptr;
 	FILE *fd;
 
-	if ((fd = fopen(filename, "rb")) == NULL)
+	if ((fd = fopen(filename, "rb")) == nullptr)
 		return errno;
 
-	if (fgets(line, 19, fd) != NULL) {
+	if (fgets(line, 19, fd) != nullptr) {
 		pch = strtok(line," ");
-		pch = strtok(NULL, " ");
+		pch = strtok(nullptr, " ");
 		w = atoi(pch);
 	}
 
-	if (fgets(line, 19, fd) != NULL) {
+	if (fgets(line, 19, fd) != nullptr) {
 		pch = strtok(line," ");
-		pch = strtok(NULL, " ");
+		pch = strtok(nullptr, " ");
 		h = atoi(pch);
 	}
 
@@ -72,12 +72,12 @@ int loadClutter(char *filename, double radius, struct site tx)
 		fflush(stderr);
 	}
 
-	if (fgets(line, 25, fd) != NULL) {
+	if (fgets(line, 25, fd) != nullptr) {
 		sscanf(pch, "%lf", &xll);
 	}
 
 	s = fgets(line, 25, fd);
-	if (fgets(line, 25, fd) != NULL) {
+	if (fgets(line, 25, fd) != nullptr) {
 		sscanf(pch, "%lf", &yll);
 	}
 
@@ -94,9 +94,9 @@ int loadClutter(char *filename, double radius, struct site tx)
 	//loop over matrix
 	for (y = h; y > 0; y--) {
 		x = 0;
-		if (fgets(line, sizeof(line)-1, fd) != NULL) {
+		if (fgets(line, sizeof(line)-1, fd) != nullptr) {
 			pch = strtok(line, " ");
-			while (pch != NULL && x < w) {
+			while (pch != nullptr && x < w) {
 				z = atoi(pch);
 				// Apply ITU-R P.452-11
 				// Treat classes 0, 9, 10, 11, 15, 16 as water, (Water, savanna, grassland, wetland, snow, barren)
@@ -138,7 +138,7 @@ int loadClutter(char *filename, double radius, struct site tx)
 				}
 
 				x++;
-				pch = strtok(NULL, " ");
+				pch = strtok(nullptr, " ");
 			}//while
 		} else {
 			fprintf(stderr, "Clutter error @ x %d y %d\n", x, y);
@@ -190,14 +190,14 @@ int loadLIDAR(char *filenames, int resample)
 
 	// test for multiple files
 	filename = strtok(filenames, " ,");
-	while (filename != NULL) {
+	while (filename != nullptr) {
 		files[fc] = filename;
-		filename = strtok(NULL, " ,");	
+		filename = strtok(nullptr, " ,");
 		fc++;
 	}
 
 	/* Allocate the tile array */
-	if( (tiles = (tile_t*) calloc(fc+1, sizeof(tile_t))) == NULL ) {
+	if( (tiles = (tile_t*) calloc(fc+1, sizeof(tile_t))) == nullptr ) {
 		if (debug)
 			fprintf(stderr,"Could not allocate %d\n tiles",fc+1);
 		return ENOMEM;
@@ -373,7 +373,7 @@ int loadLIDAR(char *filenames, int resample)
 	size_t new_tile_alloc = new_width * new_height;
 	short * new_tile = (short*) calloc( new_tile_alloc, sizeof(short) );
 
-	if ( new_tile == NULL ) {
+	if ( new_tile == nullptr ) {
 	        if (debug) {
 			fprintf(stderr,"Could not allocate %zu bytes\n", new_tile_alloc);
 			fflush(stderr);
@@ -480,7 +480,7 @@ int loadLIDAR(char *filenames, int resample)
 		fflush(stderr);
 	}
 
-	if ( tiles != NULL )
+	if ( tiles != nullptr )
 	        for (size_t i = 0; i < (unsigned)fc-1; i++)
 			tile_destroy(&tiles[i]);
 	free(tiles);
@@ -545,13 +545,13 @@ int LoadSDF_SDF(char *name)
 
 		strncpy(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
 
-		if( (fd = fopen(path_plus_name, "rb")) == NULL ){
+		if( (fd = fopen(path_plus_name, "rb")) == nullptr ){
 			/* Next, try loading SDF file from path specified
 			   in $HOME/.ss_path file or by -d argument */
 
 			strncpy(path_plus_name, sdf_path, sizeof(path_plus_name)-1);
 			strncat(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
-			if( (fd = fopen(path_plus_name, "rb")) == NULL ){
+			if( (fd = fopen(path_plus_name, "rb")) == nullptr ){
 				return -errno;
 			}
 		}
@@ -563,22 +563,22 @@ int LoadSDF_SDF(char *name)
 			fflush(stderr);
 		}
 
-		if (fgets(line, 19, fd) != NULL) {
+		if (fgets(line, 19, fd) != nullptr) {
 			if( sscanf(line, "%f", &dem[indx].max_west) == EOF )
 				return -errno;
 		}
 
-		if (fgets(line, 19, fd) != NULL) {
+		if (fgets(line, 19, fd) != nullptr) {
 			if( sscanf(line, "%f", &dem[indx].min_north) == EOF )
 				return -errno;
 		}
 
-		if (fgets(line, 19, fd) != NULL) {
+		if (fgets(line, 19, fd) != nullptr) {
 			if( sscanf(line, "%f", &dem[indx].min_west) == EOF )
 				return -errno;
 		}
 
-		if (fgets(line, 19, fd) != NULL) {
+		if (fgets(line, 19, fd) != nullptr) {
 			if( sscanf(line, "%f", &dem[indx].max_north) == EOF )
 				return -errno;
 		}
@@ -592,11 +592,11 @@ int LoadSDF_SDF(char *name)
 			for (y = 0; y < ippd; y++) {
 
 				for (j = 0; j < jgets; j++) {
-					if( fgets(jline, sizeof(jline), fd) == NULL )
+					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
 				}
 
-				if (fgets(line, sizeof(line), fd) != NULL) {
+				if (fgets(line, sizeof(line), fd) != nullptr) {
 					data = atoi(line);
 				}
 
@@ -614,17 +614,17 @@ int LoadSDF_SDF(char *name)
 
 			if (ippd == 600) {
 				for (j = 0; j < IPPD; j++) {
-					if( fgets(jline, sizeof(jline), fd) == NULL )
+					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
 				}
 			}
 			if (ippd == 300) {
 				for (j = 0; j < IPPD; j++) {
-					if( fgets(jline, sizeof(jline), fd) == NULL )
+					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
-					if( fgets(jline, sizeof(jline), fd) == NULL )
+					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
-					if( fgets(jline, sizeof(jline), fd) == NULL )
+					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
 				}
 			}
@@ -691,11 +691,11 @@ char *BZfgets(char *output, BZFILE *bzfd, unsigned length)
 {
 	/* This function returns at most one less than 'length' number
 	   of characters from a bz2 compressed file whose file descriptor
-	   is pointed to by *bzfd.   A NULL string return indicates an
+	   is pointed to by *bzfd.   A nullptr string return indicates an
 	   error condition. */
 
 	if (length > BZBUFFER)
-	        return NULL;
+	        return nullptr;
 	for (size_t i = 0; (unsigned)i < length; i++) {
 		if (bzbuf_empty) {  // Uncompress data into buffer if empty */
 
@@ -708,7 +708,7 @@ char *BZfgets(char *output, BZFILE *bzfd, unsigned length)
 				        BZ2_bzReadGetUnused (&bzerror, bzfd,void** unused, int* nUnused );
 			  */
 			if (bzerror != BZ_OK && bzerror != BZ_STREAM_END)
-			        return (NULL);
+			        return (nullptr);
 		}
 	        if (!bzbuf_empty) {  // Build string from buffer if not empty
 		        output[i]=buffer[bzbuf_pointer++];
@@ -795,9 +795,9 @@ int LoadSDF_BZ(char *name)
 
 		success = 0;
 		fd = fopen(path_plus_name, "rb");
-		bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,NULL,0);
+		bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,nullptr,0);
 
-		if (fd != NULL && bzerror == BZ_OK)
+		if (fd != nullptr && bzerror == BZ_OK)
 		        success = 1;
 		else {	
 		  /* Next, try loading SDF file from path specified
@@ -806,8 +806,8 @@ int LoadSDF_BZ(char *name)
 		        strncpy(path_plus_name, sdf_path, sizeof(path_plus_name)-1);
 			strncat(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
 			fd = fopen(path_plus_name, "rb");
-			bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,NULL,0);
-			if (fd != NULL && bzerror == BZ_OK)
+			bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,nullptr,0);
+			if (fd != nullptr && bzerror == BZ_OK)
 			        success = 1;
 		}
 		if (!success)
@@ -846,18 +846,18 @@ int LoadSDF_BZ(char *name)
 		   Each .sdf tile contains 1200x1200 = 1.44M 'points'
 		   Each point is sampled for 1200 resolution!
 		 */
-		posn = NULL;
+		posn = nullptr;
 		for (x = 0; x < ippd; x++) {
 			for (y = 0; y < ippd; y++) {
 
 				for (j = 0; j < jgets; j++) {
 				        posn = BZfgets(jline, bzfd, 19);
-					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == NULL)
+					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == nullptr)
 					        return -EIO;
 				}
 
 				posn = BZfgets(line, bzfd, 19);
-				if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == NULL)
+				if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == nullptr)
 				       return -EIO;
 				data = atoi(line);
 
@@ -876,20 +876,20 @@ int LoadSDF_BZ(char *name)
 			if (ippd == 600) {
 				for (j = 0; j < IPPD; j++) {
 				        posn = BZfgets(jline, bzfd, 19);
-					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == NULL)
+					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == nullptr)
 					        return -EIO;
 				}
 			}
 			if (ippd == 300) {
 				for (j = 0; j < IPPD; j++) {
 				        posn = BZfgets(jline, bzfd, 19);
-					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == NULL)
+					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == nullptr)
 					        return -EIO;
 				        posn = BZfgets(jline, bzfd, 19);
-					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == NULL)
+					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == nullptr)
 					        return -EIO;
 				        posn = BZfgets(jline, bzfd, 19);
-					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == NULL)
+					if ((bzerror != BZ_STREAM_END && bzerror != BZ_OK) || posn == nullptr)
 					        return -EIO;
 				}
 			}
@@ -957,13 +957,13 @@ char *GZfgets(char *output, gzFile gzfd, unsigned length)
 {
 	/* This function returns at most one less than 'length' number
 	   of characters from a Gzip compressed file whose file descriptor
-	   is pointed to by gzfd.   A NULL string return indicates an
+	   is pointed to by gzfd.   A nullptr string return indicates an
 	   error condition. */
 
 	const char *errmsg;
   
 	if (length > GZBUFFER-2)
-	        return NULL;
+	        return nullptr;
 
 
 	for (size_t i = 0; (unsigned)i < length; i++) {
@@ -976,13 +976,13 @@ char *GZfgets(char *output, gzFile gzfd, unsigned length)
 			gzbuf_empty = 0;
 
 			if (gzerr != Z_OK && gzerr != Z_STREAM_END)
-			        return (NULL);
+			        return (nullptr);
 
 			if (gzbytes_read < GZBUFFER-2) {
 			        if (gzeof(gzfd))
 				        gzclearerr(gzfd);
 				else
-				        return (NULL);
+				        return (nullptr);
 			}
 		}
 	        if (!gzbuf_empty) {  // Build string from buffer if not empty
@@ -1002,7 +1002,7 @@ char *GZfgets(char *output, gzFile gzfd, unsigned length)
 		}
 
 	}
-	if (debug && (errmsg != NULL) && (gzerr != Z_OK && gzerr != Z_STREAM_END)) {
+	if (debug && (errmsg != nullptr) && (gzerr != Z_OK && gzerr != Z_STREAM_END)) {
 	        fprintf(stderr, "GZfgets: gzerr = %d, errmsg = [%s]\n", gzerr, errmsg);
 		fflush(stderr);
 	}
@@ -1077,7 +1077,7 @@ int LoadSDF_GZ(char *name)
 		success = 0;
 		gzfd = gzopen(path_plus_name, "rb");
 
-		if (gzfd != NULL)
+		if (gzfd != nullptr)
 		        success = 1;
 		else {	
 		  /* Next, try loading SDF file from path specified
@@ -1087,7 +1087,7 @@ int LoadSDF_GZ(char *name)
 			strncat(path_plus_name, sdf_file, sizeof(path_plus_name)-1);
 			gzfd = gzopen(path_plus_name, "rb");
 
-			if (gzfd != NULL)
+			if (gzfd != nullptr)
 			        success = 1;
 		}
 		if (!success)
@@ -1127,7 +1127,7 @@ int LoadSDF_GZ(char *name)
 		if (gzerr != Z_OK || pos == EOF)
 		        return -errno;
 
-		if (debug && (errmsg != NULL) && (gzerr != Z_OK && gzerr != Z_STREAM_END)) {
+		if (debug && (errmsg != nullptr) && (gzerr != Z_OK && gzerr != Z_STREAM_END)) {
 		        fprintf(stderr, "LoadSDF_GZ: gzerr = %d, errmsg = [%s]\n", gzerr, errmsg);
 			fflush(stderr);
 		}
@@ -1137,20 +1137,20 @@ int LoadSDF_GZ(char *name)
 		   Each .sdf tile contains 1200x1200 = 1.44M 'points'
 		   Each point is sampled for 1200 resolution!
 		 */
-		posn = NULL;
+		posn = nullptr;
 		for (x = 0; x < ippd; x++) {
 			for (y = 0; y < ippd; y++) {
 
 				for (j = 0; j < jgets; j++) {
 				        posn = GZfgets(jline, gzfd, 19);
 					errmsg = gzerror(gzfd, &gzerr);
-					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == NULL)
+					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == nullptr)
 					        return -EIO;
 				}
 
 				posn = GZfgets(line, gzfd, 19);
 				errmsg = gzerror(gzfd, &gzerr);
-				if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == NULL)
+				if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == nullptr)
 				       return -EIO;
 
 				data = atoi(line);
@@ -1171,7 +1171,7 @@ int LoadSDF_GZ(char *name)
 				for (j = 0; j < IPPD; j++) {
 				        posn = GZfgets(jline, gzfd, 19);
 					errmsg = gzerror(gzfd, &gzerr);
-					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == NULL)
+					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == nullptr)
 					        return -EIO;
 				}
 			}
@@ -1179,15 +1179,15 @@ int LoadSDF_GZ(char *name)
 				for (j = 0; j < IPPD; j++) {
 				        posn = GZfgets(jline, gzfd, 19);
 					errmsg = gzerror(gzfd, &gzerr);
-					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == NULL)
+					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == nullptr)
 					        return -EIO;
 				        posn = GZfgets(jline, gzfd, 19);
 					errmsg = gzerror(gzfd, &gzerr);
-					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == NULL)
+					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == nullptr)
 					        return -EIO;
 				        posn = GZfgets(jline, gzfd, 19);
 					errmsg = gzerror(gzfd, &gzerr);
-					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == NULL)
+					if ((gzerr != Z_STREAM_END && gzerr != Z_OK) || posn == nullptr)
 					        return -EIO;
 				}
 			}
@@ -1397,12 +1397,12 @@ int LoadPAT(char *az_filename, char *el_filename)
 	   loaded ss .lrp files or may be user-supplied by cmdline.  */
 
 	int a, b, w, x, y, z, last_index, next_index, span;
-	char string[255], *pointer = NULL;
+	char string[255], *pointer = nullptr;
 	float az, xx, elevation, amplitude, rotation, valid1, valid2,
 	    delta, azimuth[361], azimuth_pattern[361], el_pattern[10001],
 	    elevation_pattern[361][1001], slant_angle[361], tilt,
 	    mechanical_tilt = 0.0, tilt_azimuth, tilt_increment, sum;
-	FILE *fd = NULL;
+	FILE *fd = nullptr;
 	unsigned char read_count[10001];
 
 	rotation = 0.0;
@@ -1412,11 +1412,11 @@ int LoadPAT(char *az_filename, char *el_filename)
 
 	/* Load .az antenna pattern file */
 
-	if( az_filename != NULL && (fd = fopen(az_filename, "r")) == NULL && errno != ENOENT )
+	if( az_filename != nullptr && (fd = fopen(az_filename, "r")) == nullptr && errno != ENOENT )
 		/* Any error other than file not existing is an error */
 		return errno;
 
-	if( fd != NULL ){
+	if( fd != nullptr ){
 	        if (debug) {
 
 		        fprintf(stderr, "\nAntenna Pattern Azimuth File = [%s]\n", az_filename);
@@ -1433,13 +1433,13 @@ int LoadPAT(char *az_filename, char *el_filename)
 		   in degrees measured clockwise
 		   from true North. */
 
-		if (fgets(string, 254, fd) == NULL) {
+		if (fgets(string, 254, fd) == nullptr) {
 			//fprintf(stderr,"Azimuth read error\n");
 			//exit(0);
 		}
 		pointer = strchr(string, ';');
 
-		if (pointer != NULL)
+		if (pointer != nullptr)
 			*pointer = 0;
 
 		if (antenna_rotation != -1)  // If cmdline override
@@ -1455,13 +1455,13 @@ int LoadPAT(char *az_filename, char *el_filename)
 		   normalized field radiation pattern amplitude
 		   (0.0 to 1.0) until EOF is reached. */
 
-		if (fgets(string, 254, fd) == NULL) {
+		if (fgets(string, 254, fd) == nullptr) {
 			//fprintf(stderr,"Azimuth read error\n");
 			//exit(0);
 		}
 		pointer = strchr(string, ';');
 
-		if (pointer != NULL)
+		if (pointer != nullptr)
 			*pointer = 0;
 
 		sscanf(string, "%f %f", &az, &amplitude);
@@ -1469,18 +1469,18 @@ int LoadPAT(char *az_filename, char *el_filename)
 		do {
 			x = (int)rintf(az);
 
-			if (x >= 0 && x <= 360 && fd != NULL) {
+			if (x >= 0 && x <= 360 && fd != nullptr) {
 				azimuth[x] += amplitude;
 				read_count[x]++;
 			}
 
-			if (fgets(string, 254, fd) == NULL) {
+			if (fgets(string, 254, fd) == nullptr) {
 				//fprintf(stderr,"Azimuth read error\n");
 				// exit(0);
 			}
 			pointer = strchr(string, ';');
 
-			if (pointer != NULL)
+			if (pointer != nullptr)
 				*pointer = 0;
 
 			sscanf(string, "%f %f", &az, &amplitude);
@@ -1488,7 +1488,7 @@ int LoadPAT(char *az_filename, char *el_filename)
 		} while (feof(fd) == 0);
 
 		fclose(fd);
-		fd = NULL;
+		fd = nullptr;
 
 		/* Handle 0=360 degree ambiguity */
 
@@ -1559,11 +1559,11 @@ int LoadPAT(char *az_filename, char *el_filename)
 
 	/* Read and process .el file */
 
-	if( el_filename != NULL && (fd = fopen(el_filename, "r")) == NULL && errno != ENOENT )
+	if( el_filename != nullptr && (fd = fopen(el_filename, "r")) == nullptr && errno != ENOENT )
 		/* Any error other than file not existing is an error */
 		return errno;
 
-	if( fd != NULL ){
+	if( fd != nullptr ){
 	        if (debug) {
 		        fprintf(stderr, "Antenna Pattern Elevation File = [%s]\n", el_filename);
 			fflush(stderr);
@@ -1580,13 +1580,13 @@ int LoadPAT(char *az_filename, char *el_filename)
 		   tilt azimuth in degrees measured
 		   clockwise from true North. */
 
-		if (fgets(string, 254, fd) == NULL) {
+		if (fgets(string, 254, fd) == nullptr) {
 			//fprintf(stderr,"Tilt read error\n");
 			//exit(0);
 		}
 		pointer = strchr(string, ';');
 
-		if (pointer != NULL)
+		if (pointer != nullptr)
 			*pointer = 0;
 
 		sscanf(string, "%f %f", &mechanical_tilt, &tilt_azimuth);
@@ -1610,13 +1610,13 @@ int LoadPAT(char *az_filename, char *el_filename)
 		   normalized field radiation pattern amplitude
 		   (0.0 to 1.0) until EOF is reached. */
 
-		if (fgets(string, 254, fd) == NULL) {
+		if (fgets(string, 254, fd) == nullptr) {
 			//fprintf(stderr,"Ant elevation read error\n");
 			//exit(0);
 		}
 		pointer = strchr(string, ';');
 
-		if (pointer != NULL)
+		if (pointer != nullptr)
 			*pointer = 0;
 
 		sscanf(string, "%f %f", &elevation, &amplitude);
@@ -1633,10 +1633,10 @@ int LoadPAT(char *az_filename, char *el_filename)
 				read_count[x]++;
 			}
 
-			if (fgets(string, 254, fd) != NULL) {
+			if (fgets(string, 254, fd) != nullptr) {
 				pointer = strchr(string, ';');
 			}
-			if (pointer != NULL)
+			if (pointer != nullptr)
 				*pointer = 0;
 
 			sscanf(string, "%f %f", &elevation, &amplitude);
@@ -1771,10 +1771,10 @@ int LoadPAT(char *az_filename, char *el_filename)
 int LoadSignalColors(struct site xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255], string[80], *pointer = NULL, *s;
-	FILE *fd = NULL;
+	char filename[255], string[80], *pointer = nullptr, *s;
+	FILE *fd = nullptr;
 
-	if (color_file != NULL && color_file[0] != 0)
+	if (color_file != nullptr && color_file[0] != 0)
 	        for (x = 0; color_file[x] != '.' && color_file[x] != 0 && x < 250; x++)
 		        filename[x] = color_file[x];
 	else
@@ -1857,11 +1857,11 @@ int LoadSignalColors(struct site xmtr)
 	region.levels = 13;
 
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename, "r")) == NULL && xmtr.filename[0] == '\0' )
+	if ( (fd = fopen(filename, "r")) == nullptr && xmtr.filename[0] == '\0' )
 		return 0;
 
-	if (fd == NULL) {
-		if( (fd = fopen(filename, "w")) == NULL )
+	if (fd == nullptr) {
+		if( (fd = fopen(filename, "w")) == nullptr )
 			return errno;
 
 		for (x = 0; x < region.levels; x++)
@@ -1882,7 +1882,7 @@ int LoadSignalColors(struct site xmtr)
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(string, ';');
 
-			if (pointer != NULL)
+			if (pointer != nullptr)
 				*pointer = 0;
 
 			ok = sscanf(string, "%d: %d, %d, %d", &val[0], &val[1],
@@ -1921,10 +1921,10 @@ int LoadSignalColors(struct site xmtr)
 int LoadLossColors(struct site xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255], string[80], *pointer = NULL, *s;
-	FILE *fd = NULL;
+	char filename[255], string[80], *pointer = nullptr, *s;
+	FILE *fd = nullptr;
 
-	if (color_file != NULL && color_file[0] != 0)
+	if (color_file != nullptr && color_file[0] != 0)
 	        for (x = 0; color_file[x] != '.' && color_file[x] != 0 && x < 250; x++)
 		        filename[x] = color_file[x];
 	else
@@ -2030,11 +2030,11 @@ int LoadLossColors(struct site xmtr)
 	}
 */
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename, "r")) == NULL && xmtr.filename[0] == '\0' )
+	if ( (fd = fopen(filename, "r")) == nullptr && xmtr.filename[0] == '\0' )
 		return 0;
 
-	if (fd == NULL) {
-		if( (fd = fopen(filename, "w")) == NULL )
+	if (fd == nullptr) {
+		if( (fd = fopen(filename, "w")) == nullptr )
 			return errno;
 
 		for (x = 0; x < region.levels; x++)
@@ -2061,7 +2061,7 @@ int LoadLossColors(struct site xmtr)
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(string, ';');
 
-			if (pointer != NULL)
+			if (pointer != nullptr)
 				*pointer = 0;
 
 			ok = sscanf(string, "%d: %d, %d, %d", &val[0], &val[1],
@@ -2100,10 +2100,10 @@ int LoadLossColors(struct site xmtr)
 int LoadDBMColors(struct site xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255], string[80], *pointer = NULL, *s;
-	FILE *fd = NULL;
+	char filename[255], string[80], *pointer = nullptr, *s;
+	FILE *fd = nullptr;
 
-	if (color_file != NULL && color_file[0] != 0)
+	if (color_file != nullptr && color_file[0] != 0)
 	        for (x = 0; color_file[x] != '.' && color_file[x] != 0 && x < 250; x++)
 		        filename[x] = color_file[x];
 	else
@@ -2201,11 +2201,11 @@ int LoadDBMColors(struct site xmtr)
 	region.levels = 16;
 
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename, "r")) == NULL && xmtr.filename[0] == '\0' )
+	if ( (fd = fopen(filename, "r")) == nullptr && xmtr.filename[0] == '\0' )
 		return 0;
 
-	if (fd == NULL) {
-		if( (fd = fopen(filename, "w")) == NULL )
+	if (fd == nullptr) {
+		if( (fd = fopen(filename, "w")) == nullptr )
 			return errno;
 
 		for (x = 0; x < region.levels; x++)
@@ -2226,7 +2226,7 @@ int LoadDBMColors(struct site xmtr)
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(string, ';');
 
-			if (pointer != NULL)
+			if (pointer != nullptr)
 				*pointer = 0;
 
 			ok = sscanf(string, "%d: %d, %d, %d", &val[0], &val[1],
@@ -2352,20 +2352,20 @@ int LoadUDT(char *filename)
 	   elevation data already loaded into memory. */
 
 	int i, x, y, z, ypix, xpix, tempxpix, tempypix, fd = 0, n = 0;
-	char input[80], str[3][80], tempname[15], *pointer = NULL, *s = NULL;
+	char input[80], str[3][80], tempname[15], *pointer = nullptr, *s = nullptr;
 	double latitude, longitude, height, tempheight, old_longitude = 0.0,
 	  old_latitude = 0.0;
-	FILE *fd1 = NULL, *fd2 = NULL;
+	FILE *fd1 = nullptr, *fd2 = nullptr;
 
 	strcpy(tempname, "/tmp/XXXXXX");
 
-	if( (fd1 = fopen(filename, "r")) == NULL )
+	if( (fd1 = fopen(filename, "r")) == nullptr )
 		return errno;
 
 	if( (fd = mkstemp(tempname)) == -1 )
 		return errno;
 
-	if( (fd2 = fdopen(fd,"w")) == NULL ){
+	if( (fd2 = fdopen(fd,"w")) == nullptr ){
 		fclose(fd1);
 		close(fd);
 		return errno;
@@ -2378,7 +2378,7 @@ int LoadUDT(char *filename)
 
 	pointer = strchr(input, ';');
 
-	if (pointer != NULL)
+	if (pointer != nullptr)
 		*pointer = 0;
 
 	while (feof(fd1) == 0) {
@@ -2442,17 +2442,17 @@ int LoadUDT(char *filename)
 
 		pointer = strchr(input, ';');
 
-		if (pointer != NULL)
+		if (pointer != nullptr)
 			*pointer = 0;
 	}
 
 	fclose(fd1);
 	fclose(fd2);
 
-	if( (fd1 = fopen(tempname, "r")) == NULL )
+	if( (fd1 = fopen(tempname, "r")) == nullptr )
 		return errno;
 
-	if( (fd2 = fopen(tempname, "r")) == NULL ){
+	if( (fd2 = fopen(tempname, "r")) == nullptr ){
 		fclose(fd1);
 		return errno;
 	}

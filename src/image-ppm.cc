@@ -8,7 +8,7 @@ int ppm_init(image_ctx_t *ctx){
 	size_t buf_size;
 
 	/* Perform simple sanity checking */
-	if(ctx->canvas != NULL)
+	if(ctx->canvas != nullptr)
 		return EINVAL;
 	ctx->model = IMAGE_RGB; //Override this as we only support RGB
 	ctx->format = IMAGE_PPM;
@@ -19,7 +19,7 @@ int ppm_init(image_ctx_t *ctx){
 	/* Allocate the canvas buffer */
 	ctx->canvas = (uint8_t*) calloc(buf_size,sizeof(uint8_t));
 	ctx->next_pixel = ctx->canvas;
-	if(ctx->canvas == NULL)
+	if(ctx->canvas == nullptr)
 		return ENOMEM;
 
 	return 0;

@@ -76,7 +76,7 @@ namespace {
 				free_elev();
 				free_path();
 		}
-		return NULL;
+		return nullptr;
 	}
 
 	void init_processed()
@@ -150,7 +150,7 @@ namespace {
 		if(!has_init_processed)
 			init_processed();
 
-		int rc = pthread_create(&threads[thread_count], NULL, rangePropagation, arg);
+		int rc = pthread_create(&threads[thread_count], nullptr, rangePropagation, arg);
 		if (rc)
 			fprintf(stderr,"ERROR; return code from pthread_create() is %d\n", rc);
 		else
@@ -375,7 +375,7 @@ void PlotPropPath(struct site source, struct site destination,
 			if (cos_rcvr_angle < -1.0)
 				cos_rcvr_angle = -1.0;
 
-			if (got_elevation_pattern || fd != NULL) {
+			if (got_elevation_pattern || fd != nullptr) {
 				/* Determine the elevation angle to the first obstruction
 				   along the path IF elevation pattern data is available
 				   or an output (.ano) file has been designated. */
@@ -564,7 +564,7 @@ void PlotPropPath(struct site source, struct site destination,
 
 			azimuth = (Azimuth(source, temp));
 
-			if (fd != NULL)
+			if (fd != nullptr)
 				buffer_offset += sprintf(fd_buffer+buffer_offset,
 					"%.7f, %.7f, %.3f, %.3f, ",
 					path.lat[y], path.lon[y], azimuth,
@@ -574,7 +574,7 @@ void PlotPropPath(struct site source, struct site destination,
 			   output file.  Otherwise, write field strength
 			   or received power level (below), as appropriate. */
 
-			if (fd != NULL && LR.erp == 0.0)
+			if (fd != nullptr && LR.erp == 0.0)
 				buffer_offset += sprintf(fd_buffer+buffer_offset,
 					"%.2f", loss);
 
@@ -605,7 +605,7 @@ void PlotPropPath(struct site source, struct site destination,
 
 					dBm = 10.0 * (log10(rxp * 1000.0));
 
-					if (fd != NULL)
+					if (fd != nullptr)
 						buffer_offset += sprintf(fd_buffer+buffer_offset,
 							"%.3f", dBm);
 
@@ -654,7 +654,7 @@ void PlotPropPath(struct site source, struct site destination,
 					PutSignal(path.lat[y], path.lon[y],
 						  (unsigned char)ifs);
 
-					if (fd != NULL)
+					if (fd != nullptr)
 						buffer_offset += sprintf(fd_buffer+buffer_offset,
 							"%.3f",
 							field_strength);
@@ -676,7 +676,7 @@ void PlotPropPath(struct site source, struct site destination,
 					  (unsigned char)ifs);
 			}
 
-			if (fd != NULL) {
+			if (fd != nullptr) {
 				if (block)
 					buffer_offset += sprintf(fd_buffer+buffer_offset,
 						" *");
@@ -715,12 +715,12 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 	   is later invoked. */
 
 	static __thread unsigned char mask_value = 1;
-	FILE *fd = NULL;
+	FILE *fd = nullptr;
 
 	if (plo_filename[0] != 0)
 		fd = fopen(plo_filename, "wb");
 
-	if (fd != NULL) {
+	if (fd != nullptr) {
 		fprintf(fd,
 			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
 			max_west, min_west, max_north, min_north);
@@ -786,7 +786,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 		     use_threads)
 {
 	static __thread unsigned char mask_value = 1;
-	FILE *fd = NULL;
+	FILE *fd = nullptr;
 	
 	if (LR.erp == 0.0 && debug)
 		fprintf(stderr, "path loss");
@@ -816,7 +816,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 	if (plo_filename[0] != 0)
 		fd = fopen(plo_filename, "wb");
 
-	if (fd != NULL) {
+	if (fd != nullptr) {
 		fprintf(fd,
 			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
 			max_west, min_west, max_north, min_north);
@@ -873,7 +873,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 		delete r[i];
 	}
 
-       if (fd != NULL)
+       if (fd != nullptr)
 		fclose(fd);
 
 	if (mask_value < 30)

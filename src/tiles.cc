@@ -32,7 +32,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	memset(tile, 0x00, sizeof(tile_t));
 
 	/* Open the file handle and return on error */
-	if ( (fd = fopen(filename,"r")) == NULL )
+	if ( (fd = fopen(filename,"r")) == nullptr )
 		return errno;
 
 	/* This is where we read the header data */
@@ -86,7 +86,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 
 	/* Read the actual tile data */
 	/* Allocate the array for the lidar data */
-	if ( (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short))) == NULL ) {
+	if ( (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short))) == nullptr ) {
 		fclose(fd);
 		free(tile->filename);
 		return ENOMEM;
@@ -94,9 +94,9 @@ int tile_load_lidar(tile_t *tile, char *filename){
 
 	size_t loaded = 0;
 	for (size_t h = 0; h < (unsigned)tile->height; h++) {
-		if (fgets(line, MAX_LINE, fd) != NULL) {
+		if (fgets(line, MAX_LINE, fd) != nullptr) {
 			pch = strtok(line, " "); // split line into values
-			for (size_t w = 0; w < (unsigned)tile->width && pch != NULL; w++) {
+			for (size_t w = 0; w < (unsigned)tile->width && pch != nullptr; w++) {
 				/* If the data is less than a *magic* minimum, normalize it to zero */
 				nextval = atoi(pch);
 				if (nextval <= 0)
@@ -107,7 +107,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 					tile->max_el = nextval;
 				if ( nextval < tile->min_el )
 					tile->min_el = nextval;
-				pch = strtok(NULL, " ");
+				pch = strtok(nullptr, " ");
 			}//while
 		} else {
 			fprintf(stderr, "LIDAR error @ h %zu file %s\n", h, filename);
@@ -158,7 +158,7 @@ int tile_rescale(tile_t *tile, float scale){
 	size_t new_width = tile->width * scale;
 
 	/* Allocate the array for the lidar data */
-	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == NULL ) {
+	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == nullptr ) {
 		return ENOMEM;
 	}
 
@@ -240,7 +240,7 @@ int tile_resize(tile_t* tile, int resolution){
  * This function simply destroys any data associated with a tile
  */
 void tile_destroy(tile_t* tile){
-	if (tile->data != NULL)
+	if (tile->data != nullptr)
 		free(tile->data);
 }
 

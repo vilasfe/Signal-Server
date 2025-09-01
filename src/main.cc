@@ -43,7 +43,7 @@ int MAXPAGES = 10*10;
 int IPPD = 1200;
 int ARRAYSIZE = (MAXPAGES * IPPD) + 10;
 
-char sdf_path[255], opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = NULL;
+char sdf_path[255], opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = nullptr;
 
 double earthradius, max_range = 0.0, forced_erp, dpp, ppd, yppd,
     fzone_clearance = 0.6, forced_freq, clutter, lat, lon, txh, tercon, terdic,
@@ -1054,7 +1054,7 @@ int main(int argc, char *argv[])
 	    0, area_mode = 0, max_txsites, ngs = 0;
 
 	char mapfile[255], ano_filename[255], lidar_tiles[27000], clutter_file[255],antenna_file[255];
-	char *az_filename, *el_filename, *udt_file = NULL;
+	char *az_filename, *el_filename, *udt_file = nullptr;
 
 	double altitude = 0.0, altitudeLR = 0.0, tx_range = 0.0,
 	    rx_range = 0.0, deg_range = 0.0, deg_limit = 0.0, deg_range_lon;
@@ -1158,8 +1158,8 @@ int main(int argc, char *argv[])
 	forced_erp = -1.0;
 	forced_freq = 0.0;
 	sdf_path[0] = 0;
-	udt_file = NULL;
-	color_file = NULL;
+	udt_file = nullptr;
+	color_file = nullptr;
 	path.length = 0;
 	max_txsites = 30;
 	fzone_clearance = 0.6;
@@ -1289,7 +1289,7 @@ int main(int argc, char *argv[])
 				strncpy(tx_site[0].filename, argv[z], 253);
 				/* Antenna pattern files have the same basic name as the output file
 				 * but with a different extension. If they exist, load them now */
-				if( (az_filename = (char*) calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == NULL )
+				if( (az_filename = (char*) calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == nullptr )
 					return ENOMEM;
 				if (antenna_file[0] != '\0')
 				        strcpy(az_filename, antenna_file);
@@ -1297,7 +1297,7 @@ int main(int argc, char *argv[])
 				        strcpy(az_filename, argv[z]);
 				strcat(az_filename, AZ_FILE_SUFFIX);
 
-				if( (el_filename = (char*) calloc(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1, sizeof(char))) == NULL ){
+				if( (el_filename = (char*) calloc(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1, sizeof(char))) == nullptr ){
 					free(az_filename);
 					return ENOMEM;
 				}
@@ -1581,7 +1581,7 @@ int main(int argc, char *argv[])
 
 			if (z <= y && argv[z][0]) {
 				udt_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if( udt_file == NULL )
+				if( udt_file == nullptr )
 					return ENOMEM;
 				strncpy(udt_file, argv[z], 253);
 			}
@@ -1653,7 +1653,7 @@ int main(int argc, char *argv[])
 
 			if (z <= y && argv[z][0]) {
 				color_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if (color_file == NULL)
+				if (color_file == nullptr)
 					return ENOMEM;
 				strncpy(color_file, argv[z], 253);
 			}
@@ -1939,7 +1939,7 @@ int main(int argc, char *argv[])
 	mpi = ippd-1; 
 
 	// User defined clutter file
-	if( udt_file != NULL && (result = LoadUDT(udt_file)) != 0 ){
+	if( udt_file != nullptr && (result = LoadUDT(udt_file)) != 0 ){
 		fprintf(stderr, "Error loading clutter file\n");
 		return result;
 	}
@@ -2014,7 +2014,7 @@ int main(int argc, char *argv[])
 			if (LR.erp == 0.0)
 				DoPathLoss(mapfile, geo, kml, ngs, tx_site, txsites);
 			else if (dbm)
-				DoRxdPwr((to_stdout == true ? NULL : mapfile), geo, kml, ngs, tx_site, txsites);
+				DoRxdPwr((to_stdout == true ? nullptr : mapfile), geo, kml, ngs, tx_site, txsites);
 			else
 			        if ((result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites)) != 0)
 					return result;

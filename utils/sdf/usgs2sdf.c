@@ -77,7 +77,7 @@ char *argv[];
 
 	fd=fopen(argv[1],"rb");
 
-	if (fd!=NULL)
+	if (fd!=nullptr)
 	{
 		fprintf(stdout,"Reading \"%s\"...",argv[1]);
 		fflush(stdout);
@@ -302,7 +302,7 @@ char *argv[];
 		fflush(stdout);
 	}
 
-	if (fd==NULL)
+	if (fd==nullptr)
 	{
 		fprintf(stderr,"*** %c%s%c: File Not Found!\n",34,argv[1],34);
 		exit(-1);

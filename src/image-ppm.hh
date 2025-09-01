@@ -14,10 +14,10 @@ int ppm_write(image_ctx_t *ctx, FILE* fd);
 image_dispatch_table_t ppm_dt = {\
 	.init 		= ppm_init, \
 	.add_pixel 	= ppm_add_pixel, \
-	.set_pixel	= NULL, \
+	.set_pixel	= nullptr, \
 	.get_pixel	= ppm_get_pixel, \
 	.write		= ppm_write, \
-	.free		= NULL
+	.free		= nullptr
 };
 
 #endif
