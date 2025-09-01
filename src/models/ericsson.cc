@@ -1,14 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
-double EricssonpathLoss(float f, float TxH, float RxH, float d, int mode)
+#include "ericsson.hh"
+
+auto EricssonpathLoss(float f, float TxH, float RxH, float d, int mode) -> double
 {
 	/*
 	   AKA Ericsson 9999 model
 	 */
 	// Urban 
-	double a0 = 36.2, a1 = 30.2, a2 = -12, a3 = 0.1;
+	double a0 = 36.2;
+	double a1 = 30.2;
+	const double a2 = -12;
+	const double a3 = 0.1;
 
 /*	if (f < 150 || f > 1900) {
 		fprintf
@@ -24,8 +29,8 @@ double EricssonpathLoss(float f, float TxH, float RxH, float d, int mode)
 		a0 = 45.95;
 		a1 = 100.6;
 	}
-	double g1 = 3.2 * (log10(11.75 * RxH) * log10(11.75 * RxH));
-	double g2 = 44.49 * log10(f) - 4.78 * (log10(f) * log10(f));
+	const double g1 = 3.2 * (std::log10(11.75 * RxH) * std::log10(11.75 * RxH));
+	const double g2 = 44.49 * std::log10(f) - 4.78 * (std::log10(f) * std::log10(f));
 
-	return a0 + a1 * log10(d) + a2 * log10(TxH) + a3 * log10(TxH) * log10(d) - g1 + g2;
+	return a0 + a1 * std::log10(d) + a2 * std::log10(TxH) + a3 * std::log10(TxH) * std::log10(d) - g1 + g2;
 }
