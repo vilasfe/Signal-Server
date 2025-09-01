@@ -1,29 +1,24 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <cmath>
+#include <numbers>
 #include <string>
 
 #define GAMMA 		2.5
 
-#ifndef PI
-  #define PI		3.141592653589793
-#endif
+constexpr double TWOPI = std::numbers::pi * 2;
 
-#ifndef TWOPI
-  #define TWOPI		6.283185307179586
-#endif
+constexpr double HALFPI = std::numbers::pi * 0.5;
 
-#ifndef HALFPI
-  #define HALFPI	1.570796326794896
-#endif
+constexpr double DEG2RAD = std::numbers::pi / 180.0;
+constexpr double EARTHRADIUS = 20902230.97;
+constexpr double METERS_PER_MILE = 1609.344;
+constexpr double METERS_PER_FOOT = 0.3048;
+constexpr double KM_PER_MILE = 1.609344;
+constexpr double FEET_PER_MILE =5280.0;
 
-#define DEG2RAD		1.74532925199e-02
-#define	EARTHRADIUS	20902230.97
-#define	METERS_PER_MILE 1609.344
-#define	METERS_PER_FOOT 0.3048
-#define	KM_PER_MILE	1.609344
-#define	FEET_PER_MILE	5280.0
-#define FOUR_THIRDS	1.3333333333333
+constexpr double FOUR_THIRDS = 4.0/3.0;
 
 #define MAX(x,y)((x)>(y)?(x):(y))
 

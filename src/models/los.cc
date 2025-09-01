@@ -180,7 +180,7 @@ namespace {
  */
 static double incidenceAngle(double opp, double adj)
 {
-	return atan2(opp, adj) * 180 / PI;
+	return atan2(opp, adj) * 180 * std::numbers::inv_pi;
 }
 
 /*

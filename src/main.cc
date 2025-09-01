@@ -85,7 +85,7 @@ double arccos(double x, double y)
 		result = acos(x / y);
 
 	if (y < 0.0)
-		result = PI + acos(x / y);
+		result = std::numbers::pi + acos(x / y);
 
 	return result;
 }
@@ -399,10 +399,10 @@ double Azimuth(struct site_t source, struct site_t destination)
 
 	diff = dest_lon - src_lon;
 
-	if (diff <= -PI)
+	if (diff <= -std::numbers::pi)
 		diff += TWOPI;
 
-	if (diff >= PI)
+	if (diff >= std::numbers::pi)
 		diff -= TWOPI;
 
 	if (diff > 0.0)
@@ -431,7 +431,7 @@ double ElevationAngle(struct site_t source, struct site_t destination)
 
 	return ((180.0 *
 		 (acos(((b * b) + (dx * dx) - (a * a)) / (2.0 * b * dx))) /
-		 PI) - 90.0);
+		 std::numbers::pi) - 90.0);
 }
 
 void ReadPath(struct site_t source, struct site_t destination)
@@ -492,16 +492,16 @@ void ReadPath(struct site_t source, struct site_t destination)
 		den = cos(lat1) * cos(lat2);
 
 		if (azimuth == 0.0 && (beta > HALFPI - lat1))
-			lon2 = lon1 + PI;
+			lon2 = lon1 + std::numbers::pi;
 
 		else if (azimuth == HALFPI && (beta > HALFPI + lat1))
-			lon2 = lon1 + PI;
+			lon2 = lon1 + std::numbers::pi;
 
 		else if (fabs(num / den) > 1.0)
 			lon2 = lon1;
 
 		else {
-			if ((PI - azimuth) >= 0.0)
+			if ((std::numbers::pi - azimuth) >= 0.0)
 				lon2 = lon1 - arccos(num, den);
 			else
 				lon2 = lon1 + arccos(num, den);

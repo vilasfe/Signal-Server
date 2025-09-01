@@ -1512,7 +1512,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			     (pow
 			      (10.0, (total_loss - free_space_loss) / 10.0)));
 			/* divide by 4*PI*distance_in_meters squared */
-			power_density /= (4.0 * PI * distance * distance *
+			power_density /= (4.0 * std::numbers::pi * distance * distance *
 					  2589988.11);
 
 			std::println(fd2, "Field strength at {}: {:.2f} dBuV/meter", destination.name, field_strength);
