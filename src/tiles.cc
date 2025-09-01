@@ -60,10 +60,12 @@ int tile_load_lidar(tile_t *tile, const std::string& filename){
 	tile->xur = tile->xll+(tile->cellsize*tile->width);
 	tile->yur = tile->yll+(tile->cellsize*tile->height);
 
-	if (tile->xur > eastoffset)
+	if (tile->xur > eastoffset) {
 		eastoffset = tile->xur;
-	if (tile->xll < westoffset)
+	}
+	if (tile->xll < westoffset) {
 		westoffset = tile->xll;
+	}
 
 	 if (debug) {
 	 	std::println(stderr,"{}, {} {:.7f}, {:.7f}, {:.7f}, {:.7f}, {:.7f}",tile->width,tile->height,tile->xll,tile->yll,tile->cellsize,tile->yur,tile->xur);
@@ -76,14 +78,18 @@ int tile_load_lidar(tile_t *tile, const std::string& filename){
 	 	delta = eastoffset; // add to Tx longitude later
 	 } else {*/
 		// Transform WGS84 longitudes into 'west' values as society finishes east of Greenwich ;)
-		if (tile->xll >= 0)
+		if (tile->xll >= 0) {
 			tile->xll = 360-tile->xll;
-		if(tile->xur >= 0)
+		}
+		if(tile->xur >= 0) {
 			tile->xur = 360-tile->xur;
-		if(tile->xll < 0)
+		}
+		if(tile->xll < 0) {
 			tile->xll = tile->xll * -1;
-		if(tile->xur < 0)
+		}
+		if(tile->xur < 0) {
 			tile->xur = tile->xur * -1;
+		}
 	// }
 
 	if (debug) {
@@ -109,10 +115,12 @@ int tile_load_lidar(tile_t *tile, const std::string& filename){
 					nextval = 0;
 				tile->data[h*tile->width + w] = nextval;
 				loaded++;
-				if ( nextval > tile->max_el )
+				if ( nextval > tile->max_el ) {
 					tile->max_el = nextval;
-				if ( nextval < tile->min_el )
+				}
+				if ( nextval < tile->min_el ) {
 					tile->min_el = nextval;
+				}
 				pch = strtok(nullptr, " ");
 			}//while
 		} else {
@@ -152,7 +160,7 @@ int tile_load_lidar(tile_t *tile, const std::string& filename){
  * NOTE: This means that new resolutions can only increment in multiples of the original
  * (ie 2m LIDAR can be 4/6/8/... and 20m can be 40/60)
  */
-int tile_rescale(tile_t *tile, float scale){
+auto tile_rescale(tile_t *tile, float scale) -> int {
 	short *new_data;
 	size_t skip_count = 1;
 	size_t copy_count = 1;
@@ -201,10 +209,12 @@ int tile_rescale(tile_t *tile, float scale){
 				}
 			}
 			/* Update local min / max values */
-			if (tile->data[y * tile->width + x] > tile->max_el)
+			if (tile->data[y * tile->width + x] > tile->max_el) {
 				tile->max_el = tile->data[y * tile->width + x];
-			if (tile->data[y * tile->width + x] < tile->min_el)
+			}
+			if (tile->data[y * tile->width + x] < tile->min_el) {
 				tile->min_el = tile->data[y * tile->width + x];
+			}
 		}
 	}
 
@@ -233,7 +243,7 @@ int tile_rescale(tile_t *tile, float scale){
  * resolution value in meters as its argument. It then calculates the
  * nearest (via averaging) resample value and calls resample_data
  */
-int tile_resize(tile_t* tile, int resolution){
+auto tile_resize(tile_t* tile, int resolution) -> int {
 	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
 	int current_res = (int) ceil((current_res_km/IPPD)*1000);
 	float scaling_factor = resolution / current_res;
@@ -248,7 +258,8 @@ int tile_resize(tile_t* tile, int resolution){
  * This function simply destroys any data associated with a tile
  */
 void tile_destroy(tile_t* tile){
-	if (tile->data != nullptr)
+	if (tile->data != nullptr) {
 		free(tile->data);
+	}
 }
 

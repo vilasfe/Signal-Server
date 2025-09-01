@@ -75,15 +75,17 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 
 	minwest = ((double)min_west) + dpp;
 
-	if (minwest > 360.0)
+	if (minwest > 360.0) {
 		minwest -= 360.0;
+	}
 
 	north = (double)max_north - dpp;
 
-	if (kml || geo)
+	if (kml || geo) {
 		south = (double)min_north;	/* No bottom legend */
-	else
+	} else {
 		south = (double)min_north - (30.0 / ppd);	/* 30 pixels for bottom legend */
+	}
 
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
@@ -117,12 +119,12 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
                                         }
                                 }*/
 
-
-				if (x0 >= 0 && x0 <= mpi && y0 >= 0
-				    && y0 <= mpi)
+				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
 					found = 1;
-				else
+				}
+				else {
 					indx++;
+				}
 			}
 
 			if (found) {
@@ -136,9 +138,9 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 				green = 0;
 				blue = 0;
 
-				if (loss <= region.level[0])
+				if (loss <= region.level[0]) {
 					match = 0;
-				else {
+				} else {
 					for (z = 1;
 					     (z < region.levels
 					      && match == 255); z++) {
@@ -157,14 +159,14 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 				if (mask & 2) {
 					/* Text Labels: Red or otherwise */
 
-					if (red >= 180 && green <= 75
-					    && blue <= 75 && loss == 0)
+					if (red >= 180 && green <= 75 && blue <= 75 && loss == 0) {
 						ADD_PIXEL(&ctx, 255 ^ red,
 							255 ^ green,
 							255 ^ blue);
-					else
-						ADD_PIXEL(&ctx, 255, 0,
-							0);
+					}
+					else {
+						ADD_PIXEL(&ctx, 255, 0, 0);
+					}
 
 					cityorcounty = 1;
 				}
@@ -178,13 +180,10 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 				}
 
 				if (cityorcounty == 0) {
-					if (loss == 0
-					    || (contour_threshold != 0
-						&& loss >
-						abs(contour_threshold))) {
-						if (ngs)	/* No terrain */
-							ADD_PIXEL(&ctx, 
-								255, 255, 255);
+					if (loss == 0 || (contour_threshold != 0 && loss > abs(contour_threshold))) {
+						if (ngs) {	/* No terrain */
+							ADD_PIXEL(&ctx, 255, 255, 255);
+						}
 						else {
 							/* Display land or sea elevation */
 
@@ -209,19 +208,16 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 					else {
 						/* Plot path loss in color */
 
-						if (red != 0 || green != 0
-						    || blue != 0)
+						if (red != 0 || green != 0 || blue != 0) {
 							ADD_PIXEL(&ctx, 
 								red, green,
 								blue);
-
+						}
 						else {	/* terrain / sea-level */
 
-							if (dem[indx].
-							    data[x0][y0] == 0)
-								ADD_PIXEL(&ctx, 
-									0, 0,
-									170);
+							if (dem[indx].data[x0][y0] == 0) {
+								ADD_PIXEL(&ctx, 0, 0, 170);
+							}
 							else {
 								/* Elevation: Greyscale */
 								terrain =
@@ -261,8 +257,8 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 
 }
 
-int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
-	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
+auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
+	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites) -> int
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal strength values held in the
@@ -313,8 +309,9 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 
 	minwest = ((double)min_west) + dpp;
 
-	if (minwest > 360.0)
+	if (minwest > 360.0) {
 		minwest -= 360.0;
+	}
 
 	north = (double)max_north - dpp;
 
@@ -332,8 +329,9 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 	     y++, lat = north - (dpp * (double)y)) {
 		for (x = 0, lon = max_west; x < (int)width;
 		     x++, lon = max_west - (dpp * (double)x)) {
-			if (lon < 0.0)
+			if (lon < 0.0) {
 				lon += 360.0;
+			}
 
 			for (indx = 0, found = 0;
 			     indx < MAXPAGES && found == 0;) {
@@ -354,11 +352,12 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
                                 }
 				*/
 
-				if (x0 >= 0 && x0 <= mpi && y0 >= 0
-				    && y0 <= mpi)
+				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
 					found = 1;
-				else
+				}
+				else {
 					indx++;
+				}
 			}
 
 			if (found) {
@@ -374,13 +373,10 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 				if (signal >= region.level[0])
 					match = 0;
 				else {
-					for (z = 1;
-					     (z < region.levels
-					      && match == 255); z++) {
-						if (signal < region.level[z - 1]
-						    && signal >=
-						    region.level[z])
+					for (int z = 1; (z < region.levels && match == 255); z++) {
+						if (signal < region.level[z - 1] && signal >= region.level[z]) {
 							match = z;
+						}
 					}
 				}
 
@@ -393,14 +389,12 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 				if (mask & 2) {
 					/* Text Labels: Red or otherwise */
 
-					if (red >= 180 && green <= 75
-					    && blue <= 75)
-						ADD_PIXEL(&ctx, 255 ^ red,
-							255 ^ green,
-							255 ^ blue);
-					else
-						ADD_PIXEL(&ctx, 255, 0,
-							0);
+					if (red >= 180 && green <= 75 && blue <= 75) {
+						ADD_PIXEL(&ctx, 255 ^ red, 255 ^ green, 255 ^ blue);
+					}
+					else {
+						ADD_PIXEL(&ctx, 255, 0, 0);
+					}
 
 					cityorcounty = 1;
 				}
@@ -414,28 +408,22 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 				}
 
 				if (cityorcounty == 0) {
-					if (contour_threshold != 0
-					    && signal < contour_threshold) {
-						if (ngs)
-							ADD_PIXEL(&ctx, 
-								255, 255, 255);
+					if (contour_threshold != 0 && signal < contour_threshold) {
+						if (ngs) {
+							ADD_PIXEL(&ctx, 255, 255, 255);
+						}
 						else {
 							/* Display land or sea elevation */
 
-							if (dem[indx].
-							    data[x0][y0] == 0)
-								ADD_PIXEL(&ctx, 
-									0, 0,
-									170);
+							if (dem[indx].data[x0][y0] == 0) {
+								ADD_PIXEL(&ctx, 0, 0, 170);
+							}
 							else {
 								terrain =
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx, 
-									terrain,
-									terrain,
-									terrain);
+								ADD_PIXEL(&ctx, terrain, terrain, terrain);
 							}
 						}
 					}
@@ -443,27 +431,18 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 					else {
 						/* Plot field strength regions in color */
 
-						if (red != 0 || green != 0
-						    || blue != 0)
-							ADD_PIXEL(&ctx, 
-								red, green,
-								blue);
-
+						if (red != 0 || green != 0 || blue != 0) {
+							ADD_PIXEL(&ctx, red, green, blue);
+						}
 						else {	/* terrain / sea-level */
 
-							if (ngs)
-								ADD_PIXEL(&ctx, 
-									255,
-									255,
-									255);
+							if (ngs) {
+								ADD_PIXEL(&ctx, 255, 255, 255);
+							}
 							else {
-								if (dem[indx].
-								    data[x0][y0]
-								    == 0)
-									ADD_PIXEL(&ctx, 
-									     0,
-									     0,
-									     170);
+								if (dem[indx].data[x0][y0] == 0) {
+									ADD_PIXEL(&ctx, 0, 0, 170);
+								}
 								else {
 									/* Elevation: Greyscale */
 									terrain
@@ -473,10 +452,7 @@ int DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 									     +
 									     pow
 									     ((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-									ADD_PIXEL(&ctx, 
-									     terrain,
-									     terrain,
-									     terrain);
+									ADD_PIXEL(&ctx, terrain, terrain, terrain);
 								}
 							}
 						}
@@ -560,8 +536,9 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 
 	minwest = ((double)min_west) + dpp;
 
-	if (minwest > 360.0)
+	if (minwest > 360.0) {
 		minwest -= 360.0;
+	}
 
 	north = (double)max_north - dpp;
 
@@ -614,15 +591,14 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 				green = 0;
 				blue = 0;
 
-				if (dBm >= region.level[0])
+				if (dBm >= region.level[0]) {
 					match = 0;
+				}
 				else {
-					for (z = 1;
-					     (z < region.levels
-					      && match == 255); z++) {
-						if (dBm < region.level[z - 1]
-						    && dBm >= region.level[z])
+					for (z = 1; (z < region.levels && match == 255); z++) {
+						if (dBm < region.level[z - 1] && dBm >= region.level[z]) {
 							match = z;
+						}
 					}
 				}
 
@@ -641,8 +617,7 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 							255 ^ green,
 							255 ^ blue);
 					else
-						ADD_PIXEL(&ctx, 255, 0,
-							0);
+						ADD_PIXEL(&ctx, 255, 0, 0);
 
 					cityorcounty = 1;
 				}
@@ -656,26 +631,21 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 				if (cityorcounty == 0) {
 					if (contour_threshold != 0
 					    && dBm < contour_threshold) {
-						if (ngs)	/* No terrain */
-							ADD_PIXEL(&ctx,
-								255, 255, 255);
+						if (ngs) {	/* No terrain */
+							ADD_PIXEL(&ctx, 255, 255, 255);
+						}
 						else {
 							/* Display land or sea elevation */
 
-							if (dem[indx].
-							    data[x0][y0] == 0)
-								ADD_PIXEL(&ctx,
-									0, 0,
-									170);
+							if (dem[indx].data[x0][y0] == 0) {
+								ADD_PIXEL(&ctx, 0, 0, 170);
+							}
 							else {
 								terrain =
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx,
-									terrain,
-									terrain,
-									terrain);
+								ADD_PIXEL(&ctx, terrain, terrain, terrain);
 							}
 						}
 					}
@@ -683,27 +653,18 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 					else {
 						/* Plot signal power level regions in color */
 
-						if (red != 0 || green != 0
-						    || blue != 0)
-							ADD_PIXEL(&ctx,
-								red, green,
-								blue);
-
+						if (red != 0 || green != 0 || blue != 0) {
+							ADD_PIXEL(&ctx, red, green, blue);
+						}
 						else {	/* terrain / sea-level */
 
-							if (ngs)
-								ADD_PIXEL(&ctx, 
-									255,
-									255,
-									255); // WHITE
+							if (ngs) {
+								ADD_PIXEL(&ctx, 255, 255, 255); // WHITE
+							}
 							else {
-								if (dem[indx].
-								    data[x0][y0]
-								    == 0)
-									ADD_PIXEL(&ctx, 
-									     0,
-									     0,
-									     170); // BLUE
+								if (dem[indx].data[x0][y0] == 0) {
+									ADD_PIXEL(&ctx, 0, 0, 170); // BLUE
+								}
 								else {
 									/* Elevation: Greyscale */
 									terrain
@@ -713,10 +674,7 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 									     +
 									     pow
 									     ((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-									ADD_PIXEL(&ctx, 
-									     terrain,
-									     terrain,
-									     terrain);
+									ADD_PIXEL(&ctx, terrain, terrain, terrain);
 								}
 							}
 						}
@@ -800,8 +758,9 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 
 	minwest = ((double)min_west) + dpp;
 
-	if (minwest > 360.0)
+	if (minwest > 360.0) {
 		minwest -= 360.0;
+	}
 
 	north = (double)max_north - dpp;
 
@@ -819,8 +778,9 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 	     y++, lat = north - (dpp * (double)y)) {
 		for (x = 0, lon = max_west; x < (int)width;
 		     x++, lon = max_west - (dpp * (double)x)) {
-			if (lon < 0.0)
+			if (lon < 0.0) {
 				lon += 360.0;
+			}
 
 			for (indx = 0, found = 0;
 			     indx < MAXPAGES && found == 0;) {
@@ -833,11 +793,12 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 					       ((double)dem[indx].max_west,
 						lon)));
 
-				if (x0 >= 0 && x0 <= mpi && y0 >= 0
-				    && y0 <= mpi)
+				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
 					found = 1;
-				else
+				}
+				else {
 					indx++;
+				}
 			}
 
 			if (found) {
@@ -1013,13 +974,12 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 	    azimuth, pattern = 1.0, patterndB = 0.0,
 	    total_loss = 0.0, cos_xmtr_angle, cos_test_angle = 0.0,
 	    source_alt, test_alt, dest_alt, source_alt2, dest_alt2,
-	    distance, elevation, four_thirds_earth,
+	    distance, elevation,
 	    free_space_loss = 0.0, eirp =
 	    0.0, voltage, rxp, power_density, dkm;
-	FILE *fd = nullptr;
 
 	snprintf(report_name, 80, "%s.txt%c", name.data(), 0);
-	four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
+	double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
 
 	FILE* fd2 = fopen(report_name, "w");
 
@@ -1066,9 +1026,10 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 	if (got_azimuth_pattern || got_elevation_pattern) {
 		int x = (int)rint(10.0 * (10.0 - angle2));
 
-		if (x >= 0 && x <= 1000)
+		if (x >= 0 && x <= 1000) {
 			pattern =
 			    (double)LR.antenna_pattern[(int)rint(azimuth)][x];
+		}
 
 		patterndB = 20.0 * log10(pattern);
 	}
@@ -1092,22 +1053,10 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 	std::println(fd2, "\nReceiver site: {}", destination.name);
 
-	if (destination.lat >= 0.0) {
-
-		if (destination.lon <= 180){
-			std::println(fd2, "Site location: {:.4f}, -{:.4f}",destination.lat, destination.lon);
-		}else{
-			std::println(fd2, "Site location: {:.4f}, {:.4f}",destination.lat, 360 - destination.lon);
-		}
-	}
-
-	else {
-
-		if (destination.lon <= 180){
-			std::println(fd2, "Site location: {:.4f}, -{:.4f}",destination.lat, destination.lon);
-		}else{
-			std::println(fd2, "Site location: {:.4f}, {:.4f}",destination.lat, 360 - destination.lon);
-		}
+	if (destination.lon <= 180){
+		std::println(fd2, "Site location: {:.4f}, -{:.4f}",destination.lat, destination.lon);
+	}else{
+		std::println(fd2, "Site location: {:.4f}, {:.4f}",destination.lat, 360 - destination.lon);
 	}
 
 	if (metric) {
@@ -1309,13 +1258,14 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 		/* Copy elevations plus clutter along
 		   path into the elev[] array. */
 
-		for (int x = 1; x < path.length - 1; x++)
+		for (int x = 1; x < path.length - 1; x++) {
 			elev[x + 2] =
 			    METERS_PER_FOOT * (path.elevation[x] ==
 					       0.0 ? path.
 					       elevation[x] : (clutter +
 							       path.
 							       elevation[x]));
+		}
 
 		/* Copy ending points without clutter */
 
@@ -1348,8 +1298,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 				for (int x = 2, block = 0; x < y && block == 0; x++) {
 					distance =
-					    FEET_PER_MILE * (path.distance[y] -
-						      path.distance[x]);
+					    FEET_PER_MILE * (path.distance[y] - path.distance[x]);
 					test_alt =
 					    four_thirds_earth +
 					    path.elevation[x];
@@ -1374,14 +1323,16 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 					   what it would be if the angles themselves
 					   were compared. */
 
-					if (cos_xmtr_angle >= cos_test_angle)
+					if (cos_xmtr_angle >= cos_test_angle) {
 						block = 1;
+					}
 				}
 
 				/* At this point, we have the elevation angle
 				   to the first obstruction (if it exists). */
 			}
 
+			//TODO: Seriously what is this array mess???
 			/* Determine path loss for each point along the
 			   path using Longley-Rice's point_to_point mode
 			   starting at x=2 (number_of_points = 1), the
@@ -1483,12 +1434,14 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 			}
 
-			if (block)
+			if (block) {
 				elevation =
-				    ((acos(cos_test_angle)) / DEG2RAD) - 90.0;
-			else
+				    ((std::acos(cos_test_angle)) / DEG2RAD) - 90.0;
+			}
+			else {
 				elevation =
-				    ((acos(cos_xmtr_angle)) / DEG2RAD) - 90.0;
+				    ((std::acos(cos_xmtr_angle)) / DEG2RAD) - 90.0;
+			}
 
 			/* Integrate the antenna's radiation
 			   pattern into the overall path loss. */
@@ -1506,8 +1459,9 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 				}
 			}
 
-			else
+			else {
 				patterndB = 0.0;
+			}
 
 			total_loss = loss - patterndB;
 
@@ -1663,13 +1617,14 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 		/* Either .ps or .postscript may be used
 		   as an extension for postscript output. */
 
-		if (strncmp(term, "postscript", 10) == 0)
+		if (strncmp(term, "postscript", 10) == 0) {
 			strncpy(ext, "ps\0", 3);
-
-		else if (strncmp(ext, "ps", 2) == 0)
+		}
+		else if (strncmp(ext, "ps", 2) == 0) {
 			strncpy(term, "postscript enhanced color\0", 26);
+		}
 
-		fd = fopen("ppa.gp", "w");
+		FILE* fd = fopen("ppa.gp", "w");
 
 		std::println(fd, "set grid");
 		std::println(fd, "set yrange [{:2.3f} to {:2.3f}]", minloss, maxloss);
@@ -1785,8 +1740,9 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 		remote.lon = path.lon[x];
 		remote.alt = 0.0;
 		terrain = GetElevation(remote);
-		if (x == 0)
+		if (x == 0) {
 			terrain += destination.alt;	/* RX antenna spike */
+		}
 
 		a = terrain + earthradius;
 		cangle = FEET_PER_MILE * Distance(destination, remote) / earthradius;
@@ -1823,8 +1779,9 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 			}
 		}
 
-		else
+		else {
 			r = 0.0;
+		}
 
 		if (metric) {
 			if (METERS_PER_FOOT * height > 0) {
@@ -1842,10 +1799,11 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 		else {
 			std::println(fd, "{:.3f} {:.3f}", path.distance[x], height);
 
-			if (fd1 != nullptr && x > 0 && x < path.length - 2)
+			if (fd1 != nullptr && x > 0 && x < path.length - 2) {
 				std::println(fd1, "{:.3f} {:.3f}", path.distance[x],
 					(terrain ==
 					 0.0 ? height : (height + clutter)));
+			}
 
 			std::println(fd2, "{:.3f} {:.3f}", path.distance[x], r);
 			std::println(fd5, "{:.3f} {:.3f}", path.distance[x], height - terrain);
@@ -1866,30 +1824,38 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 				std::println(fd4, "{:.3f} {:.3f}", path.distance[x], fpt6_zone);
 			}
 
-			if (f_zone < minheight)
+			if (f_zone < minheight) {
 				minheight = f_zone;
+			}
 		}
 
-		if ((height + clutter) > maxheight)
+		if ((height + clutter) > maxheight) {
 			maxheight = height + clutter;
+		}
 
-		if (height < minheight)
+		if (height < minheight) {
 			minheight = height;
+		}
 
-		if (r > maxheight)
+		if (r > maxheight) {
 			maxheight = r;
+		}
 
-		if (terrain < minterrain)
+		if (terrain < minterrain) {
 			minterrain = terrain;
+		}
 
-		if ((height - terrain) < minearth)
+		if ((height - terrain) < minearth) {
 			minearth = height - terrain;
+		}
 	}			// End of loop
 
-	if (normalised)
+	if (normalised) {
 		r = -(nm * path.distance[path.length - 1]) - nb;
-	else
+	}
+	else {
 		r = 0.0;
+	}
 
 	if (metric) {
 		std::print(fd, "{:.3f} {:.3f}",
@@ -1921,11 +1887,13 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 		}
 	}
 
-	if (r > maxheight)
+	if (r > maxheight) {
 		maxheight = r;
+	}
 
-	if (r < minheight)
+	if (r < minheight) {
 		minheight = r;
+	}
 
 	fclose(fd);
 
