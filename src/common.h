@@ -20,8 +20,6 @@ constexpr double FEET_PER_MILE =5280.0;
 
 constexpr double FOUR_THIRDS = 4.0/3.0;
 
-#define MAX(x,y)((x)>(y)?(x):(y))
-
 struct dem {
 	float min_north;
 	float max_north;

@@ -129,7 +129,7 @@ int tile_load_lidar(tile_t *tile, const std::string& filename){
 	}
 
 	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
-	tile->precise_resolution = (current_res_km/MAX(tile->width,tile->height)*1000);
+	tile->precise_resolution = (current_res_km/std::max(tile->width,tile->height)*1000);
 
 	// Round to nearest 0.5
 	tile->resolution = tile->precise_resolution < 0.5f ? 0.5f : ceil((tile->precise_resolution * 2)+0.5) / 2;

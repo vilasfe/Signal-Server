@@ -415,7 +415,7 @@ auto loadLIDAR(const std::string& filenames, int resample) -> int
 
 	// SUPER tile
 	MAXPAGES = 1;
-	IPPD = MAX(new_width,new_height);
+	IPPD = std::max(new_width,new_height);
 	ippd=IPPD;
 
 	ARRAYSIZE = (MAXPAGES * IPPD) + 10;
