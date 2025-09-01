@@ -28,6 +28,7 @@ double version = 3.21;
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
+#include <print>
 #include <bzlib.h>
 #include <zlib.h>
 
@@ -694,7 +695,9 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f,
 	double h_r, h_t, h_x, h_r_orig, cos_tx_angle, cos_test_angle,
 	    cos_tx_angle_f1, cos_tx_angle_fpt6, d_tx, d_x,
 	    h_r_f1, h_r_fpt6, h_f, h_los, lambda = 0.0;
-	char string[255], string_fpt6[255], string_f1[255];
+	std::string outstr;
+	std::string string_fpt6;
+	std::string string_f1;
 
 	ReadPath(xmtr, rcvr);
 	h_r = GetElevation(rcvr) + rcvr.alt + earthradius;
@@ -712,15 +715,15 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f,
 		lambda = 9.8425e8 / (f * 1e6);
 
 	if (clutter > 0.0) {
-		fprintf(outfile, "Terrain has been raised by");
+		std::print(outfile, "Terrain has been raised by");
 
 		if (metric)
-			fprintf(outfile, " %.2f meters",
+			std::print(outfile, " {:.2f} meters",
 				METERS_PER_FOOT * clutter);
 		else
-			fprintf(outfile, " %.2f feet", clutter);
+			std::print(outfile, " {:.2f} feet", clutter);
 
-		fprintf(outfile, " to account for ground clutter.\n\n");
+		std::println(outfile, " to account for ground clutter.\n");
 	}
 
 	/* At each point along the path calculate the cosine
@@ -752,41 +755,44 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f,
 		     (h_x * h_x)) / (2.0 * h_r * d_x);
 
 		if (cos_tx_angle > cos_test_angle) {
-			if (h_r == h_r_orig)
-				fprintf(outfile,
-					"Between %s and %s, obstructions were detected at:\n\n",
+			if (h_r == h_r_orig) {
+				std::println(outfile,
+					"Between {} and {}, obstructions were detected at:\n",
 					rcvr.name, xmtr.name);
+			}
 
 			if (site_x.lat >= 0.0) {
-				if (metric)
-					fprintf(outfile,
-						"   %8.4f N,%9.4f W, %5.2f kilometers, %6.2f meters AMSL\n",
+				if (metric) {
+					std::println(outfile,
+						"   {:8.4f} N,{:9.4f} W, {:5.2f} kilometers, {:6.2f} meters AMSL",
 						site_x.lat, site_x.lon,
 						KM_PER_MILE * (d_x / FEET_PER_MILE),
-						METERS_PER_FOOT * (h_x -
-								   earthradius));
-				else
-					fprintf(outfile,
-						"   %8.4f N,%9.4f W, %5.2f miles, %6.2f feet AMSL\n",
+						METERS_PER_FOOT * (h_x - earthradius));
+				}
+				else {
+					std::println(outfile,
+						"   {:8.4f} N,{:9.4f} W, {:5.2f} miles, {:6.2f} feet AMSL",
 						site_x.lat, site_x.lon,
 						d_x / FEET_PER_MILE,
 						h_x - earthradius);
+				}
 			}
 
 			else {
-				if (metric)
-					fprintf(outfile,
-						"   %8.4f S,%9.4f W, %5.2f kilometers, %6.2f meters AMSL\n",
+				if (metric) {
+					std::println(outfile,
+						"   {:8.4f} S,{:9.4f} W, {:5.2f} kilometers, {:6.2f} meters AMSL",
 						-site_x.lat, site_x.lon,
 						KM_PER_MILE * (d_x / FEET_PER_MILE),
-						METERS_PER_FOOT * (h_x -
-								   earthradius));
-				else
-					fprintf(outfile,
-						"   %8.4f S,%9.4f W, %5.2f miles, %6.2f feet AMSL\n",
+						METERS_PER_FOOT * (h_x - earthradius));
+				}
+				else {
+					std::println(outfile,
+						"   {:8.4f} S,{:9.4f} W, {:5.2f} miles, {:6.2f} feet AMSL",
 						-site_x.lat, site_x.lon,
 						d_x / FEET_PER_MILE,
 						h_x - earthradius);
+				}
 			}
 		}
 
@@ -855,76 +861,71 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f,
 	}
 
 	if (h_r > h_r_orig) {
-		if (metric)
-			snprintf(string, 150,
-				 "\nAntenna at %s must be raised to at least %.2f meters AGL\nto clear all obstructions detected.\n",
+		if (metric) {
+			outstr = std::format(
+				 "\nAntenna at {} must be raised to at least {:.2f} meters AGL\nto clear all obstructions detected.\n",
 				 rcvr.name,
-				 METERS_PER_FOOT * (h_r - GetElevation(rcvr) -
-						    earthradius));
-		else
-			snprintf(string, 150,
-				 "\nAntenna at %s must be raised to at least %.2f feet AGL\nto clear all obstructions detected.\n",
+				 METERS_PER_FOOT * (h_r - GetElevation(rcvr) - earthradius));
+		}
+		else {
+			outstr = std::format(
+				 "\nAntenna at {} must be raised to at least {:.2f} feet AGL\nto clear all obstructions detected.\n",
 				 rcvr.name,
 				 h_r - GetElevation(rcvr) - earthradius);
+		}
 	}
 
-	else
-		snprintf(string, 150,
-			 "\nNo obstructions to LOS path due to terrain were detected\n");
+	else {
+		outstr = "\nNo obstructions to LOS path due to terrain were detected\n";
+	}
 
 	if (f) {
 		if (h_r_fpt6 > h_r_orig) {
-			if (metric)
-				snprintf(string_fpt6, 150,
-					 "\nAntenna at %s must be raised to at least %.2f meters AGL\nto clear %.0f%c of the first Fresnel zone.\n",
+			if (metric) {
+				string_fpt6 = std::format(
+					 "\nAntenna at {} must be raised to at least {:.2f} meters AGL\nto clear {:.0f}{} of the first Fresnel zone.\n",
 					 rcvr.name,
-					 METERS_PER_FOOT * (h_r_fpt6 -
-							    GetElevation(rcvr) -
-							    earthradius),
-					 fzone_clearance * 100.0, 37);
-
-			else
-				snprintf(string_fpt6, 150,
-					 "\nAntenna at %s must be raised to at least %.2f feet AGL\nto clear %.0f%c of the first Fresnel zone.\n",
+					 METERS_PER_FOOT * (h_r_fpt6 - GetElevation(rcvr) - earthradius),
+					 fzone_clearance * 100.0, static_cast<char>(37));
+			}
+			else {
+				string_fpt6 = std::format(
+					 "\nAntenna at {} must be raised to at least {:.2f} feet AGL\nto clear {:.0f}{} of the first Fresnel zone.\n",
 					 rcvr.name,
-					 h_r_fpt6 - GetElevation(rcvr) -
-					 earthradius, fzone_clearance * 100.0,
-					 37);
+					 h_r_fpt6 - GetElevation(rcvr) - earthradius, fzone_clearance * 100.0,
+					 static_cast<char>(37));
+			}
 		}
-
-		else
-			snprintf(string_fpt6, 150,
-				 "\n%.0f%c of the first Fresnel zone is clear.\n",
-				 fzone_clearance * 100.0, 37);
+		else {
+			string_fpt6 = std::format(
+				 "\n{:.0f}{} of the first Fresnel zone is clear.\n",
+				 fzone_clearance * 100.0, static_cast<char>(37));
+		}
 
 		if (h_r_f1 > h_r_orig) {
-			if (metric)
-				snprintf(string_f1, 150,
-					 "\nAntenna at %s must be raised to at least %.2f meters AGL\nto clear the first Fresnel zone.\n",
+			if (metric) {
+				string_f1 = std::format(
+					 "\nAntenna at {} must be raised to at least {:.2f} meters AGL\nto clear the first Fresnel zone.\n",
 					 rcvr.name,
-					 METERS_PER_FOOT * (h_r_f1 -
-							    GetElevation(rcvr) -
-							    earthradius));
-
-			else
-				snprintf(string_f1, 150,
-					 "\nAntenna at %s must be raised to at least %.2f feet AGL\nto clear the first Fresnel zone.\n",
+					 METERS_PER_FOOT * (h_r_f1 - GetElevation(rcvr) - earthradius));
+			}
+			else {
+				string_f1 = std::format(
+					 "\nAntenna at {} must be raised to at least {:.2f} feet AGL\nto clear the first Fresnel zone.\n",
 					 rcvr.name,
-					 h_r_f1 - GetElevation(rcvr) -
-					 earthradius);
-
+					 h_r_f1 - GetElevation(rcvr) - earthradius);
+			}
 		}
-
-		else
-			snprintf(string_f1, 150,
-				 "\nThe first Fresnel zone is clear.\n");
+		else {
+			string_f1 = "\nThe first Fresnel zone is clear.\n";
+		}
 	}
 
-	fprintf(outfile, "%s", string);
+	std::print(outfile, "{}", outstr);
 
-	if (f) {
-		fprintf(outfile, "%s", string_f1);
-		fprintf(outfile, "%s", string_fpt6);
+	if (f != 0.0) {
+		std::print(outfile, "{}", string_f1);
+		std::print(outfile, "{}", string_fpt6);
 	}
 
 }
@@ -1021,7 +1022,8 @@ int main(int argc, char *argv[])
 	unsigned char LRmap = 0, txsites = 0, topomap = 0, geo = 0, kml =
 	    0, area_mode = 0, max_txsites, ngs = 0;
 
-	char mapfile[255], ano_filename[255], lidar_tiles[27000], clutter_file[255],antenna_file[255];
+	char mapfile[255], ano_filename[255], lidar_tiles[27000], clutter_file[255];
+	std::string antenna_file;
 	char *az_filename, *el_filename, *udt_file = nullptr;
 
 	double altitude = 0.0, altitudeLR = 0.0, tx_range = 0.0,
@@ -1042,66 +1044,63 @@ int main(int argc, char *argv[])
 	strncpy(ss_name, "Signal Server\0", 14);
 
 	if (argc == 1) {
-
-		fprintf(stdout, "Version: %s %.2f (Built for %d DEM tiles at %d pixels)\n", ss_name, version,MAXPAGES, IPPD);
-		fprintf(stdout, "License: GNU General Public License (GPL) version 2\n\n");
-		fprintf(stdout, "Radio propagation simulator by Alex Farrant QCVS, 2E0TDW\n");
-		fprintf(stdout, "Based upon SPLAT! by John Magliacane, KD2BD\n");
-		fprintf(stdout, "Some feature enhancements/additions by Aaron A. Collins, N9OZB\n\n");
-		fprintf(stdout, "Usage: signalserver [data options] [input options] [antenna options] [output options] -o outputfile\n\n");
-		fprintf(stdout, "Data:\n");
-		fprintf(stdout, "     -sdf Directory containing SRTM derived .sdf DEM tiles (may be .gz or .bz2)\n");
-		fprintf(stdout, "     -lid ASCII grid tile (LIDAR) with dimensions and resolution defined in header\n");
-		fprintf(stdout, "     -udt User defined point clutter as decimal co-ordinates: 'latitude,longitude,height'\n");
-		fprintf(stdout, "     -clt MODIS 17-class wide area clutter in ASCII grid format\n");
-		fprintf(stdout, "     -color File to pre-load .scf/.lcf/.dcf for Signal/Loss/dBm color palette\n");
-		fprintf(stdout, "Input:\n");
-		fprintf(stdout,	"     -lat Tx Latitude (decimal degrees) -70/+70\n");
-		fprintf(stdout,	"     -lon Tx Longitude (decimal degrees) -180/+180\n");
-		fprintf(stdout,	"     -rla (Optional) Rx Latitude for PPA (decimal degrees) -70/+70\n");
-		fprintf(stdout, "     -rlo (Optional) Rx Longitude for PPA (decimal degrees) -180/+180\n");
-		fprintf(stdout,	"     -f Tx Frequency (MHz) 20MHz to 100GHz (LOS after 20GHz)\n");
-		fprintf(stdout,	"     -erp Tx Total Effective Radiated Power in Watts (dBd) inc Tx+Rx gain. 2.14dBi = 0dBd\n");
-		fprintf(stdout, "     -gc Random ground clutter (feet/meters)\n");
-		fprintf(stdout, "     -m Metric units of measurement\n");
-		fprintf(stdout, "     -te Terrain code 1-6 (optional - 1. Water, 2. Marsh, 3. Farmland,\n");
-		fprintf(stdout, "          4. Mountain, 5. Desert, 6. Urban\n");
-		fprintf(stdout,	"     -terdic Terrain dielectric value 2-80 (optional)\n");
-		fprintf(stdout,	"     -tercon Terrain conductivity 0.01-0.0001 (optional)\n");
-		fprintf(stdout, "     -cl Climate code 1-7 (optional - 1. Equatorial 2. Continental subtropical\n");
-		fprintf(stdout,	"          3. Maritime subtropical 4. Desert 5. Continental temperate\n");
-		fprintf(stdout,	"          6. Maritime temperate (Land) 7. Maritime temperate (Sea)\n");
-		fprintf(stdout, "     -rel Reliability for ITM model (%% of 'time') 1 to 99 (optional, default 50%%)\n");
-		fprintf(stdout, "     -conf Confidence for ITM model (%% of 'situations') 1 to 99 (optional, default 50%%)\n");
-		fprintf(stdout, "     -resample Reduce Lidar resolution by specified factor (2 = 50%%)\n");
-		fprintf(stdout, "Output:\n");
-		fprintf(stdout, "     -o basename (Output file basename - required)\n");
-		fprintf(stdout,	"     -dbm Plot Rxd signal power instead of field strength in dBuV/m\n");
-		fprintf(stdout, "     -rt Rx Threshold (dB / dBm / dBuV/m)\n");
-		fprintf(stdout, "     -R Radius (miles/kilometers)\n");
-		fprintf(stdout,	"     -res Pixels per tile. 300/600/1200/3600 (Optional. LIDAR res is within the tile)\n");
-		fprintf(stdout,	"     -pm Propagation model. 1: ITM, 2: LOS, 3: Hata, 4: ECC33,\n");
-		fprintf(stdout,	"          5: SUI, 6: COST-Hata, 7: FSPL, 8: ITWOM, 9: Ericsson,\n");
-		fprintf(stdout, "          10: Plane earth, 11: Egli VHF/UHF, 12: Soil\n");
-		fprintf(stdout,	"     -pe Propagation model mode: 1=Urban,2=Suburban,3=Rural\n");
-		fprintf(stdout,	"     -ked Knife edge diffraction (Already on for ITM)\n");
-		fprintf(stdout, "Antenna:\n");
-		fprintf(stdout, "     -ant (antenna pattern file basename+path for .az and .el files)\n");
-		fprintf(stdout, "     -txh Tx Height (above ground)\n");
-		fprintf(stdout,	"     -rxh Rx Height(s) (optional. Default=0.1)\n");
-		fprintf(stdout,	"     -rxg Rx gain dBd (optional for PPA text report)\n");
-		fprintf(stdout,	"     -hp Horizontal Polarisation (default=vertical)\n");
-		fprintf(stdout, "     -rot  (  0.0 - 359.0 degrees, default 0.0) Antenna Pattern Rotation\n");
-		fprintf(stdout, "     -dt   ( -10.0 - 90.0 degrees, default 0.0) Antenna Downtilt\n");
-		fprintf(stdout, "     -dtdir ( 0.0 - 359.0 degrees, default 0.0) Antenna Downtilt Direction\n");
-		fprintf(stdout, "Debugging:\n");
-		fprintf(stdout, "     -t Terrain greyscale background\n");
-		fprintf(stdout, "     -dbg Verbose debug messages\n");
-		fprintf(stdout, "     -ng Normalise Path Profile graph\n");
-		fprintf(stdout, "     -haf Halve 1 or 2 (optional)\n");
-		fprintf(stdout, "     -nothreads Turn off threaded processing\n");
-
-		fflush(stdout);
+		std::println(stdout, "Version: {} {:.2f} (Built for {} DEM tiles at {} pixels)", ss_name, version,MAXPAGES, IPPD);
+		std::println(stdout, "License: GNU General Public License (GPL) version 2\n");
+		std::println(stdout, "Radio propagation simulator by Alex Farrant QCVS, 2E0TDW");
+		std::println(stdout, "Based upon SPLAT! by John Magliacane, KD2BD");
+		std::println(stdout, "Some feature enhancements/additions by Aaron A. Collins, N9OZB\n");
+		std::println(stdout, "Usage: signalserver [data options] [input options] [antenna options] [output options] -o outputfile\n");
+		std::println(stdout, "Data:");
+		std::println(stdout, "     -sdf Directory containing SRTM derived .sdf DEM tiles (may be .gz or .bz2)");
+		std::println(stdout, "     -lid ASCII grid tile (LIDAR) with dimensions and resolution defined in header");
+		std::println(stdout, "     -udt User defined point clutter as decimal co-ordinates: 'latitude,longitude,height'");
+		std::println(stdout, "     -clt MODIS 17-class wide area clutter in ASCII grid format");
+		std::println(stdout, "     -color File to pre-load .scf/.lcf/.dcf for Signal/Loss/dBm color palette");
+		std::println(stdout, "Input:");
+		std::println(stdout,	"     -lat Tx Latitude (decimal degrees) -70/+70");
+		std::println(stdout,	"     -lon Tx Longitude (decimal degrees) -180/+180");
+		std::println(stdout,	"     -rla (Optional) Rx Latitude for PPA (decimal degrees) -70/+70");
+		std::println(stdout, "     -rlo (Optional) Rx Longitude for PPA (decimal degrees) -180/+180");
+		std::println(stdout,	"     -f Tx Frequency (MHz) 20MHz to 100GHz (LOS after 20GHz)");
+		std::println(stdout,	"     -erp Tx Total Effective Radiated Power in Watts (dBd) inc Tx+Rx gain. 2.14dBi = 0dBd");
+		std::println(stdout, "     -gc Random ground clutter (feet/meters)");
+		std::println(stdout, "     -m Metric units of measurement");
+		std::println(stdout, "     -te Terrain code 1-6 (optional - 1. Water, 2. Marsh, 3. Farmland,");
+		std::println(stdout, "          4. Mountain, 5. Desert, 6. Urban");
+		std::println(stdout,	"     -terdic Terrain dielectric value 2-80 (optional)");
+		std::println(stdout,	"     -tercon Terrain conductivity 0.01-0.0001 (optional)");
+		std::println(stdout, "     -cl Climate code 1-7 (optional - 1. Equatorial 2. Continental subtropical");
+		std::println(stdout,	"          3. Maritime subtropical 4. Desert 5. Continental temperate");
+		std::println(stdout,	"          6. Maritime temperate (Land) 7. Maritime temperate (Sea)");
+		std::println(stdout, "     -rel Reliability for ITM model (% of 'time') 1 to 99 (optional, default 50%)");
+		std::println(stdout, "     -conf Confidence for ITM model (% of 'situations') 1 to 99 (optional, default 50%)");
+		std::println(stdout, "     -resample Reduce Lidar resolution by specified factor (2 = 50%)");
+		std::println(stdout, "Output:");
+		std::println(stdout, "     -o basename (Output file basename - required)");
+		std::println(stdout,	"     -dbm Plot Rxd signal power instead of field strength in dBuV/m");
+		std::println(stdout, "     -rt Rx Threshold (dB / dBm / dBuV/m)");
+		std::println(stdout, "     -R Radius (miles/kilometers)");
+		std::println(stdout,	"     -res Pixels per tile. 300/600/1200/3600 (Optional. LIDAR res is within the tile)");
+		std::println(stdout,	"     -pm Propagation model. 1: ITM, 2: LOS, 3: Hata, 4: ECC33,");
+		std::println(stdout,	"          5: SUI, 6: COST-Hata, 7: FSPL, 8: ITWOM, 9: Ericsson,");
+		std::println(stdout, "          10: Plane earth, 11: Egli VHF/UHF, 12: Soil");
+		std::println(stdout,	"     -pe Propagation model mode: 1=Urban,2=Suburban,3=Rural");
+		std::println(stdout,	"     -ked Knife edge diffraction (Already on for ITM)");
+		std::println(stdout, "Antenna:");
+		std::println(stdout, "     -ant (antenna pattern file basename+path for .az and .el files)");
+		std::println(stdout, "     -txh Tx Height (above ground)");
+		std::println(stdout,	"     -rxh Rx Height(s) (optional. Default=0.1)");
+		std::println(stdout,	"     -rxg Rx gain dBd (optional for PPA text report)");
+		std::println(stdout,	"     -hp Horizontal Polarisation (default=vertical)");
+		std::println(stdout, "     -rot  (  0.0 - 359.0 degrees, default 0.0) Antenna Pattern Rotation");
+		std::println(stdout, "     -dt   ( -10.0 - 90.0 degrees, default 0.0) Antenna Downtilt");
+		std::println(stdout, "     -dtdir ( 0.0 - 359.0 degrees, default 0.0) Antenna Downtilt Direction");
+		std::println(stdout, "Debugging:");
+		std::println(stdout, "     -t Terrain greyscale background");
+		std::println(stdout, "     -dbg Verbose debug messages");
+		std::println(stdout, "     -ng Normalise Path Profile graph");
+		std::println(stdout, "     -haf Halve 1 or 2 (optional)");
+		std::println(stdout, "     -nothreads Turn off threaded processing");
 
 		return 1;
 	}
@@ -1206,7 +1205,8 @@ int main(int argc, char *argv[])
 			z = x + 1;
 
 			if (z <= y && argv[z][0] && argv[z][0] != '-') {
-				strncpy(antenna_file, argv[z], 253);
+				antenna_file = argv[z];
+				std::println("Using antenna_file: {}", antenna_file);
 			}
 		}
 
@@ -1259,8 +1259,8 @@ int main(int argc, char *argv[])
 				 * but with a different extension. If they exist, load them now */
 				if( (az_filename = (char*) calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == nullptr )
 					return ENOMEM;
-				if (antenna_file[0] != '\0')
-				        strcpy(az_filename, antenna_file);
+				if (! antenna_file.empty())
+				        strcpy(az_filename, antenna_file.data());
 				else
 				        strcpy(az_filename, argv[z]);
 				strcat(az_filename, AZ_FILE_SUFFIX);
@@ -1269,16 +1269,14 @@ int main(int argc, char *argv[])
 					free(az_filename);
 					return ENOMEM;
 				}
-				if (antenna_file[0] != '\0')
-				        strcpy(el_filename, antenna_file);
+				if (!antenna_file.empty())
+				        strcpy(el_filename, antenna_file.data());
 				else
 				        strcpy(el_filename, argv[z]);
 				strcat(el_filename, EL_FILE_SUFFIX);
 
-				if( (result = LoadPAT(az_filename,el_filename)) != 0 ){
-					fprintf(stderr,"Permissions error reading antenna pattern file\n");
-					free(az_filename);
-					free(el_filename);
+				if(result = LoadPAT(az_filename,el_filename); result != 0 ){
+					std::println(stderr,"Permissions error reading antenna pattern file");
 					exit(result);
 				}
 				free(az_filename);
@@ -1289,14 +1287,14 @@ int main(int argc, char *argv[])
 				mapfile[0] = '\0';
 				strncpy(tx_site[0].name, "Tx", 2);
 				tx_site[0].filename[0] = '\0';
-				fprintf(stderr,"Writing to stdout\n");
+				std::println(stderr,"Writing to stdout");
 			}
 		}
 
 		if (strcmp(argv[x], "-so") == 0) {
 			z = x + 1;
 			if(image_set_library(argv[z]) != 0){
-				fprintf(stderr,"Error configuring image processor\n");
+				std::println(stderr,"Error configuring image processor");
 				exit(EINVAL);
 			}
 		}
@@ -1372,7 +1370,7 @@ int main(int argc, char *argv[])
 			z = x + 1;
 
 			if(!lidar){
-				fprintf(stderr, "Error, this should only be used with LIDAR tiles.\n");
+				std::println(stderr, "Error, this should only be used with LIDAR tiles.");
 				return -1;
 			}
 
@@ -1630,76 +1628,76 @@ int main(int argc, char *argv[])
 
 	/* ERROR DETECTION */
 	if (tx_site[0].lat > 90 || tx_site[0].lat < -90) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Either the lat was missing or out of range!");
 		exit(EINVAL);
 
 	}
 	if (tx_site[0].lon > 360 || tx_site[0].lon < 0) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Either the lon was missing or out of range!");
 		exit(EINVAL);
 
 	}
 	if (LR.frq_mhz < 20 || LR.frq_mhz > 100000) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Either the Frequency was missing or out of range!");
 		exit(EINVAL);
 	}
 	if (LR.erp > 500000000) {
-		fprintf(stderr, "ERROR: Power was out of range!");
+		std::println(stderr, "ERROR: Power was out of range!");
 		exit(EINVAL);
 
 	}
 	if (LR.eps_dielect > 80 || LR.eps_dielect < 0.1) {
-		fprintf(stderr, "ERROR: Ground Dielectric value out of range!");
+		std::println(stderr, "ERROR: Ground Dielectric value out of range!");
 		exit(EINVAL);
 
 	}
 	if (LR.sgm_conductivity > 0.01 || LR.sgm_conductivity < 0.000001) {
-		fprintf(stderr, "ERROR: Ground conductivity out of range!");
+		std::println(stderr, "ERROR: Ground conductivity out of range!");
 		exit(EINVAL);
 
 	}
 
 	if (tx_site[0].alt < 0 || tx_site[0].alt > 60000) {
-		fprintf(stderr,
-			"ERROR: Tx altitude above ground was too high: %f",
+		std::println(stderr,
+			"ERROR: Tx altitude above ground was too high: {:f}",
 			tx_site[0].alt);
 		exit(EINVAL);
 	}
 	if (altitudeLR < 0 || altitudeLR > 60000) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Rx altitude above ground was too high!");
 		exit(EINVAL);
 	}
 
 	if(!lidar){
 		if (ippd < 300 || ippd > 10000) {
-			fprintf(stderr, "ERROR: resolution out of range!");
+			std::println(stderr, "ERROR: resolution out of range!");
 			exit(EINVAL);
 		}
 	}
 
 	if (contour_threshold < -200 || contour_threshold > 240) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Receiver threshold out of range (-200 / +240)");
 		exit(EINVAL);
 	}
 	if (propmodel > 2 && propmodel < 7 && LR.frq_mhz < 150) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Frequency too low for Propagation model");
 		exit(EINVAL);
 	}
 
 	if (to_stdout == true && ppa != 0) {
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Cannot write to stdout in ppa mode");
 		exit(EINVAL);
 	}
 
 	if(resample > 10){
-		fprintf(stderr,
+		std::println(stderr,
 			"ERROR: Cannot resample higher than a factor of 10");
 		exit(EINVAL);	
 	}
@@ -1768,10 +1766,10 @@ int main(int argc, char *argv[])
 	/* Load the required tiles */
 	if (lidar) {
 		if( (result = loadLIDAR(lidar_tiles, resample)) != 0 ){
-			fprintf(stderr, "Couldn't find one or more of the "
+			std::println(stderr, "Couldn't find one or more of the "
 				"lidar files. Please ensure their paths are "
-				"correct and try again.\n");
-			fprintf(stderr, "Error %d: %s\n", result, strerror(result));
+				"correct and try again.");
+			std::println(stderr, "Error {}: {}", result, strerror(result));
 			exit(result);
 		}
 
@@ -1784,8 +1782,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (yppd < ppd/4) {
-			fprintf(stderr,"yppd is bad! Check longitudes\n");
-			fflush(stderr);
+			std::println(stderr,"yppd is bad! Check longitudes");
 			exit(1);
 		}
 
@@ -1795,15 +1792,15 @@ int main(int argc, char *argv[])
 
 	} else {
 		// DEM first
-		if(debug){
-			fprintf(stderr,"%.4lf,%.4lf,%.4lf,%.4lf,%.4lf,%.4lf\n",max_north,min_west,min_north,max_west,max_lon,min_lon);
+		if(debug != 0){
+			std::println(stderr,"{:.4f},{:.4f},{:.4f},{:.4f},{:.4f},{:.4f}",max_north,min_west,min_north,max_west,max_lon,min_lon);
 		}
 
 		//max_lon-=3;
 
 		if( (result = LoadTopoData(max_lon, min_lon, max_lat, min_lat)) != 0 ){
 			// This only fails on errors loading SDF tiles
-			fprintf(stderr, "Error loading topo data\n");
+			std::println(stderr, "Error loading topo data");
 			return result;
 		}
 
@@ -1892,7 +1889,7 @@ int main(int argc, char *argv[])
 
 			if( (result = LoadTopoData(max_lon, min_lon, max_lat, min_lat)) != 0 ){
 				// This only fails on errors loading SDF tiles
-				fprintf(stderr, "Error loading topo data\n");
+				std::println(stderr, "Error loading topo data");
 				return result;
 			}
 		}
@@ -1908,7 +1905,7 @@ int main(int argc, char *argv[])
 
 	// User defined clutter file
 	if( udt_file != nullptr && (result = LoadUDT(udt_file)) != 0 ){
-		fprintf(stderr, "Error loading clutter file\n");
+		std::println(stderr, "Error loading clutter file");
 		return result;
 	}
 
@@ -1919,7 +1916,7 @@ int main(int argc, char *argv[])
 		Limit by max_range / miles per degree (at equator)
 		*/
 		if( (result = loadClutter(clutter_file,max_range/45,tx_site[0])) != 0 ){
-			fprintf(stderr, "Error, invalid or clutter file not found\n");
+			std::println(stderr, "Error, invalid or clutter file not found");
 			return result;
 		}
 	}
@@ -1937,9 +1934,8 @@ int main(int argc, char *argv[])
 			// 90% of effort here
 			PlotPropagation(tx_site[0], altitudeLR, ano_filename, propmodel, knifeedge, haf, pmenv, use_threads);
 
-                        if (debug) {
-                        	fprintf(stderr,"Finished PlotPropagation()\n");
-				fflush(stderr);
+			if (debug) {
+				std::println(stderr,"Finished PlotPropagation()");
 			}	
 
 			// nearfield void
@@ -1961,19 +1957,17 @@ int main(int argc, char *argv[])
 				cropLat-=tx_site[0].lat; // angle from tx to edge
 
 			
-				if (debug) {
-					fprintf(stderr,"Cropping 1: max_west: %.4f cropLat: %.4f cropLon: %.4f longitude: %.5f dpp %.7f\n",max_west,cropLat,cropLon,tx_site[0].lon,dpp);
-					fflush (stderr);
+				if (debug != 0) {
+					std::println(stderr,"Cropping 1: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.4f} longitude: {:.5f} dpp {:.7f}",max_west,cropLat,cropLon,tx_site[0].lon,dpp);
 				}
 				width=(int)((cropLon*ppd)*2);
 				height=(int)((cropLat*ppd)*2);
 
-				if (debug) {
-				        fprintf(stderr,"Cropping 2: max_west: %.4f cropLat: %.4f cropLon: %.7f longitude: %.5f width %d\n",max_west,cropLat,cropLon,tx_site[0].lon,width);
-					fflush (stderr);
+				if (debug != 0) {
+					std::println(stderr,"Cropping 2: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f} width {}",max_west,cropLat,cropLon,tx_site[0].lon,width);
 				}
 				if (width > 3600 * 10 || cropLon < 0) {
-				  fprintf(stderr,"FATAL BOUNDS! max_west: %.4f cropLat: %.4f cropLon: %.7f longitude: %.5f\n",max_west,cropLat,cropLon,tx_site[0].lon);
+				  std::println(stderr,"FATAL BOUNDS! max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f}",max_west,cropLat,cropLon,tx_site[0].lon);
 				  return 0;
 				}
 			}
@@ -1999,17 +1993,17 @@ int main(int argc, char *argv[])
 			tx_site[0].lon += 360;
 
 		if (cropping) {
-			fprintf(stderr, "|%.6f", tx_site[0].lat+cropLat);
-			fprintf(stderr, "|%.6f", tx_site[0].lon+cropLon);
-			fprintf(stderr, "|%.6f", tx_site[0].lat-cropLat);
-			fprintf(stderr, "|%.6f|",tx_site[0].lon-cropLon);
+			std::print(stderr, "|{:.6f}", tx_site[0].lat+cropLat);
+			std::print(stderr, "|{:.6f}", tx_site[0].lon+cropLon);
+			std::print(stderr, "|{:.6f}", tx_site[0].lat-cropLat);
+			std::print(stderr, "|{:.6f}|",tx_site[0].lon-cropLon);
 		} else {
-			fprintf(stderr, "|%.6f", max_north);
-			fprintf(stderr, "|%.6f", east);
-			fprintf(stderr, "|%.6f", min_north);
-			fprintf(stderr, "|%.6f|",west);
+			std::print(stderr, "|{:.6f}", max_north);
+			std::print(stderr, "|{:.6f}", east);
+			std::print(stderr, "|{:.6f}", min_north);
+			std::print(stderr, "|{:.6f}|",west);
 		}
-		fprintf(stderr, "\n");
+		std::println(stderr, "");
 
 	} else {
 		strncpy(tx_site[0].name, "Tx", 3);
@@ -2019,7 +2013,6 @@ int main(int argc, char *argv[])
 		// Order flipped for benefit of graph. Makes no difference to data.
 		SeriesData(tx_site[1], tx_site[0], tx_site[0].filename, 1, normalise);
 	}
-	fflush(stderr);
 
 	return 0;
 }

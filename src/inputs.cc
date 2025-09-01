@@ -5,6 +5,7 @@
 #include <math.h>
 #include <errno.h>
 #include <limits.h>
+#include <print>
 #include "common.h"
 #include "main.hh"
 #include "tiles.hh"
@@ -61,15 +62,13 @@ int loadClutter(char *filename, double radius, struct site tx)
 		cellsize2 = cellsize * 3;
 	} else {
 		if (debug) {
-			fprintf(stderr, "\nError Loading clutter file, unsupported resolution %d x %d.\n", w,h);
-			fflush(stderr);
+			std::println(stderr, "\nError Loading clutter file, unsupported resolution {} x {}.", w,h);
 		}
 		return 0; // can't work with this yet
 	}
 
 	if (debug) {
-	        fprintf(stderr, "\nLoading clutter file \"%s\" %d x %d...\n", filename, w,h);
-		fflush(stderr);
+		std::println(stderr, "\nLoading clutter file \"{}\" {} x {}...", filename, w,h);
 	}
 
 	if (fgets(line, 25, fd) != nullptr) {
@@ -82,8 +81,7 @@ int loadClutter(char *filename, double radius, struct site tx)
 	}
 
 	if (debug) {
-		fprintf(stderr, "\nxll %.2f yll %.2f\n", xll, yll);
-		fflush(stderr);
+		std::println(stderr, "\nxll {:.2f} yll {:.2f}", xll, yll);
 	}
 
 	s = fgets(line, 25, fd); // cellsize
@@ -133,7 +131,6 @@ int loadClutter(char *filename, double radius, struct site tx)
 						if((lat > tx.lat+cellsize2 || lat < tx.lat-cellsize2) || (lon > tx.lon + cellsize2 || lon < tx.lon - cellsize2)){
 							AddElevation(lat,lon,clh,2);
 						}
-
 					}
 				}
 
@@ -141,7 +138,7 @@ int loadClutter(char *filename, double radius, struct site tx)
 				pch = strtok(nullptr, " ");
 			}//while
 		} else {
-			fprintf(stderr, "Clutter error @ x %d y %d\n", x, y);
+			std::println(stderr, "Clutter error @ x {} y {}", x, y);
 		}//if
 	}//for
 
@@ -199,7 +196,7 @@ int loadLIDAR(char *filenames, int resample)
 	/* Allocate the tile array */
 	if( (tiles = (tile_t*) calloc(fc+1, sizeof(tile_t))) == nullptr ) {
 		if (debug)
-			fprintf(stderr,"Could not allocate %d\n tiles",fc+1);
+			std::print(stderr,"Could not allocate {}\n tiles",fc+1);
 		return ENOMEM;
 	}
 
@@ -207,16 +204,13 @@ int loadLIDAR(char *filenames, int resample)
 	for (indx = 0; indx < fc; indx++) {
 
 		/* Grab the tile metadata */
-		if( (success = tile_load_lidar(&tiles[indx], files[indx])) != 0 ){
-			fprintf(stderr,"Failed to load LIDAR tile %s\n",files[indx]);
-			fflush(stderr);
-			free(tiles);
+		if( const int success = tile_load_lidar(&tiles[indx], files[indx]); success != 0 ){
+			std::println(stderr,"Failed to load LIDAR tile {}",files[indx]);
 			return success;
 		}
 
 		if (debug) {
-			fprintf(stderr, "Loading \"%s\" into page %d with width %d...\n", files[indx], indx, tiles[indx].width);
-			fflush(stderr);
+			std::println(stderr, "Loading \"{}\" into page {} with width {}...", files[indx], indx, tiles[indx].width);
 		}
 
 		// Increase the "average" cell size
@@ -280,13 +274,11 @@ int loadLIDAR(char *filenames, int resample)
 	  for (size_t i = 0; i < (unsigned)fc; i++) {
 			float rescale = tiles[i].resolution / (float)desired_resolution;
 			if(debug) {
-				fprintf(stderr,"res %.5f desired_res %.5f\n",tiles[i].resolution,(float)desired_resolution);
-				fflush(stderr);
+				std::println(stderr,"res {:.5f} desired_res {:.5f}",tiles[i].resolution, desired_resolution);
 			}
 			if (rescale != 1){
-				if( (success = tile_rescale(&tiles[i], rescale) != 0 ) ){
-					fprintf(stderr, "Error resampling tiles\n");
-					fflush(stderr);
+				if( const int success = tile_rescale(&tiles[i], rescale); success != 0 ){
+					std::println(stderr, "Error resampling tiles");
 					return success;
 				}
 			}
@@ -301,7 +293,7 @@ int loadLIDAR(char *filenames, int resample)
 	double total_width = max_west - min_west >= 0 ? max_west - min_west : max_west + (360 - min_west);
 	double total_height = max_north - min_north;
 	if (debug) {
-		fprintf(stderr,"totalh: %.7f - %.7f = %.7f totalw: %.7f - %.7f = %.7f fc: %d\n", max_north, min_north, total_height, max_west, min_west, total_width,fc);
+		std::println(stderr,"totalh: {:.7f} - {:.7f} = {:.7f} totalw: {:.7f} - {:.7f} = {:.7f} fc: {}", max_north, min_north, total_height, max_west, min_west, total_width,fc);
 	}
 
 	//detect problematic layouts eg. vertical rectangles
@@ -323,8 +315,7 @@ int loadLIDAR(char *filenames, int resample)
 		//calculate deficit
 
 		if (debug) {
-		        fprintf(stderr,"deficit: %.4f cellsize: %.9f tiles needed to square: %.1f, desired_resolution %f\n", total_width-total_height, avgCellsize, (total_width-total_height)/avgCellsize, (float)desired_resolution);
-			fflush (stderr);
+			std::println(stderr,"deficit: {:.4f} cellsize: {:.9f} tiles needed to square: {:.1f}, desired_resolution {}", total_width-total_height, avgCellsize, (total_width-total_height)/avgCellsize, desired_resolution);
 		}
 	}
 	// 2x1
@@ -344,8 +335,7 @@ int loadLIDAR(char *filenames, int resample)
 		//calculate deficit
 
 		if (debug) {
-			fprintf(stderr,"deficit: %.4f cellsize: %.9f tiles needed to square: %.1f\n", total_width-total_height,avgCellsize,(total_width-total_height)/avgCellsize);
-			fflush(stdout);
+			std::println(stderr,"deficit: {:.4f} cellsize: {:.9f} tiles needed to square: {:.1f}", total_width-total_height,avgCellsize,(total_width-total_height)/avgCellsize);
 		}
 	}
 	size_t new_height = 0;
@@ -358,23 +348,25 @@ int loadLIDAR(char *filenames, int resample)
 
 		if ( west_pixel_offset + tiles[i].width > new_width )
 			new_width = west_pixel_offset + tiles[i].width;
-		if ( north_pixel_offset + tiles[i].height > new_height )
+		if ( north_pixel_offset + tiles[i].height > new_height ) {
 			new_height = north_pixel_offset + tiles[i].height;
-		if (debug)
+		}
+		if (debug) {
 			fprintf(stderr,"north_pixel_offset %zu west_pixel_offset %zu, %zu x %zu\n", north_pixel_offset, west_pixel_offset,new_height,new_width);
+		}
 
-      		//sanity check!
-        	if (new_width > 39e3 || new_height > 39e3) {
-                	fprintf(stdout,"Not processing a tile with these dimensions: %zu x %zu\n",new_width,new_height);
-                	exit(1);
-        	}
+		//sanity check!
+		if (new_width > 39e3 || new_height > 39e3) {
+				fprintf(stdout,"Not processing a tile with these dimensions: %zu x %zu\n",new_width,new_height);
+				exit(1);
+		}
 	}
 
 	size_t new_tile_alloc = new_width * new_height;
 	short * new_tile = (short*) calloc( new_tile_alloc, sizeof(short) );
 
 	if ( new_tile == nullptr ) {
-	        if (debug) {
+		if (debug) {
 			fprintf(stderr,"Could not allocate %zu bytes\n", new_tile_alloc);
 			fflush(stderr);
 		}
@@ -431,8 +423,7 @@ int loadLIDAR(char *filenames, int resample)
 	width = new_width;
 
 	if (debug) {
-		fprintf(stderr,"Setting IPPD to %d height %d width %d\n",IPPD,height,width);
-		fflush(stderr);
+		std::println(stderr,"Setting IPPD to {} height {} width {}",IPPD,height,width);
 	}
 
 	/* Load the data into the global dem array */
@@ -469,15 +460,13 @@ int loadLIDAR(char *filenames, int resample)
 		}
 	}
 	if (width > 3600 * 8) {
-		fprintf(stdout,"DEM fault. Contact system administrator: %d\n",width);
-		fflush(stderr);
+		std::println(stdout,"DEM fault. Contact system administrator: {}",width);
 		exit(1);
 	}
 
 	if (debug) {
-		fprintf(stderr, "LIDAR LOADED %d x %d\n", width, height);
-		fprintf(stderr, "fc %d WIDTH %d HEIGHT %d ippd %d minN %.5f maxN %.5f minW %.5f maxW %.5f avgCellsize %.5f\n", fc, width, height, ippd,min_north,max_north,min_west,max_west,avgCellsize);
-		fflush(stderr);
+		std::println(stderr, "LIDAR LOADED {} x {}", width, height);
+		std::println(stderr, "fc {} WIDTH {} HEIGHT {} ippd {} minN {:.5f} maxN {:.5f} minW {:.5f} maxW {:.5f} avgCellsize {:.5f}", fc, width, height, ippd,min_north,max_north,min_west,max_west,avgCellsize);
 	}
 
 	if ( tiles != nullptr )
@@ -556,11 +545,10 @@ int LoadSDF_SDF(char *name)
 			}
 		}
 
-		if (debug == 1) {
-			fprintf(stderr,
-				"Loading \"%s\" into page %d...\n",
+		if (debug) {
+			std::println(stderr,
+				"Loading \"{}\" into page {}...",
 				path_plus_name, indx + 1);
-			fflush(stderr);
 		}
 
 		if (fgets(line, 19, fd) != nullptr) {
@@ -810,36 +798,39 @@ int LoadSDF_BZ(char *name)
 			if (fd != nullptr && bzerror == BZ_OK)
 			        success = 1;
 		}
-		if (!success)
-		        return -errno;
+		if (!success) {
+			return -errno;
+		}
 
-		if (debug == 1) {
-			fprintf(stderr,
-				"Decompressing \"%s\" into page %d...\n",
+		if (debug) {
+			std::println(stderr,
+				"Decompressing \"{}\" into page {}...",
 				path_plus_name, indx + 1);
-			fflush(stderr);
 		}
 
 		pos = EOF;
 		bzbuf_empty = 1;
 		bzbuf_pointer = bzbytes_read = 0L;
 
-
 		pos = sscanf(BZfgets(bzline, bzfd, 19), "%f", &dem[indx].max_west);
-		if (bzerror != BZ_OK || pos == EOF)
-		        return -errno;
+		if (bzerror != BZ_OK || pos == EOF) {
+			return -errno;
+		}
 
 		pos = sscanf(BZfgets(bzline, bzfd, 19), "%f", &dem[indx].min_north);
-		if (bzerror != BZ_OK || pos == EOF)
-		        return -errno;
+		if (bzerror != BZ_OK || pos == EOF) {
+			return -errno;
+		}
 
 		pos = sscanf(BZfgets(bzline, bzfd, 19), "%f", &dem[indx].min_west);
-		if (bzerror != BZ_OK || pos == EOF)
-		        return -errno;
+		if (bzerror != BZ_OK || pos == EOF) {
+			return -errno;
+		}
 
 		pos = sscanf(BZfgets(bzline, bzfd, 19), "%f", &dem[indx].max_north);
-		if (bzerror != BZ_OK || pos == EOF)
-		        return -errno;
+		if (bzerror != BZ_OK || pos == EOF) {
+			return -errno;
+		}
 
 		/*
 		   Here X lines of DEM will be read until IPPD is reached.
@@ -1003,8 +994,7 @@ char *GZfgets(char *output, gzFile gzfd, unsigned length)
 
 	}
 	if (debug && (errmsg != nullptr) && (gzerr != Z_OK && gzerr != Z_STREAM_END)) {
-	        fprintf(stderr, "GZfgets: gzerr = %d, errmsg = [%s]\n", gzerr, errmsg);
-		fflush(stderr);
+		std::println(stderr, "GZfgets: gzerr = {}, errmsg = [{}]", gzerr, errmsg);
 	}
 	return (output);
 }
@@ -1096,11 +1086,8 @@ int LoadSDF_GZ(char *name)
 		if (gzbuffer(gzfd, GZBUFFER))  // Allocate 32K buffer
 		        return -EIO;
 
-		if (debug == 1) {
-			fprintf(stderr,
-				"Decompressing \"%s\" into page %d...\n",
-				path_plus_name, indx + 1);
-			fflush(stderr);
+		if (debug) {
+			std::println(stderr, "Decompressing \"{}\" into page {}...", path_plus_name, indx + 1);
 		}
 
 		pos = EOF;
@@ -1109,27 +1096,30 @@ int LoadSDF_GZ(char *name)
 
 		pos = sscanf(GZfgets(gzline, gzfd, 19), "%f", &dem[indx].max_west);
 		errmsg = gzerror(gzfd, &gzerr);
-		if (gzerr != Z_OK || pos == EOF)
-		        return -errno;
+		if (gzerr != Z_OK || pos == EOF) {
+			return -errno;
+		}
 
 		pos = sscanf(GZfgets(gzline, gzfd, 19), "%f", &dem[indx].min_north);
 		errmsg = gzerror(gzfd, &gzerr);
-		if (gzerr != Z_OK || pos == EOF)
-		        return -errno;
+		if (gzerr != Z_OK || pos == EOF) {
+			return -errno;
+		}
 
 		pos = sscanf(GZfgets(gzline, gzfd, 19), "%f", &dem[indx].min_west);
 		errmsg = gzerror(gzfd, &gzerr);
-		if (gzerr != Z_OK || pos == EOF)
-		        return -errno;
+		if (gzerr != Z_OK || pos == EOF) {
+			return -errno;
+		}
 
 		pos = sscanf(GZfgets(gzline, gzfd, 19), "%f", &dem[indx].max_north);
 		errmsg = gzerror(gzfd, &gzerr);
-		if (gzerr != Z_OK || pos == EOF)
-		        return -errno;
+		if (gzerr != Z_OK || pos == EOF) {
+			return -errno;
+		}
 
 		if (debug && (errmsg != nullptr) && (gzerr != Z_OK && gzerr != Z_STREAM_END)) {
-		        fprintf(stderr, "LoadSDF_GZ: gzerr = %d, errmsg = [%s]\n", gzerr, errmsg);
-			fflush(stderr);
+			std::println(stderr, "LoadSDF_GZ: gzerr = {}, errmsg = [{}]", gzerr, errmsg);
 		}
 
 		/*
@@ -1397,7 +1387,8 @@ int LoadPAT(char *az_filename, char *el_filename)
 	   loaded ss .lrp files or may be user-supplied by cmdline.  */
 
 	int a, b, w, x, y, z, last_index, next_index, span;
-	char string[255], *pointer = nullptr;
+	char str[255];
+	char *pointer = nullptr;
 	float az, xx, elevation, amplitude, rotation, valid1, valid2,
 	    delta, azimuth[361], azimuth_pattern[361], el_pattern[10001],
 	    elevation_pattern[361][1001], slant_angle[361], tilt,
@@ -1417,10 +1408,8 @@ int LoadPAT(char *az_filename, char *el_filename)
 		return errno;
 
 	if( fd != nullptr ){
-	        if (debug) {
-
-		        fprintf(stderr, "\nAntenna Pattern Azimuth File = [%s]\n", az_filename);
-			fflush(stderr);
+		if (debug) {
+			std::println(stderr, "\nAntenna Pattern Azimuth File = [{}]", az_filename);
 		}
 
 		/* Clear azimuth pattern array */
@@ -1433,11 +1422,11 @@ int LoadPAT(char *az_filename, char *el_filename)
 		   in degrees measured clockwise
 		   from true North. */
 
-		if (fgets(string, 254, fd) == nullptr) {
+		if (fgets(str, 254, fd) == nullptr) {
 			//fprintf(stderr,"Azimuth read error\n");
 			//exit(0);
 		}
-		pointer = strchr(string, ';');
+		pointer = strchr(str, ';');
 
 		if (pointer != nullptr)
 			*pointer = 0;
@@ -1445,26 +1434,25 @@ int LoadPAT(char *az_filename, char *el_filename)
 		if (antenna_rotation != -1)  // If cmdline override
 		  rotation = (float)antenna_rotation;
 		else
-		        sscanf(string, "%f", &rotation);
+		        sscanf(str, "%f", &rotation);
 		
-	        if (debug) {
-		        fprintf(stderr, "Antenna Pattern Rotation = %f\n", rotation);
-			fflush(stderr);
+		if (debug) {
+			std::println(stderr, "Antenna Pattern Rotation = {}", rotation);
 		}
 		/* Read azimuth (degrees) and corresponding
 		   normalized field radiation pattern amplitude
 		   (0.0 to 1.0) until EOF is reached. */
 
-		if (fgets(string, 254, fd) == nullptr) {
+		if (fgets(str, 254, fd) == nullptr) {
 			//fprintf(stderr,"Azimuth read error\n");
 			//exit(0);
 		}
-		pointer = strchr(string, ';');
+		pointer = strchr(str, ';');
 
 		if (pointer != nullptr)
 			*pointer = 0;
 
-		sscanf(string, "%f %f", &az, &amplitude);
+		sscanf(str, "%f %f", &az, &amplitude);
 
 		do {
 			x = (int)rintf(az);
@@ -1474,16 +1462,16 @@ int LoadPAT(char *az_filename, char *el_filename)
 				read_count[x]++;
 			}
 
-			if (fgets(string, 254, fd) == nullptr) {
+			if (fgets(str, 254, fd) == nullptr) {
 				//fprintf(stderr,"Azimuth read error\n");
 				// exit(0);
 			}
-			pointer = strchr(string, ';');
+			pointer = strchr(str, ';');
 
 			if (pointer != nullptr)
 				*pointer = 0;
 
-			sscanf(string, "%f %f", &az, &amplitude);
+			sscanf(str, "%f %f", &az, &amplitude);
 
 		} while (feof(fd) == 0);
 
@@ -1564,9 +1552,8 @@ int LoadPAT(char *az_filename, char *el_filename)
 		return errno;
 
 	if( fd != nullptr ){
-	        if (debug) {
-		        fprintf(stderr, "Antenna Pattern Elevation File = [%s]\n", el_filename);
-			fflush(stderr);
+		if (debug) {
+			std::println(stderr, "Antenna Pattern Elevation File = [{}]", el_filename);
 		}
 
 		/* Clear azimuth pattern array */
@@ -1580,16 +1567,16 @@ int LoadPAT(char *az_filename, char *el_filename)
 		   tilt azimuth in degrees measured
 		   clockwise from true North. */
 
-		if (fgets(string, 254, fd) == nullptr) {
+		if (fgets(str, 254, fd) == nullptr) {
 			//fprintf(stderr,"Tilt read error\n");
 			//exit(0);
 		}
-		pointer = strchr(string, ';');
+		pointer = strchr(str, ';');
 
 		if (pointer != nullptr)
 			*pointer = 0;
 
-		sscanf(string, "%f %f", &mechanical_tilt, &tilt_azimuth);
+		sscanf(str, "%f %f", &mechanical_tilt, &tilt_azimuth);
 
 		if (antenna_downtilt != 99.0) {  // If Cmdline override
 		        if (antenna_dt_direction == -1) // dt_dir not specified
@@ -1600,26 +1587,25 @@ int LoadPAT(char *az_filename, char *el_filename)
 		if (antenna_dt_direction != -1) // If Cmdline override
 		        tilt_azimuth = (float)antenna_dt_direction;
 		
-	        if (debug) {
-		        fprintf(stderr, "Antenna Pattern Mechamical Downtilt = %f\n", mechanical_tilt);
-		        fprintf(stderr, "Antenna Pattern Mechanical Downtilt Direction = %f\n\n", tilt_azimuth);
-			fflush(stderr);
+		if (debug) {
+			std::println(stderr, "Antenna Pattern Mechamical Downtilt = {}", mechanical_tilt);
+			std::println(stderr, "Antenna Pattern Mechanical Downtilt Direction = {}\n", tilt_azimuth);
 		}
 
 		/* Read elevation (degrees) and corresponding
 		   normalized field radiation pattern amplitude
 		   (0.0 to 1.0) until EOF is reached. */
 
-		if (fgets(string, 254, fd) == nullptr) {
+		if (fgets(str, 254, fd) == nullptr) {
 			//fprintf(stderr,"Ant elevation read error\n");
 			//exit(0);
 		}
-		pointer = strchr(string, ';');
+		pointer = strchr(str, ';');
 
 		if (pointer != nullptr)
 			*pointer = 0;
 
-		sscanf(string, "%f %f", &elevation, &amplitude);
+		sscanf(str, "%f %f", &elevation, &amplitude);
 
 		while (feof(fd) == 0) {
 			/* Read in normalized radiated field values
@@ -1633,13 +1619,13 @@ int LoadPAT(char *az_filename, char *el_filename)
 				read_count[x]++;
 			}
 
-			if (fgets(string, 254, fd) != nullptr) {
-				pointer = strchr(string, ';');
+			if (fgets(str, 254, fd) != nullptr) {
+				pointer = strchr(str, ';');
 			}
 			if (pointer != nullptr)
 				*pointer = 0;
 
-			sscanf(string, "%f %f", &elevation, &amplitude);
+			sscanf(str, "%f %f", &elevation, &amplitude);
 		}
 
 		fclose(fd);
@@ -1771,7 +1757,9 @@ int LoadPAT(char *az_filename, char *el_filename)
 int LoadSignalColors(struct site xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255], string[80], *pointer = nullptr, *s;
+	char filename[255];
+	char str[80];
+	char *pointer = nullptr, *s;
 	FILE *fd = nullptr;
 
 	if (color_file != nullptr && color_file[0] != 0)
@@ -1864,34 +1852,32 @@ int LoadSignalColors(struct site xmtr)
 		if( (fd = fopen(filename, "w")) == nullptr )
 			return errno;
 
-		for (x = 0; x < region.levels; x++)
-			fprintf(fd, "%3d: %3d, %3d, %3d\n", region.level[x],
+		for (x = 0; x < region.levels; x++) {
+			std::println(fd, "{:3}: {:3}, {:3}, {:3}", region.level[x],
 				region.color[x][0], region.color[x][1],
 				region.color[x][2]);
+		}
 
 		fclose(fd);
 	}
-
 	else {
 		x = 0;
-		s = fgets(string, 80, fd);
+		s = fgets(str, 80, fd);
 
 		if (s)
 		  ;
 
 		while (x < 128 && feof(fd) == 0) {
-			pointer = strchr(string, ';');
+			pointer = strchr(str, ';');
 
 			if (pointer != nullptr)
 				*pointer = 0;
 
-			ok = sscanf(string, "%d: %d, %d, %d", &val[0], &val[1],
-				    &val[2], &val[3]);
+			const int ok = sscanf(str, "%d: %d, %d, %d", &val[0], &val[1], &val[2], &val[3]);
 
 			if (ok == 4) {
-			        if (debug) {
-				        fprintf(stderr, "\nLoadSignalColors() %d: %d, %d, %d\n", val[0],val[1],val[2],val[3]);
-					fflush(stderr);
+				if (debug) {
+					std::println(stderr, "\nLoadSignalColors() {}: {}, {}, {}", val[0],val[1],val[2],val[3]);
 				}
 
 				for (y = 0; y < 4; y++) {
@@ -1909,7 +1895,7 @@ int LoadSignalColors(struct site xmtr)
 				x++;
 			}
 
-			s = fgets(string, 80, fd);
+			s = fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -1921,7 +1907,9 @@ int LoadSignalColors(struct site xmtr)
 int LoadLossColors(struct site xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255], string[80], *pointer = nullptr, *s;
+	char filename[255];
+	char str[80];
+	char *pointer = nullptr, *s;
 	FILE *fd = nullptr;
 
 	if (color_file != nullptr && color_file[0] != 0)
@@ -2037,41 +2025,37 @@ int LoadLossColors(struct site xmtr)
 		if( (fd = fopen(filename, "w")) == nullptr )
 			return errno;
 
-		for (x = 0; x < region.levels; x++)
-			fprintf(fd, "%3d: %3d, %3d, %3d\n", region.level[x],
+		for (x = 0; x < region.levels; x++) {
+			std::println(fd, "{:3}: {:3}, {:3}, {:3}", region.level[x],
 				region.color[x][0], region.color[x][1],
 				region.color[x][2]);
+		}
 
 		fclose(fd);
 
-                if (debug) {
-                fprintf(stderr, "loadLossColors: fopen fail: %s\n", filename);
-                fflush(stderr);
-                }
-
+		if (debug) {
+			std::println(stderr, "loadLossColors: fopen fail: {}", filename);
+		}
 	}
-
 	else {
 		x = 0;
-		s = fgets(string, 80, fd);
+		s = fgets(str, 80, fd);
 
 		if (s)
 		  ;
 
 		while (x < 128 && feof(fd) == 0) {
-			pointer = strchr(string, ';');
+			pointer = strchr(str, ';');
 
 			if (pointer != nullptr)
 				*pointer = 0;
 
-			ok = sscanf(string, "%d: %d, %d, %d", &val[0], &val[1],
-				    &val[2], &val[3]);
+			ok = sscanf(str, "%d: %d, %d, %d", &val[0], &val[1], &val[2], &val[3]);
 
 			if (ok == 4) {
-                                 if (debug) {
-                                fprintf(stderr, "\nLoadLossColors() %d: %d, %d, %d\n", val[0],val[1],val[2],val[3]);
-                                fflush(stderr);
-                                 }
+				if (debug) {
+					std::println(stderr, "\nLoadLossColors() {}: {}, {}, {}", val[0],val[1],val[2],val[3]);
+				}
 
 				for (y = 0; y < 4; y++) {
 					if (val[y] > 255)
@@ -2088,7 +2072,7 @@ int LoadLossColors(struct site xmtr)
 				x++;
 			}
 
-			s = fgets(string, 80, fd);
+			s = fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -2100,7 +2084,9 @@ int LoadLossColors(struct site xmtr)
 int LoadDBMColors(struct site xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255], string[80], *pointer = nullptr, *s;
+	char filename[255];
+	char str[80];
+	char *pointer = nullptr, *s;
 	FILE *fd = nullptr;
 
 	if (color_file != nullptr && color_file[0] != 0)
@@ -2208,35 +2194,35 @@ int LoadDBMColors(struct site xmtr)
 		if( (fd = fopen(filename, "w")) == nullptr )
 			return errno;
 
-		for (x = 0; x < region.levels; x++)
-			fprintf(fd, "%+4d: %3d, %3d, %3d\n", region.level[x],
+		for (x = 0; x < region.levels; x++) {
+			std::println(fd, "{:+4}: {:3}, {:3}, {:3}", region.level[x],
 				region.color[x][0], region.color[x][1],
 				region.color[x][2]);
+		}
 
 		fclose(fd);
 	}
 
 	else {
 		x = 0;
-		s = fgets(string, 80, fd);
+		s = fgets(str, 80, fd);
 
 		if (s)
 		  ;
 
 		while (x < 128 && feof(fd) == 0) {
-			pointer = strchr(string, ';');
+			pointer = strchr(str, ';');
 
 			if (pointer != nullptr)
 				*pointer = 0;
 
-			ok = sscanf(string, "%d: %d, %d, %d", &val[0], &val[1],
+			ok = sscanf(str, "%d: %d, %d, %d", &val[0], &val[1],
 				    &val[2], &val[3]);
 
 			if (ok == 4) {
-                                 if (debug) {
-                                fprintf(stderr, "\nLoadDBMColors() %d: %d, %d, %d\n", val[0],val[1],val[2],val[3]);
-                                fflush(stderr);
-                                 }
+				if (debug) {
+					std::println(stderr, "\nLoadDBMColors() {}: {}, {}, {}", val[0],val[1],val[2],val[3]);
+				}
 
 				if (val[0] < -200)
 					val[0] = -200;
@@ -2260,7 +2246,7 @@ int LoadDBMColors(struct site xmtr)
 				x++;
 			}
 
-			s = fgets(string, 80, fd);
+			s = fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -2276,7 +2262,8 @@ int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
 
 	int x, y, width, ymin, ymax;
 	int success;
-	char basename[255], string[258];
+	char basename[255];
+	char str[258];
 
 	width = ReduceAngle(max_lon - min_lon);
 
@@ -2300,13 +2287,13 @@ int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
 					ymax -= 360;
 
 				snprintf(basename, 255, "%d:%d:%d:%d", x, x + 1, ymin, ymax);
-				strcpy(string, basename);
+				strcpy(str, basename);
 
 
 				if (ippd == 3600)
-				        strcat(string, "-hd");
+				        strcat(str, "-hd");
 
-				if( (success = LoadSDF(string)) < 0 )
+				if( (success = LoadSDF(str)) < 0 )
 					return -success;
 			}
 	} else {
@@ -2328,13 +2315,13 @@ int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
 				while (ymax >= 360)
 					ymax -= 360;
 
-				snprintf(string, 255, "%d:%d:%d:%d", x, x + 1, ymin, ymax);
-				strcpy(string, basename);
+				snprintf(str, 255, "%d:%d:%d:%d", x, x + 1, ymin, ymax);
+				strcpy(str, basename);
 
 				if (ippd == 3600)
-				        strcat(string, "-hd");
+				        strcat(str, "-hd");
 
-				if( (success = LoadSDF(string)) < 0 )
+				if( (success = LoadSDF(str)) < 0 )
 					return -success;
 			}
 	}
@@ -2433,10 +2420,11 @@ int LoadUDT(char *filename)
 			height = rint(METERS_PER_FOOT * atof(str[2]));
 		}
 
-		if (height > 0.0)
-			fprintf(fd2, "%d, %d, %f\n",
-				(int)rint(latitude / dpp),
-				(int)rint(longitude / dpp), height);
+		if (height > 0.0) {
+			std::println(fd2, "{}, {}, {:f}",
+				static_cast<int>(std::rint(latitude / dpp)),
+				static_cast<int>(std::rint(longitude / dpp)), height);
+		}
 
 		s = fgets(input, 78, fd1);
 
@@ -2491,9 +2479,8 @@ int LoadUDT(char *filename)
 
 		if (z == 0) {
 			// No duplicate found
-		        if (debug) {
-			        fprintf(stderr,"Adding UDT Point: %lf, %lf, %lf\n", old_latitude, old_longitude,height);
-				fflush(stderr);
+			if (debug) {
+				std::println(stderr,"Adding UDT Point: {:f}, {:f}, {:f}", old_latitude, old_longitude,height);
 			}
 			AddElevation((double)xpix * dpp, (double)ypix * dpp, height, 1);
 		}
