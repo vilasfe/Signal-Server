@@ -1,12 +1,42 @@
 #ifndef _MAIN_HH_
 #define _MAIN_HH_
 
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 #include "common.h"
 
-int ReduceAngle(double angle);
-double LonDiff(double lon1, double lon2);
+constexpr auto ReduceAngle(double angle) -> int
+{
+    /* This function normalizes the argument to
+     *   an integer angle between 0 and 180 degrees */
+
+    const double temp = std::acos(std::cos(angle * DEG2RAD));
+
+    return static_cast<int>(std::rint(temp / DEG2RAD));
+}
+
+constexpr auto LonDiff(double lon1, double lon2) -> double
+{
+    /* This function returns the short path longitudinal
+     *   difference between longitude1 and longitude2
+     *   as an angle between -180.0 and +180.0 degrees.
+     *   If lon1 is west of lon2, the result is positive.
+     *   If lon1 is east of lon2, the result is negative. */
+
+    double diff = lon1 - lon2;
+
+    if (diff <= -180.0) {
+        diff += 360.0;
+    }
+
+    if (diff >= 180.0) {
+        diff -= 360.0;
+    }
+
+    return diff;
+}
+
 void *dec2dms(double decimal, char *string);
 int PutMask(double lat, double lon, int value);
 int OrMask(double lat, double lon, int value);

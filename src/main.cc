@@ -33,6 +33,7 @@ double version = 3.21;
 
 #include "common.h"
 #include "inputs.hh"
+#include "main.hh"
 #include "outputs.hh"
 #include "models/itwom3.0.hh"
 #include "models/los.hh"
@@ -85,39 +86,6 @@ double arccos(double x, double y)
 		result = PI + acos(x / y);
 
 	return result;
-}
-
-int ReduceAngle(double angle)
-{
-	/* This function normalizes the argument to
-	   an integer angle between 0 and 180 degrees */
-
-	double temp;
-
-	temp = acos(cos(angle * DEG2RAD));
-
-	return (int)rint(temp / DEG2RAD);
-}
-
-double LonDiff(double lon1, double lon2)
-{
-	/* This function returns the short path longitudinal
-	   difference between longitude1 and longitude2
-	   as an angle between -180.0 and +180.0 degrees.
-	   If lon1 is west of lon2, the result is positive.
-	   If lon1 is east of lon2, the result is negative. */
-
-	double diff;
-
-	diff = lon1 - lon2;
-
-	if (diff <= -180.0)
-		diff += 360.0;
-
-	if (diff >= 180.0)
-		diff -= 360.0;
-
-	return diff;
 }
 
 void *dec2dms(double decimal, char *string)
