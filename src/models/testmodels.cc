@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <print>
 #include <sys/stat.h>
 /*
 *  Propagation model test script for signal server
@@ -20,14 +21,14 @@
 *                                                                            *
 \****************************************************************************/
 
+#include "cost.hh"
+#include "ecc33.hh"
+#include "egli.hh"
+#include "ericsson.hh"
+#include "fspl.hh"
+#include "hata.hh"
+#include "sui.hh"
 
-extern double EgliPathLoss(float f, float TxH, float RxH, float d);
-extern double SUIpathLoss(double f, double TxH, double RxH, double d, int mode);
-extern double COST231pathLoss(float f, float TxH, float RxH, float d, int mode);
-extern double ECC33pathLoss(float f, float TxH, float RxH, float d, int mode);
-extern double EricssonpathLoss(float f, float TxH, float RxH, float d, int mode);
-extern double FSPLpathLoss(float f, float d);
-extern double HATApathLoss(float f, float TxH, float RxH, float d, int mode);
 extern void point_to_point_ITM(double tht_m, double rht_m, double eps_dielect,
                         double sgm_conductivity, double eno_ns_surfref,
                         double frq_mhz, int radio_climate, int pol,

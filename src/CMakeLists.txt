@@ -29,7 +29,6 @@ set(LIBSOURCES
     models/ecc33.cc
     models/egli.cc
     models/ericsson.cc
-    models/fspl.cc
     models/hata.cc
     models/itwom3.0.cc
     models/los.cc
