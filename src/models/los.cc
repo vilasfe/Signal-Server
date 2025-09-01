@@ -60,25 +60,29 @@ namespace {
 		int y = 0;
 
 		do {
-			if (lon >= 360.0)
+			if (lon >= 360.0) {
 				lon -= 360.0;
+			}
 
 			site_t edge;
 			edge.lat = lat;
 			edge.lon = lon;
 			edge.alt = v->altitude;
 
-			if(v->los)
+			if(v->los) {
 				PlotLOSPath(v->source, edge, v->mask_value, v->fd);
-			else
-				PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel,
-					v->knifeedge, v->pmenv);
+			}
+			else {
+				PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
+			}
 
 			++y;
-			if(v->eastwest)
-			lon = minwest + (dpp * (double)y);
-			else
-			lat = (double)v->min_north + (dpp * (double)y);
+			if(v->eastwest) {
+				lon = minwest + (dpp * y);
+			}
+			else {
+				lat = v->min_north + (dpp * y);
+			}
 
 
 			} while ( v->eastwest 
@@ -289,12 +293,14 @@ void PlotLOSPath(const struct site_t& source, const struct site_t& destination, 
 				   statement is reversed from what it would
 				   be if the actual angles were compared. */
 
-				if (cos_xmtr_angle >= cos_test_angle)
+				if (cos_xmtr_angle >= cos_test_angle) {
 					block = 1;
+				}
 			}
 
-			if (block == 0)
+			if (block == 0) {
 				OrMask(path.lat[y], path.lon[y], mask_value);
+			}
 		}
 	}
 }
@@ -310,22 +316,23 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 	double loss, azimuth, pattern = 0.0,
 	    xmtr_alt, dest_alt, xmtr_alt2, dest_alt2,
 	    cos_rcvr_angle, cos_test_angle = 0.0, test_alt,
-	    elevation = 0.0, distance = 0.0, four_thirds_earth,
+	    elevation = 0.0, distance = 0.0,
 	    field_strength = 0.0, rxp, dBm, diffloss;
 	struct site_t temp;
 	float dkm;
 
 	ReadPath(source, destination);
 
-	four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
+	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
 
-	for (x = 1; x < path.length - 1; x++)
+	for (x = 1; x < path.length - 1; x++) {
 		elev[x + 2] =
 		    (path.elevation[x] ==
 		     0.0 ? path.elevation[x] * METERS_PER_FOOT : (clutter +
 								  path.
 								  elevation[x])
 		     * METERS_PER_FOOT);
+	}
 
 
 	/* Copy ending points without clutter */
@@ -419,18 +426,17 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 					   what it would be if the angles themselves
 					   were compared. */
 
-					if (cos_rcvr_angle >= cos_test_angle)
+					if (cos_rcvr_angle >= cos_test_angle) {
 						block = 1;
+					}
 				}
 
-				if (block)
-					elevation =
-					    ((acos(cos_test_angle)) / DEG2RAD) -
-					    90.0;
-				else
-					elevation =
-					    ((acos(cos_rcvr_angle)) / DEG2RAD) -
-					    90.0;
+				if (block != 0) {
+					elevation =  ((std::acos(cos_test_angle)) / DEG2RAD) - 90.0;
+				}
+				else {
+					elevation = ((std::acos(cos_rcvr_angle)) / DEG2RAD) - 90.0;
+				}
 			}
 
 			/* Determine attenuation for each point along the
@@ -534,10 +540,10 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 				// Egli VHF/UHF
 				loss = EgliPathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT, (path.elevation[y] * METERS_PER_FOOT) + (destination.alt * METERS_PER_FOOT),dkm);
 				break;
-                        case 12:
-                                // Soil
-                                loss = SoilPathLoss(LR.frq_mhz, dkm, LR.eps_dielect);
-                                break;
+			case 12:
+				// Soil
+				loss = SoilPathLoss(LR.frq_mhz, dkm, LR.eps_dielect);
+				break;
 
 
 			default:
@@ -555,9 +561,7 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 
 
 			if (knifeedge == 1 && propmodel > 1) {
-				diffloss =
-				    ked(LR.frq_mhz,
-					destination.alt * METERS_PER_FOOT, dkm);
+				diffloss = ked(LR.frq_mhz, destination.alt * METERS_PER_FOOT, dkm);
 				loss += (diffloss);	// ;)
 			}
 			//Key stage. Link dB for p2p is returned as 'loss'.
@@ -567,9 +571,10 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 
 			azimuth = (Azimuth(source, temp));
 
-			if (fd != nullptr)
+			if (fd != nullptr) {
 				fd_buffer += std::format("{:.7f}, {:.7f}, {:.3f}, {:.3f}, ",
 					path.lat[y], path.lon[y], azimuth, elevation);
+			}
 
 			/* If ERP==0, write path loss to alphanumeric
 			   output file.  Otherwise, write field strength
@@ -662,15 +667,18 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 			}
 
 			else {
-				if (loss > 255)
+				if (loss > 255) {
 					ifs = 255;
-				else
+				}
+				else {
 					ifs = (int)rint(loss);
+				}
 				
 				ofs = GetSignal(path.lat[y], path.lon[y]);
 
-				if (ofs < ifs && ofs != 0)
+				if (ofs < ifs && ofs != 0) {
 					ifs = ofs;
+				}
 
 				PutSignal(path.lat[y], path.lon[y],
 					  (unsigned char)ifs);
@@ -716,12 +724,13 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 	static __thread unsigned char mask_value = 1;
 	FILE *fd = nullptr;
 
-	if (plo_filename[0] != 0)
+	if (!plo_filename.empty()) {
 		fd = fopen(plo_filename.data(), "wb");
+	}
 
 	if (fd != nullptr) {
-		fprintf(fd,
-			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
+		std::println(fd,
+			"{:.3f}, {:.3f}\t; max_west, min_west\n{:.3f}, {:.3f}\t; max_north, min_north",
 			max_west, min_west, max_north, min_north);
 	}
 
@@ -751,15 +760,17 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 		range->mask_value = mask_value;
 		range->fd = fd;
 
-		if(use_threads)
+		if(use_threads) {
 			beginThread(range);
-		else
+		}
+		else {
 			rangePropagation(range);
-
+		}
 	}
 
-	if(use_threads)
+	if(use_threads) {
 		finishThreads();
+	}
 
 	for(int i = 0; i < NUM_SECTIONS; ++i){
 		delete r[i];
@@ -787,14 +798,17 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 	static __thread unsigned char mask_value = 1;
 	FILE *fd = nullptr;
 	
-	if (LR.erp == 0.0 && debug)
-		fprintf(stderr, "path loss");
+	if (LR.erp == 0.0 && debug) {
+		std::print(stderr, "path loss");
+	}
 	else {
 		if (debug) {
-			if (dbm)
-				fprintf(stderr, "signal power level");
-			else
-				fprintf(stderr, "field strength");
+			if (dbm) {
+				std::print(stderr, "signal power level");
+			}
+			else {
+				std::print(stderr, "field strength");
+			}
 		}
 	}
 	if (debug) {
@@ -813,8 +827,9 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 			metric ? "meters" : "feet");
 	}
 
-	if (plo_filename[0] != 0)
+	if (plo_filename[0] != 0) {
 		fd = fopen(plo_filename.data(), "wb");
+	}
 
 	if (fd != nullptr) {
 		std::println(fd,
@@ -838,10 +853,12 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 		range->los = false;
 
 		// Only process correct half
-		if((NUM_SECTIONS - i) <= (NUM_SECTIONS / 2) && haf == 1)
+		if((NUM_SECTIONS - i) <= (NUM_SECTIONS / 2) && haf == 1) {
 			continue;
-		if((NUM_SECTIONS - i) > (NUM_SECTIONS / 2) && haf == 2)
+		}
+		if((NUM_SECTIONS - i) > (NUM_SECTIONS / 2) && haf == 2) {
 			continue;
+		}
 
 
 		range->eastwest = (range_min_west[i] == range_max_west[i] ? false : true);
@@ -859,25 +876,30 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 		range->knifeedge = knifeedge;
 		range->pmenv = pmenv;
 
-		if(use_threads)
+		if(use_threads) {
 			beginThread(range);
-		else
+		}
+		else {
 			rangePropagation(range);
+		}
 
 	}
 
-	if(use_threads)
+	if(use_threads) {
 		finishThreads();
+	}
 
 	for(int i = 0; i < NUM_SECTIONS; ++i){
 		delete r[i];
 	}
 
-       if (fd != nullptr)
+	if (fd != nullptr) {
 		fclose(fd);
+	}
 
-	if (mask_value < 30)
+	if (mask_value < 30) {
 		mask_value++;
+	}
 }
 
 void PlotPath(const struct site_t& source, const struct site_t& destination, char mask_value)
@@ -937,12 +959,14 @@ void PlotPath(const struct site_t& source, const struct site_t& destination, cha
 				   statement is reversed from what it would
 				   be if the actual angles were compared. */
 
-				if (cos_xmtr_angle >= cos_test_angle)
+				if (cos_xmtr_angle >= cos_test_angle) {
 					block = 1;
+				}
 			}
 
-			if (block == 0)
+			if (block == 0) {
 				OrMask(path.lat[y], path.lon[y], mask_value);
+			}
 		}
 	}
 }
