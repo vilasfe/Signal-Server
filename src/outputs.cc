@@ -20,7 +20,7 @@
 #include "image.hh"
 
 void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
-		unsigned char ngs, struct site *xmtr, unsigned char txsites)
+		unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the content of flags held in the mask[][]
@@ -262,7 +262,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 }
 
 int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
-	      unsigned char ngs, struct site *xmtr, unsigned char txsites)
+	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal strength values held in the
@@ -511,7 +511,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 }
 
 void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
-	      unsigned char ngs, struct site *xmtr, unsigned char txsites)
+	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -754,7 +754,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 }
 
 void DoLOS(char *filename, unsigned char geo, unsigned char kml,
-	   unsigned char ngs, struct site *xmtr, unsigned char txsites)
+	   unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -996,7 +996,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 
 }
 
-void PathReport(struct site source, struct site destination, char *name,
+void PathReport(struct site_t source, struct site_t destination, char *name,
 		char graph_it, int propmodel, int pmenv, double rxGain)
 {
 	/* This function writes a PPA Path Report (name.txt) to
@@ -1009,8 +1009,9 @@ void PathReport(struct site source, struct site destination, char *name,
 	   found, .png is assumed. */
 
 	int x, y, z, errnum;
-	char basename[255], term[30], ext[15], strmode[100],
-	    report_name[80], block = 0;
+	char basename[255], term[30], ext[15];
+	std::string strmode;
+	char report_name[80], block = 0;
 	double maxloss = -100000.0, minloss = 100000.0, angle1, angle2,
 	    azimuth, pattern = 1.0, patterndB = 0.0,
 	    total_loss = 0.0, cos_xmtr_angle, cos_test_angle = 0.0,
@@ -1726,7 +1727,7 @@ void PathReport(struct site source, struct site destination, char *name,
 
 }
 
-void SeriesData(struct site source, struct site destination, char *name,
+void SeriesData(struct site_t source, struct site_t destination, char *name,
 		unsigned char fresnel_plot, unsigned char normalised)
 {
 	int x, y, z;
@@ -1738,7 +1739,7 @@ void SeriesData(struct site source, struct site destination, char *name,
 	    0.0, fpt6_zone = 0.0, nm = 0.0, nb = 0.0, ed = 0.0, es = 0.0, r =
 	    0.0, d = 0.0, d1 = 0.0, terrain, azimuth, distance, minterrain =
 	    100000.0, minearth = 100000.0;
-	struct site remote;
+	struct site_t remote;
 	FILE *fd = nullptr, *fd1 = nullptr, *fd2 = nullptr, *fd3 = nullptr, *fd4 =
 	    nullptr, *fd5 = nullptr;
 

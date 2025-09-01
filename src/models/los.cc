@@ -1,25 +1,38 @@
-#include <stdio.h>
-#include <math.h>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <memory>
+#include <mutex>
+#include <numbers>
+#include <print>
+#include <string>
+#include <thread>
+
 #include "../main.hh"
+
 #include "los.hh"
+
 #include "cost.hh"
 #include "ecc33.hh"
+#include "egli.hh"
 #include "ericsson.hh"
 #include "fspl.hh"
 #include "hata.hh"
 #include "itwom3.0.hh"
-#include "sui.hh"
 #include "pel.hh"
-#include "egli.hh"
 #include "soil.hh"
-#include <pthread.h>
+#include "sui.hh"
 
-#define NUM_SECTIONS 4
+#include "../common.h"
+
+enum : std::uint8_t { NUM_SECTIONS = 4 };
 
 namespace {
-	pthread_t threads[NUM_SECTIONS];
+	std::array<std::thread, NUM_SECTIONS> threads;
 	unsigned int thread_count = 0;
-	pthread_mutex_t maskMutex;
+	std::mutex maskMutex;
 	bool ***processed;
 	bool has_init_processed = false;
 
@@ -27,7 +40,7 @@ namespace {
 		double min_west, max_west, min_north, max_north;
 		double altitude;
 		bool eastwest, los, use_threads;
-		site source;
+		site_t source;
 		unsigned char mask_value;
 		FILE *fd;
 		int propmodel, knifeedge, pmenv;
@@ -50,7 +63,7 @@ namespace {
 			if (lon >= 360.0)
 				lon -= 360.0;
 
-			site edge;
+			site_t edge;
 			edge.lat = lat;
 			edge.lon = lon;
 			edge.alt = v->altitude;
@@ -81,28 +94,26 @@ namespace {
 
 	void init_processed()
 	{
-		int i;
-		int x;
-		int y;
+		const std::scoped_lock l (maskMutex);
+		if (!has_init_processed) {
+			has_init_processed = true;
 
-		processed = new bool **[MAXPAGES];
-		for (i = 0; i < MAXPAGES; i++) {
-			processed[i] = new bool *[ippd];
-			for (x = 0; x < ippd; x++)
-				processed[i][x] = new bool [ippd];
-		}
-
-		for (i = 0; i < MAXPAGES; i++) {
-			for (x = 0; x < ippd; x++) {
-				for (y = 0; y < ippd; y++)
-					processed[i][x][y] = false;
+			processed = new bool **[MAXPAGES];
+			for (int i = 0; i < MAXPAGES; i++) {
+				processed[i] = new bool *[ippd];
+				for (int x = 0; x < ippd; x++) {
+					processed[i][x] = new bool [ippd];
+					for (int y = 0; y < ippd; y++) {
+						processed[i][x][y] = false;
+					}
+				}
 			}
 		}
 
 		has_init_processed = true;
 	}
 
-	bool can_process(double lat, double lon)
+	auto can_process(double lat, double lon) -> bool
 	{
 		/* Lines, text, markings, and coverage areas are stored in a
 		mask that is combined with topology data when topographic
@@ -131,14 +142,13 @@ namespace {
 			value. */
 
 			if(!processed[indx][x][y]) {
-				pthread_mutex_lock(&maskMutex);
+				const std::scoped_lock l (maskMutex);
 
 				if(!processed[indx][x][y]) {
 					rtn = true;
 					processed[indx][x][y] = true;
 				}
 
-				pthread_mutex_unlock (&maskMutex);
 			}
 
 		}
@@ -150,20 +160,14 @@ namespace {
 		if(!has_init_processed)
 			init_processed();
 
-		int rc = pthread_create(&threads[thread_count], nullptr, rangePropagation, arg);
-		if (rc)
-			fprintf(stderr,"ERROR; return code from pthread_create() is %d\n", rc);
-		else
-			++thread_count;
+		threads[thread_count] = std::thread(rangePropagation, arg);
+		++thread_count;
 	}
 
 	void finishThreads()
 	{
-		void* status;
-		for(unsigned int i=0; i<thread_count; i++) {
-			int rc = pthread_join(threads[i], &status);
-			if (rc)
-				fprintf(stderr,"ERROR; return code from pthread_join() is %d\n", rc);
+		for(auto& t: threads) {
+			t.join();
 		}
 		thread_count = 0;
 	}
@@ -225,8 +229,7 @@ static double ked(double freq, double rxh, double dkm)
 	}
 }
 
-void PlotLOSPath(struct site source, struct site destination, char mask_value,
-		 FILE *fd)
+void PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, [[maybe_unused]] FILE *fd)
 {
 	/* This function analyzes the path between the source and
 	   destination locations.  It determines which points along
@@ -296,19 +299,20 @@ void PlotLOSPath(struct site source, struct site destination, char mask_value,
 	}
 }
 
-void PlotPropPath(struct site source, struct site destination,
+void PlotPropPath(struct site_t source, struct site_t destination,
 		  unsigned char mask_value, FILE * fd, int propmodel,
 		  int knifeedge, int pmenv)
 {
 
 	int x, y, ifs, ofs, errnum;
-	char block = 0, strmode[100];
+	char block = 0;
+	std::string strmode;
 	double loss, azimuth, pattern = 0.0,
 	    xmtr_alt, dest_alt, xmtr_alt2, dest_alt2,
 	    cos_rcvr_angle, cos_test_angle = 0.0, test_alt,
 	    elevation = 0.0, distance = 0.0, four_thirds_earth,
 	    field_strength = 0.0, rxp, dBm, diffloss;
-	struct site temp;
+	struct site_t temp;
 	float dkm;
 
 	ReadPath(source, destination);
@@ -350,8 +354,7 @@ void PlotPropPath(struct site source, struct site destination,
 		if ( (GetMask(path.lat[y], path.lon[y]) & 248) !=
 			(mask_value << 3) && can_process(path.lat[y], path.lon[y])) {
 
-			char fd_buffer[64];
-			int buffer_offset = 0;
+			std::string fd_buffer;
 
 			distance = FEET_PER_MILE * path.distance[y];
 			xmtr_alt =
@@ -565,18 +568,16 @@ void PlotPropPath(struct site source, struct site destination,
 			azimuth = (Azimuth(source, temp));
 
 			if (fd != nullptr)
-				buffer_offset += sprintf(fd_buffer+buffer_offset,
-					"%.7f, %.7f, %.3f, %.3f, ",
-					path.lat[y], path.lon[y], azimuth,
-					elevation);
+				fd_buffer += std::format("{:.7f}, {:.7f}, {:.3f}, {:.3f}, ",
+					path.lat[y], path.lon[y], azimuth, elevation);
 
 			/* If ERP==0, write path loss to alphanumeric
 			   output file.  Otherwise, write field strength
 			   or received power level (below), as appropriate. */
 
-			if (fd != nullptr && LR.erp == 0.0)
-				buffer_offset += sprintf(fd_buffer+buffer_offset,
-					"%.2f", loss);
+			if (fd != nullptr && LR.erp == 0.0) {
+				fd_buffer += std::format("{:.2f}", loss);
+			}
 
 			/* Integrate the antenna's radiation
 			   pattern into the overall path loss. */
@@ -605,9 +606,9 @@ void PlotPropPath(struct site source, struct site destination,
 
 					dBm = 10.0 * (log10(rxp * 1000.0));
 
-					if (fd != nullptr)
-						buffer_offset += sprintf(fd_buffer+buffer_offset,
-							"%.3f", dBm);
+					if (fd != nullptr) {
+						fd_buffer += std::format("{:.3f}", dBm);
+					}
 
 					/* Scale roughly between 0 and 255 */
 
@@ -654,10 +655,9 @@ void PlotPropPath(struct site source, struct site destination,
 					PutSignal(path.lat[y], path.lon[y],
 						  (unsigned char)ifs);
 
-					if (fd != nullptr)
-						buffer_offset += sprintf(fd_buffer+buffer_offset,
-							"%.3f",
-							field_strength);
+					if (fd != nullptr) {
+						fd_buffer += std::format("{:.3f}", field_strength);
+					}
 				}
 			}
 
@@ -677,10 +677,10 @@ void PlotPropPath(struct site source, struct site destination,
 			}
 
 			if (fd != nullptr) {
-				if (block)
-					buffer_offset += sprintf(fd_buffer+buffer_offset,
-						" *");
-				fprintf(fd, "%s\n", fd_buffer);
+				if (block != 0U) {
+					fd_buffer += " *";
+				}
+				std::println(fd, "{}", fd_buffer);
 			}
 
 			/* Mark this point as having been analyzed */
@@ -702,8 +702,7 @@ void PlotPropPath(struct site source, struct site destination,
 	//	cropLon-=360;
 }
 
-void PlotLOSMap(struct site source, double altitude, char *plo_filename,
-		bool use_threads)
+void PlotLOSMap(const struct site_t& source, double altitude, const std::string& plo_filename, bool use_threads)
 {
 	/* This function performs a 360 degree sweep around the
 	   transmitter site (source location), and plots the
@@ -718,7 +717,7 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 	FILE *fd = nullptr;
 
 	if (plo_filename[0] != 0)
-		fd = fopen(plo_filename, "wb");
+		fd = fopen(plo_filename.data(), "wb");
 
 	if (fd != nullptr) {
 		fprintf(fd,
@@ -781,7 +780,7 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 }
 
 
-void PlotPropagation(struct site source, double altitude, char *plo_filename,
+void PlotPropagation(struct site_t source, double altitude, const std::string& plo_filename,
 		     int propmodel, int knifeedge, int haf, int pmenv, bool
 		     use_threads)
 {
@@ -799,8 +798,8 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 		}
 	}
 	if (debug) {
-		fprintf(stderr,
-			" contours of \"%s\" out to a radius of %.2f %s with Rx antenna(s) at %.2f %s AGL\n",
+		std::println(stderr,
+			" contours of \"{}\" out to a radius of {:.2f} {} with Rx antenna(s) at {:.2f} {} AGL",
 			source.name,
 			metric ? max_range * KM_PER_MILE : max_range,
 			metric ? "kilometers" : "miles",
@@ -808,17 +807,18 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 			metric ? "meters" : "feet");
 	}
 
-	if (clutter > 0.0 && debug)
-		fprintf(stderr, "\nand %.2f %s of ground clutter",
+	if (clutter > 0.0 && debug) {
+		std::print(stderr, "\nand {:.2f} {} of ground clutter",
 			metric ? clutter * METERS_PER_FOOT : clutter,
 			metric ? "meters" : "feet");
+	}
 
 	if (plo_filename[0] != 0)
-		fd = fopen(plo_filename, "wb");
+		fd = fopen(plo_filename.data(), "wb");
 
 	if (fd != nullptr) {
-		fprintf(fd,
-			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
+		std::println(fd,
+			"{:.3f}, {:.3f}\t; max_west, min_west\n{:.3f}, {:.3f}\t; max_north, min_north",
 			max_west, min_west, max_north, min_north);
 	}
 
@@ -880,7 +880,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 		mask_value++;
 }
 
-void PlotPath(struct site source, struct site destination, char mask_value)
+void PlotPath(const struct site_t& source, const struct site_t& destination, char mask_value)
 {
 	/* This function analyzes the path between the source and
 	   destination locations.  It determines which points along

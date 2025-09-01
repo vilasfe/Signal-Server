@@ -67,7 +67,7 @@ bool to_stdout = false, cropping = true;
 
 __thread double *elev;
 __thread struct path path;
-struct site tx_site[2];
+struct site_t tx_site[2];
 struct dem *dem;
 
 struct LR LR;
@@ -256,7 +256,7 @@ unsigned char GetSignal(double lat, double lon)
 		return 0;
 }
 
-double GetElevation(struct site location)
+double GetElevation(struct site_t location)
 {
 	/* This function returns the elevation (in feet) of any location
 	   represented by the digital elevation model data in memory.
@@ -341,7 +341,7 @@ double dist(double lat1, double lon1, double lat2, double lon2)
 	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * earthRadius;
 }
 
-double Distance(struct site site1, struct site site2)
+double Distance(struct site_t site1, struct site_t site2)
 {
 	/* This function returns the great circle distance
 	   in miles between any two site locations. */
@@ -360,7 +360,7 @@ double Distance(struct site site1, struct site site2)
 	return distance;
 }
 
-double Azimuth(struct site source, struct site destination)
+double Azimuth(struct site_t source, struct site_t destination)
 {
 	/* This function returns the azimuth (in degrees) to the
 	   destination as seen from the location of the source. */
@@ -414,7 +414,7 @@ double Azimuth(struct site source, struct site destination)
 	return (azimuth / DEG2RAD);
 }
 
-double ElevationAngle(struct site source, struct site destination)
+double ElevationAngle(struct site_t source, struct site_t destination)
 {
 	/* This function returns the angle of elevation (in degrees)
 	   of the destination as seen from the source location.
@@ -437,7 +437,7 @@ double ElevationAngle(struct site source, struct site destination)
 		 PI) - 90.0);
 }
 
-void ReadPath(struct site source, struct site destination)
+void ReadPath(struct site_t source, struct site_t destination)
 {
 	/* This function generates a sequence of latitude and
 	   longitude positions between source and destination
@@ -449,7 +449,7 @@ void ReadPath(struct site source, struct site destination)
 	double azimuth, distance, lat1, lon1, beta, den, num,
 	    lat2, lon2, total_distance, dx, dy, path_length,
 	    miles_per_sample, samples_per_radian = 68755.0;
-	struct site tempsite;
+	struct site_t tempsite;
 
 	lat1 = source.lat * DEG2RAD;
 	lon1 = source.lon * DEG2RAD;
@@ -546,7 +546,7 @@ void ReadPath(struct site source, struct site destination)
 		path.length = ARRAYSIZE - 1;
 }
 
-double ElevationAngle2(struct site source, struct site destination, double er)
+double ElevationAngle2(struct site_t source, struct site_t destination, double er)
 {
 	/* This function returns the angle of elevation (in degrees)
 	   of the destination as seen from the source location, UNLESS
@@ -684,14 +684,14 @@ double ReadBearing(char *input)
 	return bearing;
 }
 
-void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f,
+void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f,
 			 FILE *outfile)
 {
 	/* Perform an obstruction analysis along the
 	   path between receiver and transmitter. */
 
 	int x;
-	struct site site_x;
+	struct site_t site_x;
 	double h_r, h_t, h_x, h_r_orig, cos_tx_angle, cos_test_angle,
 	    cos_tx_angle_f1, cos_tx_angle_fpt6, d_tx, d_x,
 	    h_r_f1, h_r_fpt6, h_f, h_los, lambda = 0.0;

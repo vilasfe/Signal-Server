@@ -37,7 +37,7 @@ struct dem {
 	unsigned char **signal;
 };
 
-struct site {
+struct site_t {
 	double lat;
 	double lon;
 	float alt;

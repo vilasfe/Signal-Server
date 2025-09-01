@@ -2386,7 +2386,7 @@ double deg2rad(double d)
 void point_to_point_ITM(double tht_m, double rht_m, double eps_dielect,
 			double sgm_conductivity, double eno_ns_surfref,
 			double frq_mhz, int radio_climate, int pol,
-			double conf, double rel, double &dbloss, char *strmode,
+			double conf, double rel, double &dbloss, std::string& strmode,
 			int &errnum)
 
 /******************************************************************************
@@ -2462,19 +2462,19 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	q = prop.dist - propa.dla;
 
 	if (int (q) < 0.0)
-		strcpy(strmode, "Line-Of-Sight Mode");
+		strmode = "Line-Of-Sight Mode";
 	else {
 		if (int (q) == 0.0)
-			strcpy(strmode, "Single Horizon");
+			strmode = "Single Horizon";
 
 		else if (int (q) > 0.0)
-			strcpy(strmode, "Double Horizon");
+			strmode = "Double Horizon";
 
 		if (prop.dist <= propa.dlsa || prop.dist <= propa.dx)
-			strcat(strmode, ", Diffraction Dominant");
+			strmode += ", Diffraction Dominant";
 
 		else if (prop.dist > propa.dx)
-			strcat(strmode, ", Troposcatter Dominant");
+			strmode += ", Troposcatter Dominant";
 	}
 
 	dbloss = avar(zr, 0.0, zc, prop, propv) + fs;
@@ -2484,7 +2484,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 void point_to_point(double tht_m, double rht_m, double eps_dielect,
 		    double sgm_conductivity, double eno_ns_surfref,
 		    double frq_mhz, int radio_climate, int pol, double conf,
-		    double rel, double &dbloss, char *strmode, int &errnum)
+		    double rel, double &dbloss, std::string& strmode, int &errnum)
 
 /******************************************************************************
 
@@ -2600,24 +2600,24 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	q = prop.dist - propa.dla;
 
 	if (int (q) < 0.0)
-		strcpy(strmode, "L-o-S");
+		strmode = "L-o-S";
 	else {
 		if (int (q) == 0.0)
-			strcpy(strmode, "1_Hrzn");
+			strmode = "1_Hrzn";
 
 		else if (int (q) > 0.0)
-			strcpy(strmode, "2_Hrzn");
+			strmode = "2_Hrzn";
 
 		if (prop.dist <= propa.dlsa || prop.dist <= propa.dx)
 
 			if (int (prop.dl[1]) == 0.0)
-				strcat(strmode, "_Peak");
+				strmode += "_Peak";
 
 			else
-				strcat(strmode, "_Diff");
+				strmode += "_Diff";
 
 		else if (prop.dist > propa.dx)
-			strcat(strmode, "_Tropo");
+			strmode += "_Tropo";
 	}
 
 	dbloss = avar(zr, 0.0, zc, prop, propv) + fs;

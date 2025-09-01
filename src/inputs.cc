@@ -27,7 +27,7 @@ extern long bzbuf_pointer, bzbytes_read, gzbuf_pointer, gzbytes_read;
 extern double antenna_rotation,antenna_downtilt,antenna_dt_direction;
 
 
-int loadClutter(char *filename, double radius, struct site tx)
+int loadClutter(char *filename, double radius, struct site_t tx)
 {
 	/* This function reads a MODIS 17-class clutter file in ASCII Grid format.
 	   The nominal heights it applies to each value, eg. 5 (Mixed forest) = 15m are 
@@ -1754,7 +1754,7 @@ int LoadPAT(char *az_filename, char *el_filename)
 	return 0;
 }
 
-int LoadSignalColors(struct site xmtr)
+int LoadSignalColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
 	char filename[255];
@@ -1904,7 +1904,7 @@ int LoadSignalColors(struct site xmtr)
 	return 0;
 }
 
-int LoadLossColors(struct site xmtr)
+int LoadLossColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
 	char filename[255];
@@ -2081,7 +2081,7 @@ int LoadLossColors(struct site xmtr)
 	return 0;
 }
 
-int LoadDBMColors(struct site xmtr)
+int LoadDBMColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
 	char filename[255];
