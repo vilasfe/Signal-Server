@@ -12,9 +12,11 @@
 *  for more details.							     *
 *									     */
 
-#include <math.h>
+#include <cmath>
 
-double HATApathLoss(float f, float h_B, float h_M, float d, int mode)
+#include "hata.hh"
+
+auto HATApathLoss(float f, float h_B, float h_M, float d, int mode) -> double
 {
 /*
 HATA URBAN model for cellular planning
@@ -27,26 +29,26 @@ mode 1 = URBAN
 mode 2 = SUBURBAN
 mode 3 = OPEN
 */
-float lh_M;
-float C_H;
-float logf = log10(f);
+float lh_M = 0.0;
+float C_H = 0.0;
+const float logf = std::log10(f);
 
 	if(f<200){
-		lh_M = log10(1.54 * h_M);	
-		C_H = 8.29 * (lh_M * lh_M) - 1.1;
+		lh_M = std::log10(1.54F * h_M);
+		C_H = 8.29F * (lh_M * lh_M) - 1.1F;
 	}else{
-		lh_M = log10(11.75 * h_M);
-		C_H = 3.2 * (lh_M * lh_M) - 4.97;
+		lh_M = std::log10(11.75F * h_M);
+		C_H = 3.2F * (lh_M * lh_M) - 4.97F;
 	}
 
-	float L_u = 69.55 + 26.16 * logf - 13.82 * log10(h_B) - C_H + (44.9 - 6.55 * log10(h_B)) * log10(d);
+	const float L_u = 69.55F + 26.16F * logf - 13.82F * std::log10(h_B) - C_H + (44.9F - 6.55F * std::log10(h_B)) * std::log10(d);
 
-	if (!mode || mode == 1) {
+	if (mode == 0 || mode == 1) {
 		return L_u;	//URBAN
 	}
 
 	if (mode == 2) {	//SUBURBAN
-		float logf_28 = log10(f / 28);
+		const float logf_28 = std::log10(f / 28);
 		return L_u - 2 * logf_28 * logf_28 - 5.4;
 	}
 
