@@ -1,26 +1,30 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <numbers>
 #include <print>
-#include <math.h>
+#include <string>
+
 #include "tiles.hh"
+
 #include "common.h"
 
-#define MAX_LINE 50000
+enum : std::uint16_t { MAX_LINE = 50000 };
 
+// TODO: This is elsewhere in the code too
 /* Computes the distance between two long/lat points */
-double haversine_formula(double th1, double ph1, double th2, double ph2)
+auto haversine_formula(double th1, double ph1, double th2, double ph2) -> double
 {
-	#define TO_RAD (3.1415926536 / 180)
-	int R = 6371;
-	double dx, dy, dz;
+	constexpr double TO_RAD = std::numbers::pi_v<double> / 180.0;
+	constexpr int R = 6371;
 	ph1 -= ph2;
 	ph1 *= TO_RAD, th1 *= TO_RAD, th2 *= TO_RAD;
-	dz = sin(th1) - sin(th2);
-	dx = cos(ph1) * cos(th1) - cos(th2);
-	dy = sin(ph1) * cos(th1);
-	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R;
+	const double dz = std::sin(th1) - std::sin(th2);
+	const double dx = std::cos(ph1) * std::cos(th1) - std::cos(th2);
+	const double dy = std::sin(ph1) * std::cos(th1);
+	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * R;
 }
 
 int tile_load_lidar(tile_t *tile, const std::string& filename){
