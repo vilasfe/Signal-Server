@@ -23,7 +23,7 @@ double haversine_formula(double th1, double ph1, double th2, double ph2)
 	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R;
 }
 
-int tile_load_lidar(tile_t *tile, char *filename){
+int tile_load_lidar(tile_t *tile, const std::string& filename){
 	FILE *fd;
 	char line[MAX_LINE];
 	short nextval;
@@ -33,7 +33,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	memset(tile, 0x00, sizeof(tile_t));
 
 	/* Open the file handle and return on error */
-	if ( (fd = fopen(filename,"r")) == nullptr )
+	if ( (fd = fopen(filename.data(),"r")) == nullptr )
 		return errno;
 
 	/* This is where we read the header data */
@@ -50,7 +50,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	}
 
 	/* Set the filename */
-	tile->filename = strdup(filename);
+	tile->filename = filename;
 
 	/* Perform xur calcs */
 	tile->xur = tile->xll+(tile->cellsize*tile->width);
@@ -82,14 +82,15 @@ int tile_load_lidar(tile_t *tile, char *filename){
 			tile->xur = tile->xur * -1;
 	// }
 
-	if (debug)
-		fprintf(stderr, "POST yll %.7f yur %.7f xur %.7f xll %.7f delta %.6f\n", tile->yll, tile->yur, tile->xur, tile->xll, delta);
+	if (debug) {
+		std::println(stderr, "POST yll {:.7f} yur {:.7f} xur {:.7f} xll {:.7f} delta {:.6f}", tile->yll, tile->yur, tile->xur, tile->xll, delta);
+	}
 
 	/* Read the actual tile data */
 	/* Allocate the array for the lidar data */
 	if ( (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short))) == nullptr ) {
 		fclose(fd);
-		free(tile->filename);
+		tile->filename.clear();
 		return ENOMEM;
 	}
 
@@ -111,7 +112,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 				pch = strtok(nullptr, " ");
 			}//while
 		} else {
-			fprintf(stderr, "LIDAR error @ h %zu file %s\n", h, filename);
+			std::println(stderr, "LIDAR error @ h {} file {}", h, filename);
 		}//if
 	}
 
@@ -175,8 +176,7 @@ int tile_rescale(tile_t *tile, float scale){
 	}
 
 	if (debug) {
-		fprintf(stderr,"Resampling tile %s [%.1f]:\n\tOld %dx%d. New %zux%zu\n\tScale %f Skip %zu Copy %zu\n", tile->filename, tile->resolution, tile->width, tile->height, new_width, new_height, scale, skip_count, copy_count);
-		fflush(stderr);
+		std::println(stderr,"Resampling tile {} [{:.1f}]:\n\tOld {}x{}. New {}x{}\n\tScale {:f} Skip {} Copy {}", tile->filename, tile->resolution, tile->width, tile->height, new_width, new_height, scale, skip_count, copy_count);
 	}
 	/* Nearest neighbour normalization. For each subsample of the original, simply
 	 * assign the value in the top left to the new pixel 
@@ -216,8 +216,9 @@ int tile_rescale(tile_t *tile, float scale){
 	tile->ppdy = tile->height / tile->height_deg;
 	// tile->width_deg *= scale;
 	// tile->height_deg *= scale;
-	if (debug)
-		fprintf(stderr, "Resampling complete. New resolution: %.1f\n", tile->resolution);
+	if (debug) {
+		std::println(stderr, "Resampling complete. New resolution: {:.1f}", tile->resolution);
+	}
 
 	return 0;
 }
@@ -232,8 +233,9 @@ int tile_resize(tile_t* tile, int resolution){
 	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
 	int current_res = (int) ceil((current_res_km/IPPD)*1000);
 	float scaling_factor = resolution / current_res;
-	if (debug)
-		fprintf(stderr, "Resampling: Current %dm Desired %dm Scale %.1f\n", current_res, resolution, scaling_factor);
+	if (debug) {
+		std::println(stderr, "Resampling: Current {}m Desired {}m Scale {:.1f}", current_res, resolution, scaling_factor);
+	}
 	return tile_rescale(tile, scaling_factor);
 }
 
