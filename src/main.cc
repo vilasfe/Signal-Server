@@ -1006,8 +1006,11 @@ auto main(int argc, char *argv[]) -> int
 
 	bool use_threads = true;
 
-	unsigned char LRmap = 0, txsites = 0, topomap = 0, geo = 0, kml =
-	    0, area_mode = 0, max_txsites, ngs = 0;
+	unsigned char LRmap = 0, txsites = 0, topomap = 0;
+	bool geo = false;
+	bool kml = false;
+	unsigned char area_mode = 0, max_txsites;
+	bool ngs = false;
 
 	// TODO: convert string filenames to std::filesystem
 	std::string mapfile;
@@ -1109,8 +1112,8 @@ auto main(int argc, char *argv[]) -> int
 	}
 
 	y = argc - 1;
-	kml = 0;
-	geo = 0;
+	kml = false;
+	geo = false;
 	dbm = 0;
 	gpsav = 0;
 	metric = 0;
@@ -1135,8 +1138,8 @@ auto main(int argc, char *argv[]) -> int
 	lat = 0;
 	lon = 0;
 	txh = 0;
-	ngs = 1;		// no terrain background
-	kml = 1;
+	ngs = true;		// no terrain background
+	kml = true;
 	LRmap = 1;
 	area_mode = 1;
 	ippd = IPPD;		// default resolution
@@ -1299,7 +1302,7 @@ auto main(int argc, char *argv[]) -> int
 		}
 
 		if (strcmp(argv[x], "-t") == 0) {
-			ngs = 0;	// greyscale background
+			ngs = false;	// greyscale background
 		}
 
 		if (strcmp(argv[x], "-dbm") == 0) {
