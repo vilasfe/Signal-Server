@@ -1,59 +1,32 @@
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <errno.h>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+
+#include "image-ppm.hh"
 #include "image.hh"
 
-int ppm_init(image_ctx_t *ctx){
-	size_t buf_size;
+ImagePPM::ImagePPM(const size_t width, const size_t height)
+  : Image(width, height, IMAGE_RGB, IMAGE_PPM)
+{
+  set_extension(".ppm");
 
-	/* Perform simple sanity checking */
-	if(ctx->canvas != nullptr)
-		return EINVAL;
-	ctx->model = IMAGE_RGB; //Override this as we only support RGB
-	ctx->format = IMAGE_PPM;
-	ctx->extension = (char*)".ppm";
+  const size_t buf_size = width * height * RGB_SIZE;
 
-	buf_size = ctx->width * ctx->height * RGB_SIZE;
+  /* Allocate the canvas buffer */
+  resize_canvas(buf_size);
+}
 
-	/* Allocate the canvas buffer */
-	ctx->canvas = (uint8_t*) calloc(buf_size,sizeof(uint8_t));
-	ctx->next_pixel = ctx->canvas;
-	if(ctx->canvas == nullptr)
-		return ENOMEM;
+auto ImagePPM::add_pixel(const uint8_t r,const uint8_t g,const uint8_t b) -> int {
+	set_canvas_item(get_next_pixel(), r);
+	set_canvas_item(get_next_pixel()+1, g);
+	set_canvas_item(get_next_pixel()+2, b);
+
+	set_next_pixel_index(get_next_pixel() + 3);
 
 	return 0;
 }
 
-int ppm_add_pixel(image_ctx_t *ctx,const uint8_t r,const uint8_t g,const uint8_t b,const uint8_t a){
-	uint8_t* next;
-
-	next = ctx->next_pixel;
-
-	next[0] = r;
-	next[1] = g;
-	next[2] = b;
-
-	ctx->next_pixel += 3;
-
-	return 0;
-}
-
-int ppm_get_pixel(image_ctx_t *ctx,const size_t x,const size_t y,const uint8_t *r,const uint8_t *g,const uint8_t *b,const uint8_t *a){
-	/* STUB */
-	return 0;
-}
-
-int ppm_write(image_ctx_t *ctx, FILE* fd){
-	size_t written;
-	size_t count;
-
-	count = ctx->width * ctx->height * RGB_SIZE;
-
-	fprintf(fd, "P6\n%zu %zu\n255\n", ctx->width, ctx->height);
-	written = fwrite(ctx->canvas,sizeof(uint8_t),count,fd);
-	if(written < count)
-		return EPIPE;
-	
-	return 0;
+auto ImagePPM::add_pixel(const uint8_t r, const uint8_t g, const uint8_t b, [[maybe_unused]] const uint8_t a) -> int {
+	return add_pixel(r, g, b);
 }

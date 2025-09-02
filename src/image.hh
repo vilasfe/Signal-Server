@@ -2,7 +2,9 @@
 #define _IMAGE_HH_
 
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <vector>
 
 #define RGB_SIZE  3
 #define RGBA_SIZE 4
@@ -18,47 +20,41 @@ enum _image_model{	IMAGE_RGB, \
 					IMAGE_MODEL_MAX
 				};
 
-typedef struct _image_ctx{
-	size_t width;
-	size_t height;
-	int model;
-	int format;
-	uint8_t *canvas;
-	uint8_t *next_pixel;
-	uint32_t initialized;
-	char *extension;
-	void *_dt;
-} image_ctx_t, *pimage_ctx_t;
-
-typedef int _init(image_ctx_t*);
-typedef int _add_pixel(image_ctx_t*,const uint8_t,const uint8_t,const uint8_t,const uint8_t);
-typedef int _set_pixel(image_ctx_t*,const size_t,const size_t,const uint8_t,const uint8_t,const uint8_t,const uint8_t);
-typedef int _get_pixel(image_ctx_t*,const size_t,const size_t,const uint8_t*,const uint8_t*,const uint8_t*,const uint8_t*);
-typedef int _write(image_ctx_t*,FILE*);
-typedef void _free(image_ctx_t*);
-
-typedef struct _image_dispatch_table{
-	_init		*init;
-	_add_pixel	*add_pixel;
-	_set_pixel	*set_pixel;
-	_get_pixel	*get_pixel;
-	_write		*write;
-	_free		*free;
-} image_dispatch_table_t;
-
-int image_set_format(int);
-int image_init(image_ctx_t*, const size_t, const size_t, const int, const int);
-int image_add_pixel(image_ctx_t* ctx, const uint8_t, const uint8_t, const uint8_t, const uint8_t);
-int image_set_pixel(image_ctx_t* ctx, const size_t, const size_t, const uint8_t, const uint8_t, const uint8_t, const uint8_t);
-int image_get_pixel(image_ctx_t* ctx,const size_t,const size_t, uint8_t const*, uint8_t const*, uint8_t const*, uint8_t const*);
-int image_get_filename(image_ctx_t*, std::string& out, size_t, std::string in);
-int image_write(image_ctx_t*, FILE*);
-void image_free(image_ctx_t*);
-int image_set_library(char*);
-
-#define ADD_PIXEL(ctx,r,g,b) image_add_pixel((ctx),(r),(g),(b),0xff)
-#define ADD_PIXELA(ctx,r,g,b,a) image_add_pixel((ctx),(r),(g),(b),(a))
+class Image {
+public:
+  static auto set_format(_image_format format) -> int;
+  static auto create(const size_t width, const size_t height, const _image_model model, const _image_format format) -> std::shared_ptr<Image>;
+  virtual ~Image() = default;
+  virtual int add_pixel(const uint8_t r, const uint8_t g, const uint8_t b) = 0;
+  virtual int add_pixel(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) = 0;
+  //virtual int get_pixel(const size_t x,const size_t y, uint8_t const* r, uint8_t const* g, uint8_t const* b, uint8_t const* a) = 0;
+  auto get_filename(const std::string& in) const -> std::string;
+  virtual int write(FILE*);
 
 #define PIXEL_OFFSET(x,y,width,pixel_size) (((x) * (pixel_size)) + ((width) * (pixel_size) * (y)))
+
+  Image(const size_t width, const size_t height, const _image_model model, const _image_format format);
+
+protected:
+	void set_extension(const std::string& ext);
+	auto get_width() const -> size_t;
+	auto get_height() const -> size_t;
+	void resize_canvas(size_t size);
+	auto get_next_pixel() const -> size_t;
+	void set_next_pixel_index(size_t index);
+	void set_canvas_item(size_t index, uint8_t value);
+
+private:
+	size_t width = 0;
+	size_t height = 0;
+	_image_model model = IMAGE_RGB;
+	_image_format format = IMAGE_DEFAULT;
+	std::vector<uint8_t> canvas;
+	size_t next_pixel = 0;
+	std::string extension;
+
+	static _image_format default_format;
+	static std::string dynamic_backend;
+};
 
 #endif

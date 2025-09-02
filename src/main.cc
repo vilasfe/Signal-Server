@@ -399,14 +399,17 @@ double Azimuth(struct site_t source, struct site_t destination)
 
 	diff = dest_lon - src_lon;
 
-	if (diff <= -std::numbers::pi)
+	if (diff <= -std::numbers::pi) {
 		diff += TWOPI;
+	}
 
-	if (diff >= std::numbers::pi)
+	if (diff >= std::numbers::pi) {
 		diff -= TWOPI;
+	}
 
-	if (diff > 0.0)
+	if (diff > 0.0) {
 		azimuth = TWOPI - azimuth;
+	}
 
 	return (azimuth / DEG2RAD);
 }
@@ -507,11 +510,13 @@ void ReadPath(struct site_t source, struct site_t destination)
 				lon2 = lon1 + arccos(num, den);
 		}
 
-		while (lon2 < 0.0)
+		while (lon2 < 0.0) {
 			lon2 += TWOPI;
+		}
 
-		while (lon2 > TWOPI)
+		while (lon2 > TWOPI) {
 			lon2 -= TWOPI;
+		}
 
 		lat2 = lat2 / DEG2RAD;
 		lon2 = lon2 / DEG2RAD;
@@ -990,7 +995,7 @@ void do_allocs(void)
 	}
 }
 
-int main(int argc, char *argv[])
+auto main(int argc, char *argv[]) -> int
 {
 	int x, y, z = 0, propmodel, knifeedge = 0, ppa = 0, normalise = 0,
 	  haf = 0, pmenv = 1, lidar=0, result;
@@ -1098,8 +1103,9 @@ int main(int argc, char *argv[])
 	 * memory now. For LIDAR we need to wait until we've parsed
 	 * the headers in the .asc file to know how much memory to allocate...
 	 */
-	if (!lidar)
+	if (! lidar) {
 		do_allocs();
+	}
 
 	y = argc - 1;
 	kml = 0;
@@ -1279,14 +1285,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (strcmp(argv[x], "-so") == 0) {
-			z = x + 1;
-			if(image_set_library(argv[z]) != 0){
-				std::println(stderr,"Error configuring image processor");
-				exit(EINVAL);
-			}
-		}
-
 		if (strcmp(argv[x], "-rt") == 0) {
 			z = x + 1;
 
@@ -1303,8 +1301,9 @@ int main(int argc, char *argv[])
 			ngs = 0;	// greyscale background
 		}
 
-		if (strcmp(argv[x], "-dbm") == 0)
+		if (strcmp(argv[x], "-dbm") == 0) {
 			dbm = 1;
+		}
 
 		if (strcmp(argv[x], "-sdf") == 0) {
 			z = x + 1;
@@ -1317,8 +1316,9 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[x], "-lid") == 0) {
 			z = x + 1;
 			lidar=1;
-			if (z <= y && argv[z][0] && argv[z][0] != '-')
+			if (z <= y && argv[z][0] && argv[z][0] != '-') {
 				lidar_tiles = argv[z];
+			}
 		}
 
 		if (strcmp(argv[x], "-res") == 0) {
@@ -1378,8 +1378,9 @@ int main(int argc, char *argv[])
 			if (z <= y && argv[z][0]) {
 				tx_site[0].lon = ReadBearing(argv[z]);
 				tx_site[0].lon *= -1;
-				if (tx_site[0].lon < 0.0)
+				if (tx_site[0].lon < 0.0) {
 					tx_site[0].lon += 360.0;
+				}
 			}
 		}
 		//Switch to Path Profile Mode if Rx co-ords specified
@@ -1397,8 +1398,9 @@ int main(int argc, char *argv[])
 			if (z <= y && argv[z][0]) {
 				tx_site[1].lon = ReadBearing(argv[z]);
 				tx_site[1].lon *= -1;
-				if (tx_site[1].lon < 0.0)
+				if (tx_site[1].lon < 0.0) {
 					tx_site[1].lon += 360.0;
+				}
 			}
 		}
 
@@ -1536,8 +1538,9 @@ int main(int argc, char *argv[])
 
 			if (z <= y && argv[z][0]) {
 				udt_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if( udt_file == nullptr )
+				if( udt_file == nullptr ) {
 					return ENOMEM;
+				}
 				strncpy(udt_file, argv[z], 253);
 			}
 		}
@@ -1608,8 +1611,9 @@ int main(int argc, char *argv[])
 
 			if (z <= y && argv[z][0]) {
 				color_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if (color_file == nullptr)
+				if (color_file == nullptr) {
 					return ENOMEM;
+				}
 				strncpy(color_file, argv[z], 253);
 			}
 		}
@@ -1724,11 +1728,13 @@ int main(int argc, char *argv[])
 	if (txlat > max_lat)
 		max_lat = txlat;
 
-	if (LonDiff(txlon, min_lon) < 0.0)
+	if (LonDiff(txlon, min_lon) < 0.0) {
 		min_lon = txlon;
+	}
 
-	if (LonDiff(txlon, max_lon) >= 0.0)
+	if (LonDiff(txlon, max_lon) >= 0.0) {
 		max_lon = txlon;
+	}
 
 	if (ppa == 1) {
 		rxlat = (int)floor(tx_site[1].lat);
@@ -1740,11 +1746,13 @@ int main(int argc, char *argv[])
 		if (rxlat > max_lat)
 			max_lat = rxlat;
 
-		if (LonDiff(rxlon, min_lon) < 0.0)
+		if (LonDiff(rxlon, min_lon) < 0.0) {
 			min_lon = rxlon;
+		}
 
-		if (LonDiff(rxlon, max_lon) >= 0.0)
+		if (LonDiff(rxlon, max_lon) >= 0.0) {
 			max_lon = rxlon;
+		}
 	}
 
 	/* Load the required tiles */
@@ -1814,8 +1822,9 @@ int main(int argc, char *argv[])
 				   width of the analysis and the size of
 				   the map. */
 
-				if (max_range == 0.0)
+				if (max_range == 0.0) {
 					max_range = tx_range + rx_range;
+				}
 
 				deg_range = max_range / 57.0;
 
@@ -1841,19 +1850,23 @@ int main(int argc, char *argv[])
 
 				west_min = (int)floor(tx_site[z].lon - deg_range_lon);
 
-				while (west_min < 0)
+				while (west_min < 0) {
 					west_min += 360;
+				}
 
-				while (west_min >= 360)
+				while (west_min >= 360) {
 					west_min -= 360;
+				}
 
 				west_max = (int)floor(tx_site[z].lon + deg_range_lon);
 
-				while (west_max < 0)
+				while (west_max < 0) {
 					west_max += 360;
+				}
 
-				while (west_max >= 360)
+				while (west_max >= 360) {
 					west_max -= 360;
+				}
 
 				if (nortRxHin < min_lat)
 					min_lat = nortRxHin;
@@ -1861,11 +1874,13 @@ int main(int argc, char *argv[])
 				if (nortRxHax > max_lat)
 					max_lat = nortRxHax;
 
-				if (LonDiff(west_min, min_lon) < 0.0)
+				if (LonDiff(west_min, min_lon) < 0.0) {
 					min_lon = west_min;
+				}
 
-				if (LonDiff(west_max, max_lon) >= 0.0)
+				if (LonDiff(west_max, max_lon) >= 0.0) {
 					max_lon = west_max;
+				}
 			}
 
 			/* Load any additional SDF files, if required */
@@ -1956,24 +1971,30 @@ int main(int argc, char *argv[])
 			}
 
 			// Write bitmap
-			if (LR.erp == 0.0)
+			if (LR.erp == 0.0) {
 				DoPathLoss(mapfile, geo, kml, ngs, tx_site, txsites);
-			else if (dbm)
+			}
+			else if (dbm) {
 				DoRxdPwr((to_stdout ? "" : mapfile), geo, kml, ngs, tx_site, txsites);
-			else
-			        if ((result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites)) != 0)
+			}
+			else {
+				if (result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites); result != 0) {
 					return result;
+				}
+			}
 		}
 		/*if(lidar){
 			east=eastoffset;
 			west=westoffset;
 		}*/
 
-		if (tx_site[0].lon > 0.0)
+		if (tx_site[0].lon > 0.0) {
 		        tx_site[0].lon *= -1;
+		}
 
-		if (tx_site[0].lon < -180.0)
+		if (tx_site[0].lon < -180.0) {
 			tx_site[0].lon += 360;
+		}
 
 		if (cropping) {
 			std::print(stderr, "|{:.6f}", tx_site[0].lat+cropLat);

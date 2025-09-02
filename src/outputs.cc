@@ -33,22 +33,17 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 	unsigned red, green, blue, terrain = 0;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z, x0 = 0, y0 = 0, loss, match;
-	double lat, lon, conversion, one_over_gamma, minwest;
+	double lat, lon, conversion, minwest;
 	FILE *fd;
-	image_ctx_t ctx;
-	int success;
+	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
+	int success = 0;
 
-	if( (success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0 ){
-		std::println(stderr,"Error initializing image: {}", strerror(success));
-		exit(success);
-	}
-
-	one_over_gamma = 1.0 / GAMMA;
+	const double one_over_gamma = 1.0 / GAMMA;
 	conversion =
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
 
-	if( (success = LoadLossColors(xmtr[0])) != 0 ){
+	if( success = LoadLossColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading loss colors");
 		exit(success);  // Now a fatal error!
 	}
@@ -60,10 +55,7 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
-		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			std::println(stderr,"Error creating file name");
-			exit(1);
-		}
+		mapfile = ctx->get_filename(std::string(filename));
 
 		fd = fopen(mapfile.data(),"wb");
 
@@ -99,8 +91,9 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 	     y++, lat = north - (dpp * (double)y)) {
 		for (x = 0, lon = max_west; x < (int)width;
 		     x++, lon = max_west - (dpp * (double)x)) {
-			if (lon < 0.0)
+			if (lon < 0.0) {
 				lon += 360.0;
+			}
 
 			for (indx = 0, found = 0;
 			     indx < MAXPAGES && found == 0;) {
@@ -145,8 +138,9 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 					     (z < region.levels
 					      && match == 255); z++) {
 						if (loss >= region.level[z - 1]
-						    && loss < region.level[z])
+						    && loss < region.level[z]) {
 							match = z;
+						}
 					}
 				}
 
@@ -160,12 +154,10 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 					/* Text Labels: Red or otherwise */
 
 					if (red >= 180 && green <= 75 && blue <= 75 && loss == 0) {
-						ADD_PIXEL(&ctx, 255 ^ red,
-							255 ^ green,
-							255 ^ blue);
+						ctx->add_pixel(255 ^ red, 255 ^ green, 255 ^ blue);
 					}
 					else {
-						ADD_PIXEL(&ctx, 255, 0, 0);
+						ctx->add_pixel(255, 0, 0);
 					}
 
 					cityorcounty = 1;
@@ -174,7 +166,7 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 				else if (mask & 4) {
 					/* County Boundaries: Black */
 
-					ADD_PIXEL(&ctx, 0, 0, 0);
+					ctx->add_pixel(0, 0, 0);
 
 					cityorcounty = 1;
 				}
@@ -182,25 +174,20 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 				if (cityorcounty == 0) {
 					if (loss == 0 || (contour_threshold != 0 && loss > abs(contour_threshold))) {
 						if (ngs) {	/* No terrain */
-							ADD_PIXEL(&ctx, 255, 255, 255);
+							ctx->add_pixel(255, 255, 255);
 						}
 						else {
 							/* Display land or sea elevation */
 
-							if (dem[indx].
-							    data[x0][y0] == 0)
-								ADD_PIXEL(&ctx, 
-									0, 0,
-									170);
+							if (dem[indx].data[x0][y0] == 0) {
+								ctx->add_pixel(0, 0, 170);
+							}
 							else {
 								terrain =
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx, 
-									terrain,
-									terrain,
-									terrain);
+								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
 					}
@@ -209,14 +196,12 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 						/* Plot path loss in color */
 
 						if (red != 0 || green != 0 || blue != 0) {
-							ADD_PIXEL(&ctx, 
-								red, green,
-								blue);
+							ctx->add_pixel(red, green, blue);
 						}
 						else {	/* terrain / sea-level */
 
 							if (dem[indx].data[x0][y0] == 0) {
-								ADD_PIXEL(&ctx, 0, 0, 170);
+								ctx->add_pixel(0, 0, 170);
 							}
 							else {
 								/* Elevation: Greyscale */
@@ -224,10 +209,7 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx, 
-									terrain,
-									terrain,
-									terrain);
+								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
 					}
@@ -238,17 +220,15 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 				/* We should never get here, but if */
 				/* we do, display the region as black */
 
-				ADD_PIXEL(&ctx, 0, 0, 0);
+				ctx->add_pixel(0, 0, 0);
 			}
 		}
 	}
 
-	if((success = image_write(&ctx,fd)) != 0){
+	if(success = ctx->write(fd); success != 0){
 		std::println(stderr,"Error writing image");
 		exit(success);
 	}
-
-	image_free(&ctx);
 
 	if( !filename.empty() ) {
 		fclose(fd);
@@ -270,17 +250,12 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 	unsigned terrain, red, green, blue;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z = 1, x0 = 0, y0 = 0, signal, match;
-	double conversion, one_over_gamma, lat, lon, minwest;
+	double conversion, lat, lon, minwest;
 	FILE *fd;
-	image_ctx_t ctx;
+	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success;
 
-	if((success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0){
-		std::println(stderr,"Error initializing image: {}", strerror(success));
-		exit(success);
-	}
-
-	one_over_gamma = 1.0 / GAMMA;
+	constexpr double one_over_gamma = 1.0 / GAMMA;
 	conversion =
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
@@ -296,10 +271,7 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
-		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			std::println(stderr,"Error creating file name");
-			exit(1);
-		}
+		mapfile = ctx->get_filename(filename);
 
 		fd = fopen(mapfile.data(),"wb");
 	} else {
@@ -390,10 +362,10 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 					/* Text Labels: Red or otherwise */
 
 					if (red >= 180 && green <= 75 && blue <= 75) {
-						ADD_PIXEL(&ctx, 255 ^ red, 255 ^ green, 255 ^ blue);
+						ctx->add_pixel(255 ^ red, 255 ^ green, 255 ^ blue);
 					}
 					else {
-						ADD_PIXEL(&ctx, 255, 0, 0);
+						ctx->add_pixel(255, 0,	0);
 					}
 
 					cityorcounty = 1;
@@ -402,7 +374,7 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 				else if (mask & 4) {
 					/* County Boundaries: Black */
 
-					ADD_PIXEL(&ctx, 0, 0, 0);
+					ctx->add_pixel(0, 0, 0);
 
 					cityorcounty = 1;
 				}
@@ -410,20 +382,20 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 				if (cityorcounty == 0) {
 					if (contour_threshold != 0 && signal < contour_threshold) {
 						if (ngs) {
-							ADD_PIXEL(&ctx, 255, 255, 255);
+							ctx->add_pixel(255, 255, 255);
 						}
 						else {
 							/* Display land or sea elevation */
 
 							if (dem[indx].data[x0][y0] == 0) {
-								ADD_PIXEL(&ctx, 0, 0, 170);
+								ctx->add_pixel(0, 0, 170);
 							}
 							else {
 								terrain =
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx, terrain, terrain, terrain);
+								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
 					}
@@ -432,16 +404,16 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 						/* Plot field strength regions in color */
 
 						if (red != 0 || green != 0 || blue != 0) {
-							ADD_PIXEL(&ctx, red, green, blue);
+							ctx->add_pixel(red, green, blue);
 						}
 						else {	/* terrain / sea-level */
 
 							if (ngs) {
-								ADD_PIXEL(&ctx, 255, 255, 255);
+								ctx->add_pixel(255, 255, 255);
 							}
 							else {
 								if (dem[indx].data[x0][y0] == 0) {
-									ADD_PIXEL(&ctx, 0, 0, 170);
+									ctx->add_pixel(0, 0, 170);
 								}
 								else {
 									/* Elevation: Greyscale */
@@ -452,7 +424,7 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 									     +
 									     pow
 									     ((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-									ADD_PIXEL(&ctx, terrain, terrain, terrain);
+									ctx->add_pixel(terrain, terrain, terrain);
 								}
 							}
 						}
@@ -464,17 +436,16 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 				/* We should never get here, but if */
 				/* we do, display the region as black */
 
-				ADD_PIXEL(&ctx, 255, 255, 255);
+				ctx->add_pixel(255, 255, 255);
 			}
 		}
 	}
 
-	if((success = image_write(&ctx,fd)) != 0){
+	if(success = ctx->write(fd); success != 0){
 		std::println(stderr,"Error writing image");
 		exit(success);
 	}
 
-	image_free(&ctx);
 
 	if( !filename.empty() ) {
 		fclose(fd);
@@ -496,17 +467,12 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 	unsigned terrain, red, green, blue;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z = 1, x0 = 0, y0 = 0, dBm, match;
-	double conversion, one_over_gamma, lat, lon, minwest;
+	double conversion, lat, lon, minwest;
 	FILE *fd = stdout;
-	image_ctx_t ctx;
+	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success;
 
-	if( (success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0 ){
-		std::println(stderr,"Error initializing image: {}", strerror(success));
-		exit(success);
-	}
-
-	one_over_gamma = 1.0 / GAMMA;
+	constexpr double one_over_gamma = 1.0 / GAMMA;
 	conversion =
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
@@ -523,10 +489,7 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
-		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			std::println(stderr,"Error creating file name");
-			exit(1);
-		}
+		mapfile = ctx->get_filename(filename);
 
 		fd = fopen(mapfile.data(),"wb");
 
@@ -557,8 +520,9 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 	     y++, lat = north - (dpp * (double)y)) {
 		for (x = 0, lon = max_west; x < (int)width;
 		     x++, lon = max_west - (dpp * (double)x)) {
-			if (lon < 0.0)
+			if (lon < 0.0) {
 				lon += 360.0;
+			}
 
 			for (indx = 0, found = 0;
 			     indx < MAXPAGES && found == 0;) {
@@ -613,18 +577,18 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 
 					if (red >= 180 && green <= 75
 					    && blue <= 75 && dBm != 0)
-						ADD_PIXEL(&ctx, 255 ^ red,
+						ctx->add_pixel(255 ^ red,
 							255 ^ green,
 							255 ^ blue);
 					else
-						ADD_PIXEL(&ctx, 255, 0, 0);
+						ctx->add_pixel(255, 0, 0);
 
 					cityorcounty = 1;
 				}
 
 				else if (mask & 4) {
 					/* County Boundaries: Black */
-					ADD_PIXEL(&ctx, 0, 0, 0);
+					ctx->add_pixel(0, 0, 0);
 					cityorcounty = 1;
 				}
 
@@ -632,20 +596,19 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 					if (contour_threshold != 0
 					    && dBm < contour_threshold) {
 						if (ngs) {	/* No terrain */
-							ADD_PIXEL(&ctx, 255, 255, 255);
+							ctx->add_pixel(255, 255, 255);
 						}
 						else {
 							/* Display land or sea elevation */
 
-							if (dem[indx].data[x0][y0] == 0) {
-								ADD_PIXEL(&ctx, 0, 0, 170);
-							}
+							if (dem[indx].data[x0][y0] == 0)
+								ctx->add_pixel(0, 0, 170);
 							else {
 								terrain =
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx, terrain, terrain, terrain);
+								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
 					}
@@ -654,16 +617,16 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 						/* Plot signal power level regions in color */
 
 						if (red != 0 || green != 0 || blue != 0) {
-							ADD_PIXEL(&ctx, red, green, blue);
+							ctx->add_pixel(red, green, blue);
 						}
 						else {	/* terrain / sea-level */
 
 							if (ngs) {
-								ADD_PIXEL(&ctx, 255, 255, 255); // WHITE
+								ctx->add_pixel(255, 255, 255); // WHITE
 							}
 							else {
 								if (dem[indx].data[x0][y0] == 0) {
-									ADD_PIXEL(&ctx, 0, 0, 170); // BLUE
+									ctx->add_pixel(0, 0, 170); // BLUE
 								}
 								else {
 									/* Elevation: Greyscale */
@@ -674,7 +637,7 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 									     +
 									     pow
 									     ((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-									ADD_PIXEL(&ctx, terrain, terrain, terrain);
+									ctx->add_pixel(terrain, terrain, terrain);
 								}
 							}
 						}
@@ -686,19 +649,17 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 				/* We should never get here, but if */
 				/* we do, display the region as black */
 
-				ADD_PIXEL(&ctx, 255, 255, 255);
+				ctx->add_pixel(255, 255, 255);
 			}
 		}
 	}
 
-	if((success = image_write(&ctx,fd)) != 0){
+	if(success = ctx->write(fd); success != 0){
 		std::println(stderr,"Error writing image");
 		exit(success);
 	}
 
 	fflush(fd);
-
-	image_free(&ctx);
 
 	if( !filename.empty() ) {
 		fclose(fd);
@@ -720,17 +681,12 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 	unsigned terrain;
 	unsigned char found, mask;
 	int indx, x, y, x0 = 0, y0 = 0;
-	double conversion, one_over_gamma, lat, lon, minwest;
+	double conversion, lat, lon, minwest;
 	FILE *fd;
-	image_ctx_t ctx;
+	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success;
 
-	if((success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0){
-		std::println(stderr,"Error initializing image: {}", strerror(success));
-		exit(success);
-	}
-
-	one_over_gamma = 1.0 / GAMMA;
+	constexpr double one_over_gamma = 1.0 / GAMMA;
 	conversion =
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
@@ -742,10 +698,7 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 			filename = filename.substr(0, filename.length() - 4);	/* Remove .qth */
 		}
 
-		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			std::println(stderr,"Error creating file name");
-			exit(1);
-		}
+		mapfile = ctx->get_filename(filename);
 
 		fd = fopen(mapfile.data(),"wb");
 
@@ -806,125 +759,104 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 
 				if (mask & 2)
 					/* Text Labels: Red */
-					ADD_PIXEL(&ctx, 255, 0, 0);
+					ctx->add_pixel(255, 0, 0);
 
 				else if (mask & 4)
 					/* County Boundaries: Light Cyan */
-					ADD_PIXEL(&ctx, 128, 128, 255);
+					ctx->add_pixel(128, 128, 255);
 
 				else
 					switch (mask & 57) {
 					case 1:
 						/* TX1: Green */
-						ADD_PIXEL(&ctx, 0, 255,
-							0);
+						ctx->add_pixel(0, 255, 0);
 						break;
 
 					case 8:
 						/* TX2: Cyan */
-						ADD_PIXEL(&ctx, 0, 255,
-							255);
+						ctx->add_pixel(0, 255, 255);
 						break;
 
 					case 9:
 						/* TX1 + TX2: Yellow */
-						ADD_PIXEL(&ctx, 255, 255,
-							0);
+						ctx->add_pixel(255, 255, 0);
 						break;
 
 					case 16:
 						/* TX3: Medium Violet */
-						ADD_PIXEL(&ctx, 147, 112,
-							219);
+						ctx->add_pixel(147, 112, 219);
 						break;
 
 					case 17:
 						/* TX1 + TX3: Pink */
-						ADD_PIXEL(&ctx, 255, 192,
-							203);
+						ctx->add_pixel(255, 192, 203);
 						break;
 
 					case 24:
 						/* TX2 + TX3: Orange */
-						ADD_PIXEL(&ctx, 255, 165,
-							0);
+						ctx->add_pixel(255, 165, 0);
 						break;
 
 					case 25:
 						/* TX1 + TX2 + TX3: Dark Green */
-						ADD_PIXEL(&ctx, 0, 100,
-							0);
+						ctx->add_pixel(0, 100, 0);
 						break;
 
 					case 32:
 						/* TX4: Sienna 1 */
-						ADD_PIXEL(&ctx, 255, 130,
-							71);
+						ctx->add_pixel(255, 130, 71);
 						break;
 
 					case 33:
 						/* TX1 + TX4: Green Yellow */
-						ADD_PIXEL(&ctx, 173, 255,
-							47);
+						ctx->add_pixel(173, 255, 47);
 						break;
 
 					case 40:
 						/* TX2 + TX4: Dark Sea Green 1 */
-						ADD_PIXEL(&ctx, 193, 255,
-							193);
+						ctx->add_pixel(193, 255, 193);
 						break;
 
 					case 41:
 						/* TX1 + TX2 + TX4: Blanched Almond */
-						ADD_PIXEL(&ctx, 255, 235,
-							205);
+						ctx->add_pixel(255, 235, 205);
 						break;
 
 					case 48:
 						/* TX3 + TX4: Dark Turquoise */
-						ADD_PIXEL(&ctx, 0, 206,
-							209);
+						ctx->add_pixel(0, 206, 209);
 						break;
 
 					case 49:
 						/* TX1 + TX3 + TX4: Medium Spring Green */
-						ADD_PIXEL(&ctx, 0, 250,
-							154);
+						ctx->add_pixel(0, 250, 154);
 						break;
 
 					case 56:
 						/* TX2 + TX3 + TX4: Tan */
-						ADD_PIXEL(&ctx, 210, 180,
-							140);
+						ctx->add_pixel(210, 180, 140);
 						break;
 
 					case 57:
 						/* TX1 + TX2 + TX3 + TX4: Gold2 */
-						ADD_PIXEL(&ctx, 238, 201,
-							0);
+						ctx->add_pixel(238, 201, 0);
 						break;
 
 					default:
 						if (ngs)	/* No terrain */
-							ADD_PIXEL(&ctx, 
-								255, 255, 255);
+							ctx->add_pixel(255, 255, 255);
 						else {
 							/* Sea-level: Medium Blue */
-							if (dem[indx].
-							    data[x0][y0] == 0)
-								ADD_PIXEL(&ctx, 
-									0, 0,
-									170);
+							if (dem[indx].data[x0][y0] == 0) {
+								ctx->add_pixel(0, 0, 170);
+							}
 							else {
 								/* Elevation: Greyscale */
 								terrain =
 								    (unsigned)
 								    (0.5 +
 								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
-								ADD_PIXEL(&ctx, 
-									terrain,
-									terrain,
-									terrain);
+								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
 					}
@@ -934,17 +866,15 @@ void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
 				/* We should never get here, but if */
 				/* we do, display the region as black */
 
-				ADD_PIXEL(&ctx, 255, 255, 255);
+				ctx->add_pixel(255, 255, 255);
 			}
 		}
 	}
 
-	if((success = image_write(&ctx,fd)) != 0){
+	if((success = ctx->write(fd)) != 0){
 		std::println(stderr,"Error writing image");
 		exit(success);
 	}
-
-	image_free(&ctx);
 
 	if( !filename.empty() ) {
 		fclose(fd);
@@ -979,7 +909,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 	    0.0, voltage, rxp, power_density, dkm;
 
 	snprintf(report_name, 80, "%s.txt%c", name.data(), 0);
-	double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
+	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
 
 	FILE* fd2 = fopen(report_name, "w");
 
@@ -1512,8 +1442,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			     (pow
 			      (10.0, (total_loss - free_space_loss) / 10.0)));
 			/* divide by 4*PI*distance_in_meters squared */
-			power_density /= (4.0 * std::numbers::pi * distance * distance *
-					  2589988.11);
+			power_density /= (4.0 * std::numbers::pi * distance * distance * 2589988.11);
 
 			std::println(fd2, "Field strength at {}: {:.2f} dBuV/meter", destination.name, field_strength);
 			fprintf(fd2, "Signal power level at %s: %+.2f dBm\n", destination.name, dBm);
@@ -1686,19 +1615,19 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 	int x, y, z;
 	std::string basename;
 	char term[30], ext[15];
-	double a, b, c, height = 0.0, refangle, cangle, maxheight =
+	double a, c, height = 0.0, cangle, maxheight =
 	    -100000.0, minheight = 100000.0, lambda = 0.0, f_zone =
 	    0.0, fpt6_zone = 0.0, nm = 0.0, nb = 0.0, ed = 0.0, es = 0.0, r =
-	    0.0, d = 0.0, d1 = 0.0, terrain, azimuth, distance, minterrain =
+	    0.0, d = 0.0, d1 = 0.0, terrain, minterrain =
 	    100000.0, minearth = 100000.0;
 	struct site_t remote;
 	FILE *fd1 = nullptr, *fd3 = nullptr, *fd4 = nullptr;
 
 	ReadPath(destination, source);
-	azimuth = Azimuth(destination, source);
-	distance = Distance(destination, source);
-	refangle = ElevationAngle(destination, source);
-	b = GetElevation(destination) + destination.alt + earthradius;
+	const double azimuth = Azimuth(destination, source);
+	const double distance = Distance(destination, source);
+	const double refangle = ElevationAngle(destination, source);
+	const double b = GetElevation(destination) + destination.alt + earthradius;
 
 	if (debug) {
 		std::println(stderr, "SeriesData: az = {:f}, dist = {:f}, ref = {:f}, b = {:f}", azimuth, distance, refangle, b);
