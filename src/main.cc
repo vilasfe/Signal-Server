@@ -232,28 +232,16 @@ auto GetElevation(const struct site_t& location) -> double
 	   represented by the digital elevation model data in memory.
 	   Function returns -5000.0 for locations not found in memory. */
 
-	char found;
-	int x = 0, y = 0, indx;
-	double elevation;
+	for (int indx = 0; indx < MAXPAGES; ++indx) {
+		const int x = static_cast<int>(std::rint(ppd * (location.lat - dem[indx].min_north)));
+		const int y = mpi - static_cast<int>(std::rint(yppd * (LonDiff(dem[indx].max_west, location.lon))));
 
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-		x = (int)rint(ppd * (location.lat - dem[indx].min_north));
-		y = mpi -
-		    (int)rint(yppd *
-			      (LonDiff(dem[indx].max_west, location.lon)));
-
-		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
-			found = 1;
-		else
-			indx++;
+		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
+			return 3.28084 * dem[indx].data[x][y];
+		}
 	}
 
-	if (found)
-		elevation = 3.28084 * dem[indx].data[x][y];
-	else
-		elevation = -5000.0;
-
-	return elevation;
+	return -5000.0;
 }
 
 auto AddElevation(double lat, double lon, double height, int size) -> int
@@ -263,52 +251,48 @@ auto AddElevation(double lat, double lon, double height, int size) -> int
 	   in memory.  Does nothing and returns 0 for locations
 	   not found in memory. */
 
-	char found;
-	int i,j,x = 0, y = 0, indx;
+	for (int indx = 0; indx < MAXPAGES; ++indx) {
+		const int x = static_cast<int>(std::rint(ppd * (lat - dem[indx].min_north)));
+		const int y = mpi - static_cast<int>(std::rint(yppd * (LonDiff(dem[indx].max_west, lon))));
 
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-		x = (int)rint(ppd * (lat - dem[indx].min_north));
-		y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
-
-		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
-			found = 1;
-		else
-			indx++;
-	}
-
-	if (found && size<2)
-		dem[indx].data[x][y] += (short)rint(height);
-
-	// Make surrounding area bigger for wide area landcover. Should enhance 3x3 pixels including c.p
-	if (found && size>1){
-		for(i=size*-1; i <= size; i=i+1){
-			for(j=size*-1; j <= size; j=j+1){
-				if(x+j >= 0 && x+j <=IPPD && y+i >= 0 && y+i <=IPPD)
-					dem[indx].data[x+j][y+i] += (short)rint(height);
+		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
+			if (size<2) {
+				dem[indx].data[x][y] += static_cast<short>(std::rint(height));
 			}
 
+			// Make surrounding area bigger for wide area landcover. Should enhance 3x3 pixels including c.p
+			if (size>1){
+				for(int i=size*-1; i <= size; i=i+1){
+					for(int j=size*-1; j <= size; j=j+1){
+						if(x+j >= 0 && x+j <=IPPD && y+i >= 0 && y+i <=IPPD) {
+							dem[indx].data[x+j][y+i] += static_cast<short>(std::rint(height));
+						}
+					}
+				}
+			}
+			return 1;
 		}
 	}
 
-
-	return found;
+	return 0;
 }
 
 auto dist(double lat1, double lon1, double lat2, double lon2) -> double
 {
 	//ENHANCED HAVERSINE FORMULA WITH RADIUS SLIDER
-	double dx, dy, dz;
-	int polarRadius=6357;
-	int equatorRadius=6378;
-	int delta = equatorRadius-polarRadius; // 21km
-	float earthRadius = equatorRadius - ((lat1/100) * delta);
+	constexpr int polarRadius=6357;
+	constexpr int equatorRadius=6378;
+	constexpr int delta = equatorRadius-polarRadius; // 21km
+	const auto earthRadius = equatorRadius - ((lat1 * 0.01) * delta);
 	lon1 -= lon2;
-	lon1 *= DEG2RAD, lat1 *= DEG2RAD, lat2 *= DEG2RAD;
+	lon1 *= DEG2RAD;
+	lat1 *= DEG2RAD;
+	lat2 *= DEG2RAD;
  
-	dz = sin(lat1) - sin(lat2);
-	dx = cos(lon1) * cos(lat1) - cos(lat2);
-	dy = sin(lon1) * cos(lat1);
-	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * earthRadius;
+	const double dz = std::sin(lat1) - std::sin(lat2);
+	const double dx = std::cos(lon1) * std::cos(lat1) - std::cos(lat2);
+	const double dy = std::sin(lon1) * std::cos(lat1);
+	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * earthRadius;
 }
 
 auto Distance(const struct site_t& site1, const struct site_t& site2) -> double
@@ -316,18 +300,14 @@ auto Distance(const struct site_t& site1, const struct site_t& site2) -> double
 	/* This function returns the great circle distance
 	   in miles between any two site locations. */
 
-	double lat1, lon1, lat2, lon2, distance;
+	const double lat1 = site1.lat * DEG2RAD;
+	const double lon1 = site1.lon * DEG2RAD;
+	const double lat2 = site2.lat * DEG2RAD;
+	const double lon2 = site2.lon * DEG2RAD;
 
-	lat1 = site1.lat * DEG2RAD;
-	lon1 = site1.lon * DEG2RAD;
-	lat2 = site2.lat * DEG2RAD;
-	lon2 = site2.lon * DEG2RAD;
-
-	distance =
-	    3959.0 * acos(sin(lat1) * sin(lat2) +
-			  cos(lat1) * cos(lat2) * cos((lon1) - (lon2)));
-
-	return distance;
+	return
+	    3959.0 * std::acos(std::sin(lat1) * std::sin(lat2) +
+			  std::cos(lat1) * std::cos(lat2) * std::cos(lon1 - lon2));
 }
 
 auto Azimuth(const struct site_t& source, const struct site_t& destination) -> double
@@ -335,42 +315,32 @@ auto Azimuth(const struct site_t& source, const struct site_t& destination) -> d
 	/* This function returns the azimuth (in degrees) to the
 	   destination as seen from the location of the source. */
 
-	double dest_lat, dest_lon, src_lat, src_lon,
-	    beta, azimuth, diff, num, den, fraction;
+	const double dest_lat = destination.lat * DEG2RAD;
+	const double dest_lon = destination.lon * DEG2RAD;
 
-	dest_lat = destination.lat * DEG2RAD;
-	dest_lon = destination.lon * DEG2RAD;
-
-	src_lat = source.lat * DEG2RAD;
-	src_lon = source.lon * DEG2RAD;
+	const double src_lat = source.lat * DEG2RAD;
+	const double src_lon = source.lon * DEG2RAD;
 
 	/* Calculate Surface Distance */
 
-	beta =
-	    acos(sin(src_lat) * sin(dest_lat) +
-		 cos(src_lat) * cos(dest_lat) * cos(src_lon - dest_lon));
+	const double beta =
+	    std::acos(std::sin(src_lat) * std::sin(dest_lat) +
+		 std::cos(src_lat) * std::cos(dest_lat) * std::cos(src_lon - dest_lon));
 
 	/* Calculate Azimuth */
 
-	num = sin(dest_lat) - (sin(src_lat) * cos(beta));
-	den = cos(src_lat) * sin(beta);
-	fraction = num / den;
-
+	const double num = std::sin(dest_lat) - (std::sin(src_lat) * std::cos(beta));
+	const double den = std::cos(src_lat) * std::sin(beta);
 	/* Trap potential problems in acos() due to rounding */
-
-	if (fraction >= 1.0)
-		fraction = 1.0;
-
-	if (fraction <= -1.0)
-		fraction = -1.0;
+	const double fraction = std::clamp(num / den, -1.0, 1.0);
 
 	/* Calculate azimuth */
 
-	azimuth = acos(fraction);
+	double azimuth = std::acos(fraction);
 
 	/* Reference it to True North */
 
-	diff = dest_lon - src_lon;
+	double diff = dest_lon - src_lon;
 
 	if (diff <= -std::numbers::pi) {
 		diff += TWOPI;
@@ -396,12 +366,10 @@ auto ElevationAngle(const struct site_t& source, const struct site_t& destinatio
 	   (downtilt), as referenced to a normal to the center of
 	   the earth. */
 
-	double a, b, dx;
+	const double a = GetElevation(destination) + destination.alt + earthradius;
+	const double b = GetElevation(source) + source.alt + earthradius;
 
-	a = GetElevation(destination) + destination.alt + earthradius;
-	b = GetElevation(source) + source.alt + earthradius;
-
-	dx = FEET_PER_MILE * Distance(source, destination);
+	const double dx = FEET_PER_MILE * Distance(source, destination);
 
 	/* Apply the Law of Cosines */
 
@@ -470,17 +438,19 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 		if (azimuth == 0.0 && (beta > HALFPI - lat1))
 			lon2 = lon1 + std::numbers::pi;
 
-		else if (azimuth == HALFPI && (beta > HALFPI + lat1))
+		else if (azimuth == HALFPI && (beta > HALFPI + lat1)) 
 			lon2 = lon1 + std::numbers::pi;
 
 		else if (fabs(num / den) > 1.0)
 			lon2 = lon1;
 
 		else {
-			if ((std::numbers::pi - azimuth) >= 0.0)
+			if ((std::numbers::pi - azimuth) >= 0.0) {
 				lon2 = lon1 - arccos(num, den);
-			else
+			}
+			else {
 				lon2 = lon1 + arccos(num, den);
+			}
 		}
 
 		while (lon2 < 0.0) {
@@ -500,8 +470,9 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 		tempsite.lon = lon2;
 		path.elevation[c] = GetElevation(tempsite);
 		// fix for tile gaps in multi-tile LIDAR plots
-		if(path.elevation[c]==0 && path.elevation[c-1] > 10)
+		if(path.elevation[c]==0 && path.elevation[c-1] > 10) {
 			path.elevation[c]=path.elevation[c-1];
+		}
 		path.distance[c] = distance;
 	}
 
@@ -515,10 +486,12 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 		c++;
 	}
 
-	if (c < ARRAYSIZE)
+	if (c < ARRAYSIZE) {
 		path.length = c;
-	else
+	}
+	else {
 		path.length = ARRAYSIZE - 1;
+	}
 }
 
 auto ElevationAngle2(const struct site_t& source, const struct site_t& destination, double er) -> double
@@ -529,26 +502,17 @@ auto ElevationAngle2(const struct site_t& source, const struct site_t& destinati
 	   elevation angle to the first obstruction is returned instead.
 	   "er" represents the earth radius. */
 
-	int x;
-	char block = 0;
-	double source_alt, destination_alt, cos_xmtr_angle,
-	    cos_test_angle, test_alt, elevation, distance,
-	    source_alt2, first_obstruction_angle = 0.0;
-	struct path temp;
-
-	temp = path;
-
 	ReadPath(source, destination);
 
-	distance = FEET_PER_MILE * Distance(source, destination);
-	source_alt = er + source.alt + GetElevation(source);
-	destination_alt = er + destination.alt + GetElevation(destination);
-	source_alt2 = source_alt * source_alt;
+	double distance = FEET_PER_MILE * Distance(source, destination);
+	const double source_alt = er + source.alt + GetElevation(source);
+	const double destination_alt = er + destination.alt + GetElevation(destination);
+	const double source_alt2 = source_alt * source_alt;
 
 	/* Calculate the cosine of the elevation angle of the
 	   destination (receiver) as seen by the source (transmitter). */
 
-	cos_xmtr_angle =
+	const double cos_xmtr_angle =
 	    ((source_alt2) + (distance * distance) -
 	     (destination_alt * destination_alt)) / (2.0 * source_alt *
 						     distance);
@@ -559,15 +523,14 @@ auto ElevationAngle2(const struct site_t& source, const struct site_t& destinati
 	   at the source since we're interested in identifying the FIRST
 	   obstruction along the path between source and destination. */
 
-	for (x = 2, block = 0; x < path.length && block == 0; x++) {
+	for (int x = 2; x < path.length; x++) {
 		distance = FEET_PER_MILE * path.distance[x];
 
-		test_alt =
+		auto test_alt =
 		    earthradius + (path.elevation[x] ==
-				   0.0 ? path.elevation[x] : path.elevation[x] +
-				   clutter);
+				   0.0 ? path.elevation[x] : path.elevation[x] + clutter);
 
-		cos_test_angle =
+		const double cos_test_angle =
 		    ((source_alt2) + (distance * distance) -
 		     (test_alt * test_alt)) / (2.0 * source_alt * distance);
 
@@ -580,21 +543,11 @@ auto ElevationAngle2(const struct site_t& source, const struct site_t& destinati
 		   were compared. */
 
 		if (cos_xmtr_angle >= cos_test_angle) {
-			block = 1;
-			first_obstruction_angle =
-			    ((acos(cos_test_angle)) / DEG2RAD) - 90.0;
+			return (std::acos(cos_test_angle) / DEG2RAD) - 90.0;
 		}
 	}
 
-	if (block)
-		elevation = first_obstruction_angle;
-
-	else
-		elevation = ((acos(cos_xmtr_angle)) / DEG2RAD) - 90.0;
-
-	path = temp;
-
-	return elevation;
+	return (std::acos(cos_xmtr_angle) / DEG2RAD) - 90.0;
 }
 
 auto ReadBearing(std::string_view input) -> double
@@ -656,7 +609,6 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 	/* Perform an obstruction analysis along the
 	   path between receiver and transmitter. */
 
-	int x;
 	struct site_t site_x;
 	double h_r, h_t, h_x, h_r_orig, cos_tx_angle, cos_test_angle,
 	    cos_tx_angle_f1, cos_tx_angle_fpt6, d_tx, d_x,
@@ -677,17 +629,19 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 	cos_tx_angle_f1 = cos_tx_angle;
 	cos_tx_angle_fpt6 = cos_tx_angle;
 
-	if (f)
+	if (f) {
 		lambda = 9.8425e8 / (f * 1e6);
+	}
 
 	if (clutter > 0.0) {
 		std::print(outfile, "Terrain has been raised by");
 
-		if (metric)
-			std::print(outfile, " {:.2f} meters",
-				METERS_PER_FOOT * clutter);
-		else
+		if (metric) {
+			std::print(outfile, " {:.2f} meters", METERS_PER_FOOT * clutter);
+		}
+		else {
 			std::print(outfile, " {:.2f} feet", clutter);
+		}
 
 		std::println(outfile, " to account for ground clutter.\n");
 	}
@@ -706,13 +660,13 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 	   acos().  However, note the inverted comparison: if
 	   acos(A) > acos(B), then B > A. */
 
-	for (x = path.length - 1; x > 0; x--) {
+	for (int x = path.length - 1; x > 0; x--) {
 		site_x.lat = path.lat[x];
 		site_x.lon = path.lon[x];
 		site_x.alt = 0.0;
 
-		h_x = GetElevation(site_x) + earthradius + clutter;
-		d_x = FEET_PER_MILE * Distance(rcvr, site_x);
+		const double h_x = GetElevation(site_x) + earthradius + clutter;
+		const double d_x = FEET_PER_MILE * Distance(rcvr, site_x);
 
 		/* Deal with the LOS path first. */
 
