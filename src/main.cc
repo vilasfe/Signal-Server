@@ -136,7 +136,7 @@ void *dec2dms(double decimal, char *string)
 	return (string);
 }
 
-int PutMask(double lat, double lon, int value)
+auto PutMask(double lat, double lon, int value) -> int
 {
 	/* Lines, text, markings, and coverage areas are stored in a
 	   mask that is combined with topology data when topographic
@@ -144,29 +144,20 @@ int PutMask(double lat, double lon, int value)
 	   bits in the mask based on the latitude and longitude of the
 	   area pointed to. */
 
-	int x = 0, y = 0, indx;
-	char found;
+	for (int indx = 0;indx < MAXPAGES; ++indx) {
+		const int x = static_cast<int>(std::rint(ppd * (lat - dem[indx].min_north)));
+		const int y = mpi - static_cast<int>(std::rint(yppd * (LonDiff(dem[indx].max_west, lon))));
 
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-		x = (int)rint(ppd * (lat - dem[indx].min_north));
-		y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
-
-		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
-			found = 1;
-		else
-			indx++;
+		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
+			dem[indx].mask[x][y] = value;
+			return static_cast<int>(dem[indx].mask[x][y]);
+		}
 	}
 
-	if (found) {
-		dem[indx].mask[x][y] = value;
-		return ((int)dem[indx].mask[x][y]);
-	}
-
-	else
-		return -1;
+	return -1;
 }
 
-int OrMask(double lat, double lon, int value)
+auto OrMask(double lat, double lon, int value) -> int
 {
 	/* Lines, text, markings, and coverage areas are stored in a
 	   mask that is combined with topology data when topographic
@@ -174,29 +165,20 @@ int OrMask(double lat, double lon, int value)
 	   the mask based on the latitude and longitude of the area
 	   pointed to. */
 
-	int x = 0, y = 0, indx;
-	char found;
+	for (int indx = 0; indx < MAXPAGES; ++indx) {
+		const int x = static_cast<int>(std::rint(ppd * (lat - dem[indx].min_north)));
+		const int y = mpi - static_cast<int>(std::rint(yppd * (LonDiff(dem[indx].max_west, lon))));
 
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-		x = (int)rint(ppd * (lat - dem[indx].min_north));
-		y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
-
-		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
-			found = 1;
-		else
-			indx++;
+		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
+			dem[indx].mask[x][y] |= value;
+			return static_cast<int>(dem[indx].mask[x][y]);
+		}
 	}
 
-	if (found) {
-		dem[indx].mask[x][y] |= value;
-		return ((int)dem[indx].mask[x][y]);
-	}
-
-	else
-		return -1;
+	return -1;
 }
 
-int GetMask(double lat, double lon)
+auto GetMask(double lat, double lon) -> int
 {
 	/* This function returns the mask bits based on the latitude
 	   and longitude given. */
@@ -206,59 +188,42 @@ int GetMask(double lat, double lon)
 
 void PutSignal(double lat, double lon, unsigned char signal)
 {
-	int x = 0, y = 0, indx;
-	char found;
-
 	/* This function writes a signal level (0-255)
 	   at the specified location for later recall. */
 
-	if (signal > hottest)	// dBm, dBuV
-		hottest = signal;
+	hottest = std::max<int>(signal, hottest);	// dBm, dBuV
 
 	//lookup x/y for this co-ord
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-		x = (int)rint(ppd * (lat - dem[indx].min_north));
-		y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
+	for (int indx = 0; indx < MAXPAGES; ++indx) {
+		const int x = static_cast<int>(std::rint(ppd * (lat - dem[indx].min_north)));
+		const int y = mpi - static_cast<int>(std::rint(yppd * (LonDiff(dem[indx].max_west, lon))));
 
-		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
-			found = 1;
-		else
-			indx++;
+		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
+			dem[indx].signal[x][y] = signal;
+			// return (dem[indx].signal[x][y]);
+			return;
+		}
 	}
 
-	if (found) {		// Write values to file
-		dem[indx].signal[x][y] = signal;
-		// return (dem[indx].signal[x][y]);
-		return;
-	}
-	else
-	  // return 0;
-	  return;
+	// return 0;
 }
 
-unsigned char GetSignal(double lat, double lon)
+auto GetSignal(double lat, double lon) -> unsigned char
 {
 	/* This function reads the signal level (0-255) at the
 	   specified location that was previously written by the
 	   complimentary PutSignal() function. */
 
-	int x = 0, y = 0, indx;
-	char found;
+	for (int indx = 0; indx < MAXPAGES; ++indx) {
+		const int x = static_cast<int>(std::rint(ppd * (lat - dem[indx].min_north)));
+		const int y = mpi - static_cast<int>(std::rint(yppd * (LonDiff(dem[indx].max_west, lon))));
 
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-		x = (int)rint(ppd * (lat - dem[indx].min_north));
-		y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
-
-		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
-			found = 1;
-		else
-			indx++;
+		if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
+			return (dem[indx].signal[x][y]);
+		}
 	}
 
-	if (found)
-		return (dem[indx].signal[x][y]);
-	else
-		return 0;
+	return 0;
 }
 
 auto GetElevation(const struct site_t& location) -> double
