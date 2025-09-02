@@ -20,8 +20,8 @@
 #include "models/itwom3.0.hh"
 #include "models/sui.hh"
 
-void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
-		unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
+void DoPathLoss(std::string& filename, bool geo, bool kml,
+		bool ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the content of flags held in the mask[][]
@@ -38,7 +38,7 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
-	const double one_over_gamma = 1.0 / GAMMA;
+	constexpr double one_over_gamma = 1.0 / GAMMA;
 	conversion =
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
@@ -237,8 +237,8 @@ void DoPathLoss(std::string& filename, unsigned char geo, unsigned char kml,
 
 }
 
-auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
-	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites) -> int
+auto DoSigStr(std::string& filename, bool geo, bool kml,
+	      bool ngs, struct site_t *xmtr, unsigned char txsites) -> int
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal strength values held in the
@@ -454,8 +454,8 @@ auto DoSigStr(std::string& filename, unsigned char geo, unsigned char kml,
 	return 0;
 }
 
-void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
-	      unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
+void DoRxdPwr(std::string filename, bool geo, bool kml,
+	      bool ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -668,8 +668,8 @@ void DoRxdPwr(std::string filename, unsigned char geo, unsigned char kml,
 
 }
 
-void DoLOS(std::string& filename, unsigned char geo, unsigned char kml,
-	   unsigned char ngs, struct site_t *xmtr, unsigned char txsites)
+void DoLOS(std::string& filename, bool geo, bool kml,
+	   bool ngs, struct site_t *xmtr, unsigned char txsites)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the

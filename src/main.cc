@@ -63,7 +63,9 @@ int loops = 100, jgets = 0, MAXRAD, hottest = 0, height, width, resample = 0,
 
 long bzbuf_pointer = 0L, bzbytes_read, gzbuf_pointer = 0L, gzbytes_read;
 
-unsigned char got_elevation_pattern, got_azimuth_pattern, metric = 0, dbm = 0;
+unsigned char got_elevation_pattern, got_azimuth_pattern;
+bool metric = false;
+bool dbm = false;
 
 bool to_stdout = false, cropping = true;
 
@@ -1114,9 +1116,9 @@ auto main(int argc, char *argv[]) -> int
 	y = argc - 1;
 	kml = false;
 	geo = false;
-	dbm = 0;
+	dbm = false;
 	gpsav = 0;
-	metric = 0;
+	metric = false;
 	mapfile[0] = 0;
 	clutter_file[0] = 0;
 	clutter = 0.0;
@@ -1297,8 +1299,7 @@ auto main(int argc, char *argv[]) -> int
 		}
 
 		if (strcmp(argv[x], "-m") == 0) {
-			metric = 1;
-
+			metric = true;
 		}
 
 		if (strcmp(argv[x], "-t") == 0) {
@@ -1306,7 +1307,7 @@ auto main(int argc, char *argv[]) -> int
 		}
 
 		if (strcmp(argv[x], "-dbm") == 0) {
-			dbm = 1;
+			dbm = true;
 		}
 
 		if (strcmp(argv[x], "-sdf") == 0) {

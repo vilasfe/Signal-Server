@@ -112,8 +112,8 @@ extern char gpsav;
 
 extern unsigned char got_elevation_pattern;
 extern unsigned char got_azimuth_pattern;
-extern unsigned char metric;
-extern unsigned char dbm;
+extern bool metric;
+extern bool dbm;
 
 extern struct dem *dem;
 extern thread_local struct path path;
