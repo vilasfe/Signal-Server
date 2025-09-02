@@ -21,16 +21,21 @@ double version = 3.21;
 \****************************************************************************/
 
 #include <algorithm>
-#include <stdio.h>
+#include <cctype>
+#include <cerrno>
+#include <charconv>
+#include <climits>
 #include <cmath>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <errno.h>
-#include <limits.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <format>
+#include <numbers>
 #include <print>
+#include <ranges>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "common.h"
 #include "inputs.hh"
@@ -256,7 +261,7 @@ unsigned char GetSignal(double lat, double lon)
 		return 0;
 }
 
-double GetElevation(struct site_t location)
+auto GetElevation(const struct site_t& location) -> double
 {
 	/* This function returns the elevation (in feet) of any location
 	   represented by the digital elevation model data in memory.
@@ -286,7 +291,7 @@ double GetElevation(struct site_t location)
 	return elevation;
 }
 
-int AddElevation(double lat, double lon, double height, int size)
+auto AddElevation(double lat, double lon, double height, int size) -> int
 {
 	/* This function adds a user-defined terrain feature
 	   (in meters AGL) to the digital elevation model data
@@ -324,7 +329,7 @@ int AddElevation(double lat, double lon, double height, int size)
 	return found;
 }
 
-double dist(double lat1, double lon1, double lat2, double lon2)
+auto dist(double lat1, double lon1, double lat2, double lon2) -> double
 {
 	//ENHANCED HAVERSINE FORMULA WITH RADIUS SLIDER
 	double dx, dy, dz;
@@ -341,7 +346,7 @@ double dist(double lat1, double lon1, double lat2, double lon2)
 	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * earthRadius;
 }
 
-double Distance(struct site_t site1, struct site_t site2)
+auto Distance(const struct site_t& site1, const struct site_t& site2) -> double
 {
 	/* This function returns the great circle distance
 	   in miles between any two site locations. */
@@ -360,7 +365,7 @@ double Distance(struct site_t site1, struct site_t site2)
 	return distance;
 }
 
-double Azimuth(struct site_t source, struct site_t destination)
+auto Azimuth(const struct site_t& source, const struct site_t& destination) -> double
 {
 	/* This function returns the azimuth (in degrees) to the
 	   destination as seen from the location of the source. */
@@ -417,7 +422,7 @@ double Azimuth(struct site_t source, struct site_t destination)
 	return (azimuth / DEG2RAD);
 }
 
-double ElevationAngle(struct site_t source, struct site_t destination)
+auto ElevationAngle(const struct site_t& source, const struct site_t& destination) -> double
 {
 	/* This function returns the angle of elevation (in degrees)
 	   of the destination as seen from the source location.
@@ -440,7 +445,7 @@ double ElevationAngle(struct site_t source, struct site_t destination)
 		 std::numbers::pi) - 90.0);
 }
 
-void ReadPath(struct site_t source, struct site_t destination)
+void ReadPath(const struct site_t& source, const struct site_t& destination)
 {
 	/* This function generates a sequence of latitude and
 	   longitude positions between source and destination
@@ -551,7 +556,7 @@ void ReadPath(struct site_t source, struct site_t destination)
 		path.length = ARRAYSIZE - 1;
 }
 
-double ElevationAngle2(struct site_t source, struct site_t destination, double er)
+auto ElevationAngle2(const struct site_t& source, const struct site_t& destination, double er) -> double
 {
 	/* This function returns the angle of elevation (in degrees)
 	   of the destination as seen from the source location, UNLESS
@@ -926,7 +931,7 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 
 }
 
-void free_dem(void)
+void free_dem()
 {
 	for (int i = 0; i < MAXPAGES; i++) {
 		for (int j = 0; j < IPPD; j++) {
@@ -941,7 +946,7 @@ void free_dem(void)
 	delete [] dem;
 }
 
-void free_elev(void) {
+void free_elev() {
   delete [] elev;
 }
 
@@ -953,12 +958,12 @@ void free_path(void)
 	delete [] path.distance;
 }
 
-void alloc_elev(void)
+void alloc_elev()
 {
   elev  = new double[ARRAYSIZE + 10];
 }
 
-void alloc_dem(void)
+void alloc_dem()
 {
 	dem = new struct dem[MAXPAGES];
 	for (int i = 0; i < MAXPAGES; i++) {
@@ -973,7 +978,7 @@ void alloc_dem(void)
 	}
 }
 
-void alloc_path(void)
+void alloc_path()
 {
 	path.lat = new double[ARRAYSIZE];
 	path.lon = new double[ARRAYSIZE];
@@ -981,7 +986,7 @@ void alloc_path(void)
 	path.distance = new double[ARRAYSIZE];
 }
 
-void do_allocs(void)
+void do_allocs()
 {
 
 	alloc_elev();
