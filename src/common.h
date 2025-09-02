@@ -100,7 +100,7 @@ extern double clutter;
 extern double dBm;
 extern double loss;
 extern double field_strength;
-extern __thread double *elev;
+extern thread_local double *elev;
 extern double westoffset;
 extern double eastoffset;
 extern double delta;
@@ -116,7 +116,7 @@ extern unsigned char metric;
 extern unsigned char dbm;
 
 extern struct dem *dem;
-extern __thread struct path path;
+extern thread_local struct path path;
 extern struct LR LR;
 extern struct region region;
 

@@ -66,8 +66,8 @@ unsigned char got_elevation_pattern, got_azimuth_pattern, metric = 0, dbm = 0;
 
 bool to_stdout = false, cropping = true;
 
-__thread double *elev;
-__thread struct path path;
+thread_local double *elev;
+thread_local struct path path;
 struct site_t tx_site[2];
 struct dem *dem;
 

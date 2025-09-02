@@ -721,7 +721,7 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 	   of a topographic map when the WritePPM() function
 	   is later invoked. */
 
-	static __thread unsigned char mask_value = 1;
+	static thread_local unsigned char mask_value = 1;
 	FILE *fd = nullptr;
 
 	if (!plo_filename.empty()) {
@@ -795,7 +795,7 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 		     int propmodel, int knifeedge, int haf, int pmenv, bool
 		     use_threads)
 {
-	static __thread unsigned char mask_value = 1;
+	static thread_local unsigned char mask_value = 1;
 	FILE *fd = nullptr;
 	
 	if (LR.erp == 0.0 && debug) {
