@@ -56,8 +56,9 @@ double earthradius, max_range = 0.0, forced_erp, dpp, ppd, yppd,
     antenna_downtilt,antenna_dt_direction, cropLat=-70, cropLon=0,cropLonNeg=0;
 
 int ippd, mpi, max_elevation = -32768, min_elevation = 32768, bzerror, gzerr,
-    contour_threshold, pred, pblue, pgreen, ter, multiplier = 256, debug = 0,
-    loops = 100, jgets = 0, MAXRAD, hottest = 0, height, width, resample = 0,
+    contour_threshold, pred, pblue, pgreen, ter, multiplier = 256;
+bool debug = false;
+int loops = 100, jgets = 0, MAXRAD, hottest = 0, height, width, resample = 0,
     bzbuf_empty = 1, gzbuf_empty = 1;
 
 long bzbuf_pointer = 0L, bzbytes_read, gzbuf_pointer = 0L, gzbytes_read;
@@ -1528,7 +1529,7 @@ auto main(int argc, char *argv[]) -> int
 		}
 
 		if (strcmp(argv[x], "-dbg") == 0) {
-			debug = 1;
+			debug = true;
 		}
 
 	
@@ -1955,13 +1956,13 @@ auto main(int argc, char *argv[]) -> int
 				cropLat-=tx_site[0].lat; // angle from tx to edge
 
 			
-				if (debug != 0) {
+				if (debug) {
 					std::println(stderr,"Cropping 1: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.4f} longitude: {:.5f} dpp {:.7f}",max_west,cropLat,cropLon,tx_site[0].lon,dpp);
 				}
 				width=(int)((cropLon*ppd)*2);
 				height=(int)((cropLat*ppd)*2);
 
-				if (debug != 0) {
+				if (debug) {
 					std::println(stderr,"Cropping 2: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f} width {}",max_west,cropLat,cropLon,tx_site[0].lon,width);
 				}
 				if (width > 3600 * 10 || cropLon < 0) {

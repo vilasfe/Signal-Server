@@ -1303,11 +1303,10 @@ int LoadSDF(char *name)
 		indx--;
 
 		if (free_page && found == 0 && indx >= 0 && indx < MAXPAGES) {
-			if (debug == 1) {
-				fprintf(stderr,
-					"Region  \"%s\" assumed as sea-level into page %d...\n",
+			if (debug) {
+				std::println(stderr,
+					"Region  \"{}\" assumed as sea-level into page {}...",
 					name, indx + 1);
-				fflush(stderr);
 			}
 
 			dem[indx].max_west = maxlon;

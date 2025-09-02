@@ -120,7 +120,7 @@ extern thread_local struct path path;
 extern struct LR LR;
 extern struct region region;
 
-extern int debug;
+extern bool debug;
 
 constexpr auto _10log10(auto x)
 {
