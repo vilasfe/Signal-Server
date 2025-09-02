@@ -2,6 +2,7 @@
 #define _TILES_HH_
 
 #include <string>
+#include <string_view>
 
 typedef struct _tile_t{
 	std::string filename;
@@ -43,7 +44,7 @@ typedef struct _tile_t{
 	int		ppdy = 0;
 } tile_t, *ptile_t;
 
-int tile_load_lidar(tile_t*, const std::string& filename);
+int tile_load_lidar(tile_t*, std::string_view filename);
 int tile_rescale(tile_t *, float);
 void tile_destroy(tile_t *);
 

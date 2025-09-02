@@ -1,11 +1,13 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <numbers>
 #include <print>
 #include <string>
+#include <string_view>
 
 #include "tiles.hh"
 
@@ -27,18 +29,19 @@ auto haversine_formula(double th1, double ph1, double th2, double ph2) -> double
 	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * R;
 }
 
-int tile_load_lidar(tile_t *tile, const std::string& filename){
+auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	FILE *fd;
 	char line[MAX_LINE];
 	short nextval;
 	char *pch;
 
 	/* Clear the tile data */
-	memset(tile, 0x00, sizeof(tile_t));
+	*tile = tile_t{};
 
 	/* Open the file handle and return on error */
-	if ( (fd = fopen(filename.data(),"r")) == nullptr )
+	if ( (fd = fopen(filename.data(),"r")) == nullptr ) {
 		return errno;
+	}
 
 	/* This is where we read the header data */
 	/* The string is split for readability but is parsed as a block */
