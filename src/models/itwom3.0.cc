@@ -40,12 +40,16 @@
 *    (-Wunused-but-set-variable)  -- John A. Magliacane -- July 25, 2013      *
 ******************************************************************************/
 
-#include <math.h>
+#include <algorithm>
+#include <cassert>
+#include <cmath>
 #include <complex>
-#include <assert.h>
-#include <string.h>
+#include <cstring>
+#include <numbers>
+#include <vector>
 
 #include "../common.h"
+#include "itwom3.0.hh"
 
 static constexpr double THIRD = 1.0/3.0;
 
@@ -106,15 +110,13 @@ struct propa_type {
 	double tha;
 };
 
-double FORTRAN_DIM(const double &x, const double &y)
+// TODO: Look into replacing this with std::fdim
+constexpr auto FORTRAN_DIM(const double &x, const double &y) -> double
 {
 	/* This performs the FORTRAN DIM function.  Result is x-y
 	   if x is greater than y; otherwise result is 0.0 */
 
-	if (x > y)
-		return x - y;
-	else
-		return 0.0;
+	return std::fmax(x-y, 0.0);
 }
 
 auto aknfe(const double &v2) -> double
