@@ -82,20 +82,20 @@ struct dem *dem;
 struct LR LR;
 struct region region;
 
-double arccos(double x, double y)
+constexpr auto arccos(double x, double y) -> double
 {
 	/* This function implements the arc cosine function,
 	   returning a value between 0 and TWOPI. */
 
-	double result = 0.0;
+	if (y > 0.0) {
+		return std::acos(x / y);
+	}
 
-	if (y > 0.0)
-		result = acos(x / y);
+	if (y < 0.0) {
+		return std::numbers::pi + std::acos(x / y);
+	}
 
-	if (y < 0.0)
-		result = std::numbers::pi + acos(x / y);
-
-	return result;
+	return 0.0;
 }
 
 void *dec2dms(double decimal, char *string)
