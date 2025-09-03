@@ -108,10 +108,10 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	}
 
 	size_t loaded = 0;
-	for (size_t h = 0; h < (unsigned)tile->height; h++) {
+	for (size_t h = 0; h < static_cast<unsigned>(tile->height); h++) {
 		if (fgets(line, MAX_LINE, fd) != nullptr) {
 			pch = strtok(line, " "); // split line into values
-			for (size_t w = 0; w < (unsigned)tile->width && pch != nullptr; w++) {
+			for (size_t w = 0; w < static_cast<unsigned>(tile->width) && pch != nullptr; w++) {
 				/* If the data is less than a *magic* minimum, normalize it to zero */
 				nextval = atoi(pch);
 				if (nextval <= 0)
@@ -131,11 +131,11 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 		}//if
 	}
 
-	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
-	tile->precise_resolution = (current_res_km/std::max(tile->width,tile->height)*1000);
+	const double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
+	tile->precise_resolution = static_cast<float>(current_res_km/std::max(tile->width,tile->height)*1000);
 
 	// Round to nearest 0.5
-	tile->resolution = tile->precise_resolution < 0.5f ? 0.5f : ceil((tile->precise_resolution * 2)+0.5) / 2;
+	tile->resolution = tile->precise_resolution < 0.5F ? 0.5F : std::ceil((tile->precise_resolution * 2)+0.5) * 0.5;
 
 	// Positive westing
 	tile->width_deg = tile->max_west - tile->min_west >= 0 ? tile->max_west - tile->min_west : tile->max_west + (360 - tile->min_west);
@@ -172,8 +172,8 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 		return 0;	
 	}
 
-	size_t new_height = tile->height * scale;
-	size_t new_width = tile->width * scale;
+	const size_t new_height = tile->height * scale;
+	const size_t new_width = tile->width * scale;
 
 	/* Allocate the array for the lidar data */
 	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == nullptr ) {
@@ -187,7 +187,7 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 	if (scale < 1) {
 		skip_count = 1 / scale;
 	} else {
-		copy_count = (size_t) scale;
+		copy_count = static_cast<size_t>(scale);
 	}
 
 	if (debug) {
@@ -198,15 +198,15 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 	 * SOURCE: X / Y
 	 * DEST:   I / J */
 
-	for (size_t y = 0, j = 0; y < (unsigned)tile->height && j < new_height; y += skip_count, j += copy_count) {
+	for (size_t y = 0, j = 0; y < static_cast<unsigned>(tile->height) && j < new_height; y += skip_count, j += copy_count) {
 
-		for (size_t x = 0, i = 0; x < (unsigned)tile->width && i < new_width; x += skip_count, i += copy_count) {
+		for (size_t x = 0, i = 0; x < static_cast<unsigned>(tile->width) && i < new_width; x += skip_count, i += copy_count) {
 		
 			/* These are for scaling up the data */
 			for (size_t copy_y = 0; copy_y < copy_count; copy_y++) {
 				for (size_t copy_x = 0; copy_x < copy_count; copy_x++) {
-					size_t new_j = j + copy_y;
-					size_t new_i = i + copy_x;
+					const size_t new_j = j + copy_y;
+					const size_t new_i = i + copy_x;
 					/* Do the copy */
 					new_data[ new_j * new_width + new_i ] = tile->data[y * tile->width + x];
 				}
@@ -247,9 +247,9 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
  * nearest (via averaging) resample value and calls resample_data
  */
 auto tile_resize(tile_t* tile, int resolution) -> int {
-	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
-	int current_res = (int) ceil((current_res_km/IPPD)*1000);
-	float scaling_factor = resolution / current_res;
+	const double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
+	const int current_res = static_cast<int>( std::ceil((current_res_km/IPPD)*1000) );
+	const float scaling_factor = static_cast<float>(resolution) / current_res;
 	if (debug) {
 		std::println(stderr, "Resampling: Current {}m Desired {}m Scale {:.1f}", current_res, resolution, scaling_factor);
 	}

@@ -61,18 +61,21 @@ double earthradius, max_range = 0.0, forced_erp, dpp, ppd, yppd,
     antenna_downtilt,antenna_dt_direction, cropLat=-70, cropLon=0,cropLonNeg=0;
 
 int ippd, mpi, max_elevation = -32768, min_elevation = 32768, bzerror, gzerr,
-    contour_threshold, pred, pblue, pgreen, ter, multiplier = 256;
-bool debug = false;
-int loops = 100, jgets = 0, MAXRAD, hottest = 0, height, width, resample = 0,
-    bzbuf_empty = 1, gzbuf_empty = 1;
+    contour_threshold, pred, pblue, pgreen, ter, multiplier = 256,
+    loops = 100, jgets = 0, MAXRAD, hottest = 0, height = 0, width = 0;
+int resample = 0;
+bool bzbuf_empty = true;
+bool gzbuf_empty = true;
 
 long bzbuf_pointer = 0L, bzbytes_read, gzbuf_pointer = 0L, gzbytes_read;
 
 unsigned char got_elevation_pattern, got_azimuth_pattern;
+bool debug = false;
 bool metric = false;
 bool dbm = false;
 
-bool to_stdout = false, cropping = true;
+bool to_stdout = false;
+bool cropping = true;
 
 thread_local double *elev;
 thread_local struct path path;
@@ -98,42 +101,29 @@ constexpr auto arccos(double x, double y) -> double
 	return 0.0;
 }
 
-void *dec2dms(double decimal, char *string)
+// TODO: Is this used? or can it be removed?
+auto dec2dms(double decimal) -> std::string
 {
 	/* Converts decimal degrees to degrees, minutes, seconds,
 	   (DMS) and returns the result as a character string. */
 
-        char sign;
-	int degrees, minutes, seconds;
-	double a, b, c, d;
+	char sign = 1;
 
 	if (decimal < 0.0) {
 		decimal = -decimal;
 		sign = -1;
 	}
 
-	else
-		sign = 1;
+	const double a = std::floor(decimal);
+	const double b = 60.0 * (decimal - a);
+	const double c = std::floor(b);
+	const double d = 60.0 * (b - c);
 
-	a = floor(decimal);
-	b = 60.0 * (decimal - a);
-	c = floor(b);
-	d = 60.0 * (b - c);
+	const int degrees = static_cast<int>(a);
+	const int minutes = static_cast<int>(c);
+	const int seconds = std::clamp(static_cast<int>(d), 0, 59);
 
-	degrees = (int)a;
-	minutes = (int)c;
-	seconds = (int)d;
-
-	if (seconds < 0)
-		seconds = 0;
-
-	if (seconds > 59)
-		seconds = 59;
-
-	string[0] = 0;
-	snprintf(string, 250, "%d%c %d\' %d\"", degrees * sign, 176, minutes,
-		 seconds);
-	return (string);
+	return std::format("{}{:c} {}\' {}\"", degrees * sign, 176, minutes, seconds);
 }
 
 auto PutMask(double lat, double lon, int value) -> int
@@ -387,33 +377,28 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 	   along that path in the "path" structure. */
 
 	int c;
-	double azimuth, distance, lat1, lon1, beta, den, num,
-	    lat2, lon2, total_distance, dx, dy, path_length,
-	    miles_per_sample, samples_per_radian = 68755.0;
+	double beta, den, num,
+	    miles_per_sample = 0.0, samples_per_radian = 68755.0;
 	struct site_t tempsite;
 
-	lat1 = source.lat * DEG2RAD;
-	lon1 = source.lon * DEG2RAD;
-	lat2 = destination.lat * DEG2RAD;
-	lon2 = destination.lon * DEG2RAD;
+	double lat1 = source.lat * DEG2RAD;
+	double lon1 = source.lon * DEG2RAD;
+	double lat2 = destination.lat * DEG2RAD;
+	double lon2 = destination.lon * DEG2RAD;
 	samples_per_radian = ppd * 57.295833;
-	azimuth = Azimuth(source, destination) * DEG2RAD;
+	double azimuth = Azimuth(source, destination) * DEG2RAD;
 
-	total_distance = Distance(source, destination);
+	double total_distance = Distance(source, destination);
 
 	if (total_distance > (30.0 / ppd)) {
-		dx = samples_per_radian * acos(cos(lon1 - lon2));
-		dy = samples_per_radian * acos(cos(lat1 - lat2));
-		path_length = sqrt((dx * dx) + (dy * dy));
+		const double dx = samples_per_radian * std::acos(std::cos(lon1 - lon2));
+		const double dy = samples_per_radian * std::acos(std::cos(lat1 - lat2));
+		const double path_length = std::hypot(dx, dy);
 		miles_per_sample = total_distance / path_length;
 	}
 
 	else {
 		c = 0;
-		dx = 0.0;
-		dy = 0.0;
-		path_length = 0.0;
-		miles_per_sample = 0.0;
 		total_distance = 0.0;
 
 		lat1 = lat1 / DEG2RAD;
@@ -425,24 +410,24 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 		path.distance[c] = 0.0;
 	}
 
-	for (distance = 0.0, c = 0;
-	     (total_distance != 0.0 && distance <= total_distance
-	      && c < ARRAYSIZE); c++, distance = miles_per_sample * (double)c) {
+	double distance = 0.0;
+	for (c = 0; (total_distance != 0.0 && distance <= total_distance && c < ARRAYSIZE); c++) {
 		beta = distance / 3959.0;
+		auto sin_lat1 = std::sin(lat1);
+		auto cos_lat1 = std::cos(lat1);
+		auto cos_beta = std::cos(beta);
 		lat2 =
-		    asin(sin(lat1) * cos(beta) +
-			 cos(azimuth) * sin(beta) * cos(lat1));
-		num = cos(beta) - (sin(lat1) * sin(lat2));
-		den = cos(lat1) * cos(lat2);
+		    std::asin(sin_lat1 * cos_beta + std::cos(azimuth) * std::sin(beta) * cos_lat1);
+		const double num = cos_beta - (sin_lat1 * std::sin(lat2));
+		const double den = cos_lat1 * std::cos(lat2);
 
-		if (azimuth == 0.0 && (beta > HALFPI - lat1))
+		if ((azimuth == 0.0 && (beta > HALFPI - lat1)) || (azimuth == HALFPI && (beta > HALFPI + lat1))) {
 			lon2 = lon1 + std::numbers::pi;
+		}
 
-		else if (azimuth == HALFPI && (beta > HALFPI + lat1)) 
-			lon2 = lon1 + std::numbers::pi;
-
-		else if (fabs(num / den) > 1.0)
+		else if (std::fabs(num / den) > 1.0) {
 			lon2 = lon1;
+		}
 
 		else {
 			if ((std::numbers::pi - azimuth) >= 0.0) {
@@ -474,6 +459,7 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 			path.elevation[c]=path.elevation[c-1];
 		}
 		path.distance[c] = distance;
+		distance = miles_per_sample * (c + 1);
 	}
 
 	/* Make sure exact destination point is recorded at path.length-1 */
@@ -927,7 +913,7 @@ auto main(int argc, char *argv[]) -> int
 	int x, y, z = 0, propmodel, knifeedge = 0, ppa = 0, normalise = 0,
 	  haf = 0, pmenv = 1, lidar=0, result;
 
-	double min_lat, min_lon, max_lat, max_lon, rxlat, rxlon, txlat, txlon,
+	double rxlat, rxlon,
 	  west_min, west_max, nortRxHin, nortRxHax;
 
 	bool use_threads = true;
@@ -1641,21 +1627,14 @@ auto main(int argc, char *argv[]) -> int
 	x = 0;
 	y = 0;
 
-	min_lat = 70;
-	max_lat = -70;
+	double min_lon = std::floor(tx_site[0].lon);
+	double max_lon = std::floor(tx_site[0].lon);
 
+	double txlat = static_cast<int>(std::floor(tx_site[0].lat));
+	double txlon = static_cast<int>(std::floor(tx_site[0].lon));
 
-	min_lon = (double)floor(tx_site[0].lon);
-	max_lon = (double)floor(tx_site[0].lon);
-
-	txlat = (int)floor(tx_site[0].lat);
-	txlon = (int)floor(tx_site[0].lon);
-
-	if (txlat < min_lat)
-		min_lat = txlat;
-
-	if (txlat > max_lat)
-		max_lat = txlat;
+	double min_lat = std::min(txlat, 70.0);
+	double max_lat = std::max(txlat, -70.0);
 
 	if (LonDiff(txlon, min_lon) < 0.0) {
 		min_lon = txlon;
