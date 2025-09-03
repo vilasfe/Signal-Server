@@ -131,10 +131,10 @@ auto aknfe(const double &v2) -> double
 
 auto fht(const double &x, const double &pk) -> double
 {
-	double w, fhtv;
+	double fhtv = 0.0;
 
 	if (x < 200.0) {
-		w = -log(pk);
+		const double w = -std::log(pk);
 
 		if (pk < 1.0e-5 || x * w * w * w > 5495.0) {
 			fhtv = -117.0;
@@ -148,11 +148,11 @@ auto fht(const double &x, const double &pk) -> double
 	}
 
 	else {
-		fhtv = 0.05751 * x - 10.0 * log10(x);
+		fhtv = 0.05751 * x - 10.0 * std::log10(x);
 
 		if (x < 2000.0) {
-			w = 0.0134 * x * exp(-0.005 * x);
-			fhtv = (1.0 - w) * fhtv + w * (40.0 * log10(x) - 117.0);
+			const double w = 0.0134 * x * std::exp(-0.005 * x);
+			fhtv = (1.0 - w) * fhtv + w * (40.0 * std::log10(x) - 117.0);
 		}
 	}
 	return fhtv;
@@ -162,20 +162,15 @@ auto h0f(double r, double et) -> double
 {
 	double a[5] = { 25.0, 80.0, 177.0, 395.0, 705.0 };
 	double b[5] = { 24.0, 45.0, 68.0, 80.0, 105.0 };
-	double q, x;
-	double h0fv, temp;
-	int it;
-
-	it = (int)et;
+	double q = 0.0;
+	int it = static_cast<int>(et);
 
 	if (it <= 0) {
 		it = 1;
-		q = 0.0;
 	}
 
 	else if (it >= 5) {
 		it = 5;
-		q = 0.0;
 	}
 
 	else {
@@ -184,10 +179,10 @@ auto h0f(double r, double et) -> double
 
 	/* x=pow(1.0/r,2.0); */
 
-	temp = 1.0 / r;
-	x = temp * temp;
+	const double temp = 1.0 / r;
+	const double x = temp * temp;
 
-	h0fv = 4.343 * log((a[it - 1] * x + b[it - 1]) * x + 1.0);
+	double h0fv = 4.343 * std::log((a[it - 1] * x + b[it - 1]) * x + 1.0);
 
 	if (q != 0.0) {
 		h0fv =
@@ -199,7 +194,7 @@ auto h0f(double r, double et) -> double
 
 auto ahd(double td) -> double
 {
-	int i;
+	int i = 2;
 	double a[3] = { 133.4, 104.6, 71.8 };
 	double b[3] = { 0.332e-3, 0.212e-3, 0.157e-3 };
 	double c[3] = { -4.343, -1.086, 2.171 };
@@ -212,67 +207,48 @@ auto ahd(double td) -> double
 		i = 1;
 	}
 
-	else {
-		i = 2;
-	}
-
-	return a[i] + b[i] * td + c[i] * log(td);
+	return a[i] + b[i] * td + c[i] * std::log(td);
 }
 
-auto abq_alos(std::complex < double >r) -> double
+auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> double
 {
-	return r.real() * r.real() + r.imag() * r.imag();
-}
-
-double saalos(double d, prop_type & prop, propa_type & propa)
-{
-	double ensa, encca, q, dp, dx, tde, hc, ucrpc, ctip, tip, tic, stic,
-	    ctic, sta;
-	double ttc, cttc, crpc, ssnps, d1a, rsp, tsp, arte, zi, pd, pdk, hone,
-	    tvsr;
 	double saalosv = 0.0;
 
-	q = 0.0;
+	if ((d != 0.0) && (prop.hg[1] <= prop.cch)) {
+		double rsp = 0.0;
+		double tsp = 1.0;
+		double arte = 0.0;
+		double tvsr = 0.0;
+		double q = 0.0;
 
-	if (d == 0.0) {
-		tsp = 1.0;
-		rsp = 0.0;
-		d1a = 50.0;
-		saalosv = 0.0;
-	} else if (prop.hg[1] > prop.cch) {
-		saalosv = 0.0;
-	} else {
-		pd = d;
-		pdk = pd / 1000.0;
-		tsp = 1.0;
-		rsp = 0.0;
-		d1a = pd;
+		const double pd = d;
+		const double pdk = pd * 0.001;
+		double d1a = pd;
 		/* at first, hone is transmitter antenna height 
 		   relative to receive site ground level. */
-		hone = prop.tgh + prop.tsgh - (prop.rch[1] - prop.hg[1]);
+		double hone = prop.tgh + prop.tsgh - (prop.rch[1] - prop.hg[1]);
 
 		if (prop.tgh > prop.cch) {	/* for TX ant above all clutter height */
-			ensa = 1 + prop.ens * 0.000001;
-			encca = 1 + prop.encc * 0.000001;
-			dp = pd;
+			double cttc = 0.0;
+			double crpc = 0.0;
+			double ssnps = 0.0;
+			const double ensa = 1 + prop.ens * 0.000001;
+			const double encca = 1 + prop.encc * 0.000001;
+			double dp = pd;
+			double tic = 0.0;
 
 			for (int j = 0; j < 5; ++j) {
-				tde = dp / 6378137.0;
-				hc = (prop.cch + 6378137.0) * (1 - cos(tde));
-				dx = (prop.cch + 6378137.0) * sin(tde);
-				ucrpc =
-				    sqrt((hone - prop.cch + hc) * (hone -
-								   prop.cch +
-								   hc) +
-					 (dx * dx));
-				ctip = (hone - prop.cch + hc) / ucrpc;
-				tip = acos(ctip);
-				tic = tip + tde;
-				tic = std::max(0.0, tic);
-				stic = sin(tic);
-				sta = (ensa / encca) * stic;
-				ttc = asin(sta);
-				cttc = sqrt(1 - (sin(ttc)) * (sin(ttc)));
+				const double tde = dp / 6378137.0;
+				const double hc = (prop.cch + 6378137.0) * (1 - std::cos(tde));
+				const double dx = (prop.cch + 6378137.0) * std::sin(tde);
+				const double ucrpc = std::hypot((hone - prop.cch + hc), dx);
+				const double ctip = (hone - prop.cch + hc) / ucrpc;
+				const double tip = std::acos(ctip);
+				tic = std::max(0.0, tip + tde);
+				const double stic = std::sin(tic);
+				const double sta = (ensa / encca) * stic;
+				const double ttc = std::asin(sta);
+				cttc = std::sqrt(1 - (std::sin(ttc)) * (std::sin(ttc)));
 				crpc = (prop.cch - prop.hg[1]) / cttc;
 				if (crpc >= dp) {
 					crpc = dp - 1 / dp;
@@ -284,7 +260,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 
 			}
 
-			ctic = cos(tic);
+			const double ctic = std::cos(tic);
 
 			/* if the ucrpc path touches the canopy before reaching the
 			   end of the ucrpc, the entry point moves toward the
@@ -337,7 +313,7 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 			tvsr = std::max(0.0, prop.tgh + prop.tsgh - prop.rch[1]);
 
 			if (d1a < 50.0) {
-				arte = 0.0195 * crpc - 20 * log10(tsp);
+				arte = 0.0195 * crpc - 20 * std::log10(tsp);
 			}
 
 			else {
@@ -345,52 +321,52 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 
 					if (tvsr > 1000.0) {
 						q = d1a * (0.03 *
-							   exp(-0.14 * pdk));
+							   std::exp(-0.14 * pdk));
 					} else {
 						q = d1a * (0.07 *
-							   exp(-0.17 * pdk));
+							   std::exp(-0.17 * pdk));
 					}
 
 					arte =
 					    q + (0.7 * pdk -
 						 std::max(0.01,
-						       log10(prop.wn * 47.7) -
+						       std::log10(prop.wn * 47.7) -
 						       2)) * (prop.hg[1] /
 							      hone);
 				}
 
 				else {
 					q = 0.00055 * (pdk) +
-					    log10(pdk) * (0.041 -
-							  0.0017 * sqrt(hone) +
+					    std::log10(pdk) * (0.041 -
+							  0.0017 * std::sqrt(hone) +
 							  0.019);
 
 					arte =
 					    d1a * q -
-					    (18 * log10(rsp)) /
-					    (exp(hone / 37.5));
+					    (18 * std::log10(rsp)) /
+					    (std::exp(hone / 37.5));
 
-					zi = 1.5 * sqrt(hone - prop.cch);
+					const double zi = 1.5 * std::sqrt(hone - prop.cch);
 
 					if (pdk > zi) {
 						q = (pdk -
 						     zi) * 10.2 *
-						    ((sqrt
+						    ((std::sqrt
 						      (std::max
 						       (0.01,
-							log10(prop.wn * 47.7) -
+							std::log10(prop.wn * 47.7) -
 							2.0))) / (100 - zi));
 					} else {
 						q = ((zi -
 						      pdk) / zi) * (-20.0 *
 								    std::max(0.01,
-									  log10
+									  std::log10
 									  (prop.
 									   wn *
 									   47.7)
 									  -
 									  2.0))
-						    / sqrt(hone);
+						    / std::sqrt(hone);
 					}
 					arte = arte + q;
 
@@ -399,16 +375,16 @@ double saalos(double d, prop_type & prop, propa_type & propa)
 		} else {	/* for TX at or below clutter height */
 
 			q = (prop.cch - prop.tgh) * (2.06943 -
-						     1.56184 * exp(1 /
+						     1.56184 * std::exp(1 /
 								   prop.cch -
 								   prop.tgh));
 			q = q + (17.98 -
 				 0.84224 * (prop.cch -
-					    prop.tgh)) * exp(-0.00000061 * pd);
-			arte = q + 1.34795 * 20 * log10(pd + 1.0);
+					    prop.tgh)) * std::exp(-0.00000061 * pd);
+			arte = q + 1.34795 * 20 * std::log10(pd + 1.0);
 			arte =
 			    arte -
-			    (std::max(0.01, log10(prop.wn * 47.7) - 2)) *
+			    (std::max(0.01, std::log10(prop.wn * 47.7) - 2)) *
 			    (prop.hg[1] / prop.tgh);
 		}
 		saalosv = arte;
@@ -731,7 +707,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						if (pd >= 3.141592654) {
 							pd = 6.283185307 - pd;
 							csd =
-							    abq_alos(std::complex <
+							    std::norm(std::complex <
 								     double
 								     >(sdl,
 								       0) +
@@ -744,7 +720,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 								       (pd)));
 						} else {
 							csd =
-							    abq_alos(std::complex <
+							    std::norm(std::complex <
 								     double
 								     >(sdl,
 								       0) +
@@ -775,8 +751,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						} else {	/* downhill slope just above foliage  */
 
 							vv = 0.6365 * prop.wn *
-							    abs(dto + dro -
-								dtr);
+							    std::abs(dto + dro - dtr);
 							adiffv2 = aknfe(vv);
 						}
 						closs = saalos(rd, prop, propa);
@@ -824,8 +799,9 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 			r1 = r2 * prop.he[0];
 			r2 *= prop.he[1];
 
-			if (r1 < 0.2 && r2 < 0.2)
+			if (r1 < 0.2 && r2 < 0.2) {
 				return 1001.0;	// <==== early return
+			}
 
 			ss = (d - ad) / (d + ad);
 			q = rr / ss;
@@ -914,8 +890,9 @@ void qlrps(double fmhz, double zsys, double en0, int ipol, double eps,
 	zq = std::complex < double >(eps, 376.62 * sgm / prop.wn);
 	prop_zgnd = sqrt(zq - 1.0);
 
-	if (ipol != 0.0)
+	if (ipol != 0.0) {
 		prop_zgnd = prop_zgnd / zq;
+	}
 
 	prop.zgndreal = prop_zgnd.real();
 	prop.zgndimag = prop_zgnd.imag();
@@ -946,7 +923,7 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 					 prop_zgnd) * exp(-std::min(10.0,
 								 prop.wn * s *
 								 sps));
-		q = abq_alos(r);
+		q = std::norm(r);
 
 		if (q < 0.25 || q < sps) {
 			r = r * std::sqrt(sps / q);
@@ -961,7 +938,7 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 
 		alosv =
 		    (-4.343 *
-		     log(abq_alos(std::complex < double >(cos(q), -sin(q)) + r)) -
+		     std::log(std::norm(std::complex < double >(std::cos(q), -std::sin(q)) + r)) -
 		     alosv) * wls + alosv;
 
 	}
@@ -972,7 +949,7 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 {
 	std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	std::complex < double >r;
-	double cd, cr, dr, hr, hrg, ht, htg, hrp, re, s, sps, q, pd, drh;
+	double cd, cr, dr, hr, hrg, ht, htg, hrp, s, sps, q, pd, drh;
 	/* int rp; */
 	double alosv;
 
@@ -1028,7 +1005,7 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 		s = 0.78 * q * exp(-pow(q / 16.0, 0.25));
 		q = exp(-std::min(10.0, prop.wn * s * sps));
 		r = q * (sps - prop_zgnd) / (sps + prop_zgnd);
-		q = abq_alos(r);
+		q = std::norm(r);
 		q = std::min(q, 1.0);
 
 		if (q < 0.25 || q < sps) {
@@ -1051,7 +1028,7 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 		}
 		/* no longer valid complex conjugate removed 
 		   by removing minus sign from in front of sin function */
-		re = abq_alos(std::complex < double >(cos(q), sin(q)) + r);
+		const double re = std::norm(std::complex < double >(std::cos(q), std::sin(q)) + r);
 		alosv = -10 * log10(re);
 		prop.tgh = prop.hg[0];	/*tx above gnd hgt set to antenna height AGL */
 		prop.tsgh = prop.rch[0] - prop.hg[0];	/* tsgh set to tx site gl AMSL */
@@ -1075,20 +1052,23 @@ void qlra(int kst[], int klimx, int mdvarx, prop_type & prop,
 	double q;
 
 	for (int j = 0; j < 2; ++j) {
-		if (kst[j] <= 0)
+		if (kst[j] <= 0) {
 			prop.he[j] = prop.hg[j];
+		}
 		else {
 			q = 4.0;
 
-			if (kst[j] != 1)
+			if (kst[j] != 1) {
 				q = 9.0;
+			}
 
-			if (prop.hg[j] < 5.0)
-				q *= sin(0.3141593 * prop.hg[j]);
+			if (prop.hg[j] < 5.0) {
+				q *= std::sin(0.3141593 * prop.hg[j]);
+			}
 
 			prop.he[j] =
 			    prop.hg[j] + (1.0 +
-					  q) * exp(-std::min(20.0,
+					  q) * std::exp(-std::min(20.0,
 							  2.0 * prop.hg[j] /
 							  std::max(1e-3,
 								prop.dh)));
