@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 #include <mutex>
 #include <numbers>
 #include <print>
@@ -35,24 +36,30 @@ namespace {
 	bool has_init_processed = false;
 
 	struct propagationRange {
-		double min_west, max_west, min_north, max_north;
-		double altitude;
-		bool eastwest, los, use_threads;
+		double min_west = 0.0;
+		double max_west = 0.0;
+		double min_north = 0.0;
+		double max_north = 0.0;
+		double altitude = 0.0;
+		bool eastwest = false;
+		bool los = true;
+		bool use_threads = true;
 		site_t source;
-		unsigned char mask_value;
-		FILE *fd;
-		int propmodel, knifeedge, pmenv;
+		unsigned char mask_value = 0;
+		FILE *fd = nullptr;
+		int propmodel = 0;
+		int knifeedge = 0;
+		int pmenv = 0;
 	};
 
-	void* rangePropagation(void *parameters)
+	auto rangePropagation(std::shared_ptr<propagationRange> v) -> void*
 	{
-		propagationRange *v = (propagationRange*)parameters;
 		if(v->use_threads) {
 			alloc_elev();
 			alloc_path();
 		}
 
-		double minwest = dpp + (double)v->min_west;
+		const double minwest = dpp + v->min_west;
 		double lon = v->eastwest ? minwest : v->min_west;
 		double lat = v->min_north;
 		int y = 0;
@@ -83,13 +90,11 @@ namespace {
 			}
 
 
-			} while ( v->eastwest 
-				? (LonDiff(lon, (double)v->max_west) <= 0.0)
-				: (lat < (double)v->max_north) );
+		} while ( v->eastwest ? (LonDiff(lon, v->max_west) <= 0.0) : (lat < v->max_north) );
 
-			if(v->use_threads) {
-				free_elev();
-				free_path();
+		if(v->use_threads) {
+			free_elev();
+			free_path();
 		}
 		return nullptr;
 	}
@@ -150,17 +155,16 @@ namespace {
 					rtn = true;
 					processed[indx][x][y] = true;
 				}
-
 			}
-
 		}
 		return rtn;
 	}
   
-	void beginThread(void *arg)
+	void beginThread(std::shared_ptr<propagationRange> arg)
 	{
-		if(!has_init_processed)
+		if(!has_init_processed)  {
 			init_processed();
+		}
 
 		threads[thread_count] = std::thread(rangePropagation, arg);
 		++thread_count;
@@ -173,63 +177,57 @@ namespace {
 		}
 		thread_count = 0;
 	}
-}
 
-
-/*
- * Acute Angle from Rx point to an obstacle of height (opp) and
- * distance (adj)
- */
-static double incidenceAngle(double opp, double adj)
-{
-	return atan2(opp, adj) * 180 * std::numbers::inv_pi;
-}
-
-/*
- * Knife edge diffraction:
- * This is based upon a recognised formula like Huygens, but trades
- * thoroughness for increased speed which adds a proportional diffraction
- * effect to obstacles.
- */
-static double ked(double freq, double rxh, double dkm)
-{
-	double obh, obd, rxobaoi = 0, d;
-
-	obh = 0;		// Obstacle height
-	obd = 0;		// Obstacle distance
-
-	dkm = dkm * 1000;	// KM to metres
-
-	// walk along path
-	for (int n = 2; n < (dkm / elev[1]); n++) {
-
-		d = (n - 2) * elev[1];	// no of points * delta = km
-
-		//Find dip(s)
-		if (elev[n] < obh) {
-
-			// Angle from Rx point to obstacle
-			rxobaoi =
-			    incidenceAngle((obh - (elev[n] + rxh)), d - obd);
-		} else {
-			// Line of sight or higher
-			rxobaoi = 0;
-		}
-
-		//note the highest point
-		if (elev[n] > obh) {
-			obh = elev[n];
-			obd = d;
-		}
-
+	/*
+	* Acute Angle from Rx point to an obstacle of height (opp) and
+	* distance (adj)
+	*/
+	auto incidenceAngle(double opp, double adj) -> double
+	{
+		return std::atan2(opp, adj) * 180 * std::numbers::inv_pi;
 	}
 
-	if (rxobaoi >= 0) {
-		return (rxobaoi / (300 / freq))+3;	// Diffraction angle divided by wavelength (m)
-	} else {
+	/*
+	* Knife edge diffraction:
+	* This is based upon a recognised formula like Huygens, but trades
+	* thoroughness for increased speed which adds a proportional diffraction
+	* effect to obstacles.
+	*/
+	auto ked(double freq, double rxh, double dkm) -> double
+	{
+		double rxobaoi = 0;
+		double obh = 0;		// Obstacle height
+		double obd = 0;		// Obstacle distance
+
+		dkm = dkm * 1000;	// KM to metres
+
+		// walk along path
+		for (int n = 2; n < (dkm / elev[1]); n++) {
+
+			const double d = (n - 2) * elev[1];	// no of points * delta = km
+
+			//Find dip(s)
+			if (elev[n] < obh) {
+				// Angle from Rx point to obstacle
+				rxobaoi = incidenceAngle((obh - (elev[n] + rxh)), d - obd);
+			} else {
+				// Line of sight or higher
+				rxobaoi = 0;
+			}
+
+			//note the highest point
+			if (elev[n] > obh) {
+				obh = elev[n];
+				obd = d;
+			}
+		}
+
+		if (rxobaoi >= 0) {
+			return (rxobaoi / (300 / freq))+3;	// Diffraction angle divided by wavelength (m)
+		}
 		return 1;
 	}
-}
+} /* anonymous namespace */
 
 void PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, [[maybe_unused]] FILE *fd)
 {
@@ -248,8 +246,7 @@ void PlotLOSPath(const struct site_t& source, const struct site_t& destination, 
 	double distance, rx_alt, tx_alt;
 
 	ReadPath(source, destination);
-        for (y = 0; (y < (path.length - 1) && path.distance[y] <= max_range);
-             y++) {
+	for (y = 0; (y < (path.length - 1) && path.distance[y] <= max_range); y++) {
 	//for (y = 0; y < path.length; y++) {
 		/* Test this point only if it hasn't been already
 		   tested and found to be free of obstructions. */
@@ -567,7 +564,7 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 			temp.lat = path.lat[y];
 			temp.lon = path.lon[y];
 
-			azimuth = (Azimuth(source, temp));
+			azimuth = Azimuth(source, temp);
 
 			if (fd != nullptr) {
 				fd_buffer += std::format("{:.7f}, {:.7f}, {:.3f}, {:.3f}, ",
@@ -739,10 +736,10 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 	double range_min_north[] = {max_north, min_north, min_north, min_north};
 	double range_max_west[] = {max_west, min_west, max_west, max_west};
 	double range_max_north[] = {max_north, max_north, min_north, max_north};
-	propagationRange* r[NUM_SECTIONS];
+	std::array<std::shared_ptr<propagationRange>, NUM_SECTIONS> r;
 
 	for(int i = 0; i < NUM_SECTIONS; ++i) {
-		propagationRange *range = new propagationRange;
+		auto range = std::make_shared<propagationRange>();
 		r[i] = range;
 		range->los = true;
 
@@ -768,10 +765,6 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 
 	if(use_threads) {
 		finishThreads();
-	}
-
-	for(int i = 0; i < NUM_SECTIONS; ++i){
-		delete r[i];
 	}
 
 	switch (mask_value) {
@@ -825,7 +818,7 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 			metric ? "meters" : "feet");
 	}
 
-	if (plo_filename[0] != 0) {
+	if (!plo_filename.empty()) {
 		fd = fopen(plo_filename.data(), "wb");
 	}
 
@@ -843,10 +836,10 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 	double range_min_north[] = {max_north, min_north, min_north, min_north};
 	double range_max_west[] = {max_west, min_west, max_west, max_west};
 	double range_max_north[] = {max_north, max_north, min_north, max_north};
-	propagationRange* r[NUM_SECTIONS];
+	std::array<std::shared_ptr<propagationRange>, NUM_SECTIONS> r;
 
 	for(int i = 0; i < NUM_SECTIONS; ++i) {
-		propagationRange *range = new propagationRange;
+		auto range = std::make_shared<propagationRange>();
 		r[i] = range;
 		range->los = false;
 
@@ -885,10 +878,6 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 
 	if(use_threads) {
 		finishThreads();
-	}
-
-	for(int i = 0; i < NUM_SECTIONS; ++i){
-		delete r[i];
 	}
 
 	if (fd != nullptr) {
