@@ -350,24 +350,10 @@ auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> 
 					const double zi = 1.5 * std::sqrt(hone - prop.cch);
 
 					if (pdk > zi) {
-						q = (pdk -
-						     zi) * 10.2 *
-						    ((std::sqrt
-						      (std::max
-						       (0.01,
-							std::log10(prop.wn * 47.7) -
-							2.0))) / (100 - zi));
+						q = (pdk - zi) * 10.2 *
+						    ((std::sqrt(std::max(0.01, std::log10(prop.wn * 47.7) - 2.0))) / (100 - zi));
 					} else {
-						q = ((zi -
-						      pdk) / zi) * (-20.0 *
-								    std::max(0.01,
-									  std::log10
-									  (prop.
-									   wn *
-									   47.7)
-									  -
-									  2.0))
-						    / std::sqrt(hone);
+						q = ((zi - pdk) / zi) * (-20.0 * std::max(0.01, std::log10(prop.wn * 47.7) - 2.0)) / std::sqrt(hone);
 					}
 					arte = arte + q;
 
@@ -857,7 +843,7 @@ auto qerfi(double q) -> double
 	constexpr double d3 = 0.001308;
 
 	const double x = 0.5 - q;
-	double t = std::max(0.5 - fabs(x), 0.000001);
+	double t = std::max(0.5 - std::abs(x), 0.000001);
 	t = std::sqrt(-2.0 * std::log(t));
 	const double v = t - ((c2 * t + c1) * t + c0) / (((d3 * t + d2) * t + d1) * t + 1.0);
 
@@ -1363,10 +1349,10 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
 		q = adiff2(0.0, prop, propa);
 		xae = std::pow(prop.wn * (prop.gme * prop.gme), -THIRD);
-		d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
-		d4 = d3 + 2.7574 * xae;
-		a3 = adiff2(d3, prop, propa);
-		a4 = adiff2(d4, prop, propa);
+		const double d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
+		const double d4 = d3 + 2.7574 * xae;
+		const double a3 = adiff2(d3, prop, propa);
+		const double a4 = adiff2(d4, prop, propa);
 		propa.emd = (a4 - a3) / (d4 - d3);
 		propa.aed = a3 - propa.emd * d3;
 	}
@@ -1396,29 +1382,25 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 
 			if (!wlos) {
 				q = alos2(0.0, prop, propa);
-				d2 = propa.dlsa;
-				a2 = propa.aed + d2 * propa.emd;
-				d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
+				const double d2 = propa.dlsa;
+				double a2 = propa.aed + d2 * propa.emd;
+				double d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
 
 				if (propa.aed > 0.0) {
 					prop.aref =
 					    propa.aed + propa.emd * prop.dist;
 				} else {
+					double d1 = std::max(-propa.aed / propa.emd, 0.25 * propa.dla); /* aed less than zero */
 					if (propa.aed == 0.0) {
 						d0 = std::min(d0, 0.5 * propa.dla);
 						d1 = d0 + 0.25 * (propa.dla -
 								  d0);
-					} else {	/* aed less than zero */
-
-						d1 = std::max(-propa.aed /
-							   propa.emd,
-							   0.25 * propa.dla);
 					}
-					a1 = alos2(d1, prop, propa);
-					wq = false;
+					const double a1 = alos2(d1, prop, propa);
+					bool wq = false;
 
 					if (d0 < d1) {
-						a0 = alos2(d0, prop, propa);
+						const double a0 = alos2(d0, prop, propa);
 						a2 = std::min(a2,
 							   alos2(d2, prop,
 								 propa));
@@ -1501,10 +1483,10 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		if (iw == 0.0) {	/* area mode */
 			if (!wscat) {
 				q = ascat(0.0, prop, propa);
-				d5 = propa.dla + 200e3;
-				d6 = d5 + 200e3;
-				a6 = ascat(d6, prop, propa);
-				a5 = ascat(d5, prop, propa);
+				const double d5 = propa.dla + 200e3;
+				const double d6 = d5 + 200e3;
+				const double a6 = ascat(d6, prop, propa);
+				const double a5 = ascat(d5, prop, propa);
 
 				if (a5 < 1000.0) {
 					propa.ems = (a6 - a5) / 200e3;
@@ -1540,12 +1522,10 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		} else {	/* ITWOM mode  q used to preset coefficients with zero input */
 
 			if (!wscat) {
-				d5 = 0.0;
-				d6 = 0.0;
 				q = ascat(0.0, prop, propa);
-				a6 = ascat(pd1, prop, propa);
+				const double a6 = ascat(pd1, prop, propa);
 				q = adiff2(0.0, prop, propa);
-				a5 = adiff2(pd1, prop, propa);
+				const double a5 = adiff2(pd1, prop, propa);
 
 				if (a5 <= a6) {
 					propa.dx = 10000000;
@@ -1616,8 +1596,7 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	const double bfp3[7] = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
 	static thread_local bool ws, w1;
 	const double rt = 7.8;
-	double rl = 24.0, avarv, q, vs, zt, zl, zc;
-	double sgt, yr, temp1, temp2;
+	double rl = 24.0, q;
 	int temp_klim = propv.klim - 1;
 
 	if (propv.lvar > 0) {
@@ -1715,7 +1694,7 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 		}
 		else {
 			/* vs0=pow(5.0+3.0*exp(-de/100e3),2.0); */
-			temp1 = (5.0 + 3.0 * std::exp(-de / 100e3));
+			const double temp1 = (5.0 + 3.0 * std::exp(-de / 100e3));
 			vs0 = temp1 * temp1;
 
 		}
@@ -1723,9 +1702,9 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 		propv.lvar = 0;
 	}
 
-	zt = zzt;
-	zl = zzl;
-	zc = zzc;
+	double zt = zzt;
+	double zl = zzl;
+	const double zc = zzc;
 
 	switch (kdv) {
 	case 0:
@@ -1745,6 +1724,7 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 		prop.kwx = std::max(prop.kwx, 1);
 	}
 
+	double sgt = sgtm;
 	if (zt < 0.0) {
 		sgt = sgtm;
 	}
@@ -1757,13 +1737,14 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 
 	/* vs=vs0+pow(sgt*zt,2.0)/(rt+zc*zc)+pow(sgl*zl,2.0)/(rl+zc*zc); */
 
-	temp1 = sgt * zt;
-	temp2 = sgl * zl;
+	const double temp1 = sgt * zt;
+	const double temp2 = sgl * zl;
 
-	vs = vs0 + (temp1 * temp1) / (rt + zc * zc) + (temp2 * temp2) / (rl +
+	const double vs = vs0 + (temp1 * temp1) / (rt + zc * zc) + (temp2 * temp2) / (rl +
 									 zc *
 									 zc);
 
+	double yr = 0.0;
 	if (kdv == 0) {
 		yr = 0.0;
 		propv.sgc = std::sqrt(sgt * sgt + sgl * sgl + vs);
@@ -1784,7 +1765,7 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 		propv.sgc = std::sqrt(vs);
 	}
 
-	avarv = prop.aref - vmd - yr - propv.sgc * zc;
+	double avarv = prop.aref - vmd - yr - propv.sgc * zc;
 
 	if (avarv < 0.0) {
 		avarv = avarv * (29.0 - avarv) / (29.0 - 10.0 * avarv);
@@ -1795,17 +1776,12 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 
 void hzns(double pfl[], prop_type & prop)
 {
-	/* Used only with ITM 1.2.2 */
-	bool wq;
-	int np;
-	double xi, za, zb, qc, q, sb, sa;
-
-	np = (int)pfl[0];
-	xi = pfl[1];
-	za = pfl[2] + prop.hg[0];
-	zb = pfl[np + 2] + prop.hg[1];
-	qc = 0.5 * prop.gme;
-	q = qc * prop.dist;
+	const int np = static_cast<int>(pfl[0]);
+	const double xi = pfl[1];
+	const double za = pfl[2] + prop.hg[0];
+	const double zb = pfl[np + 2] + prop.hg[1];
+	const double qc = 0.5 * prop.gme;
+	double q = qc * prop.dist;
 	prop.the[1] = (zb - za) / prop.dist;
 	prop.the[0] = prop.the[1] - q;
 	prop.the[1] = -prop.the[1] - q;
@@ -1813,9 +1789,10 @@ void hzns(double pfl[], prop_type & prop)
 	prop.dl[1] = prop.dist;
 
 	if (np >= 2) {
-		sa = 0.0;
-		sb = prop.dist;
-		wq = true;
+		double sa = 0.0;
+		double sb = prop.dist;
+		/* Used only with ITM 1.2.2 */
+		bool wq = true;
 
 		for (int i = 1; i < np; i++) {
 			sa += xi;
@@ -1829,8 +1806,7 @@ void hzns(double pfl[], prop_type & prop)
 			}
 
 			if (!wq) {
-				q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb -
-				    zb;
+				q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
 
 				if (q > 0.0) {
 					prop.the[1] += q / sb;
@@ -1843,14 +1819,12 @@ void hzns(double pfl[], prop_type & prop)
 
 void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 {
-	bool wq;
-	int np, rp, i, j;
-	double xi, za, zb, sb, sa, dr, dshh;
+	double dr = 0.0;
 
-	np = (int)pfl[0];
-	xi = pfl[1];
-	za = pfl[2] + prop.hg[0];
-	zb = pfl[np + 2] + prop.hg[1];
+	const int np = static_cast<int>(pfl[0]);
+	const double xi = pfl[1];
+	const double za = pfl[2] + prop.hg[0];
+	const double zb = pfl[np + 2] + prop.hg[1];
 	prop.tiw = xi;
 	prop.ght = za;
 	prop.ghr = zb;
@@ -1866,11 +1840,11 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 	prop.los = 1;
 
 	if (np >= 2) {
-		sa = 0.0;
-		sb = prop.dist;
-		wq = true;
+		double sa = 0.0;
+		double sb = prop.dist;
+		bool wq = true;
 
-		for (j = 1; j < np; j++) {
+		for (int j = 1; j < np; j++) {
 			sa += xi;
 			q = pfl[j + 2] - (qc * sa + prop.the[0]) * sa - za;
 
@@ -1885,7 +1859,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 		}
 
 		if (!wq) {
-			for (i = 1; i < np; i++) {
+			for (int i = 1; i < np; i++) {
 				sb -= xi;
 				q = pfl[np + 2 - i] - (qc * (prop.dist - sb) +
 						       prop.the[1]) *
@@ -1909,7 +1883,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 	}
 
 	if ((prop.dl[1]) < (prop.dist)) {
-		dshh = prop.dist - prop.dl[0] - prop.dl[1];
+		const double dshh = prop.dist - prop.dl[0] - prop.dl[1];
 
 		if (static_cast<int>(dshh) == 0) {	/* one obstacle */
 			dr = prop.dl[1] / (1 + zb / prop.hht);
@@ -1921,7 +1895,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 
 		dr = (prop.dist) / (1 + zb / za);
 	}
-	rp = 2 + (int)(floor(0.5 + dr / xi));
+	const int rp = 2 + (int)(floor(0.5 + dr / xi));
 	prop.rpl = rp;
 	prop.rph = pfl[rp];
 }
@@ -1965,28 +1939,25 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0,
 void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
 {
 	/* corrected for use with ITWOM */
-	double xn, xa, xb, x, a, b, bn;
-	int n, ja, jb;
 
-	xn = z[0];
-	xa = int (FORTRAN_DIM(x1 / z[1], 0.0));
-	xb = xn - int (FORTRAN_DIM(xn, x2 / z[1]));
+	const double xn = z[0];
+	double xa = int (FORTRAN_DIM(x1 / z[1], 0.0));
+	double xb = xn - int (FORTRAN_DIM(xn, x2 / z[1]));
 
 	if (xb <= xa) {
 		xa = FORTRAN_DIM(xa, 1.0);
 		xb = xn - FORTRAN_DIM(xn, xb + 1.0);
 	}
 
-	ja = (int)xa;
-	jb = (int)xb;
-	xa = (2 * int ((xb - xa) / 2))-1;
-	x = -0.5 * (xa + 1);
+	const int jb = static_cast<int>(xb);
+	xa = (2 * static_cast<int>((xb - xa) / 2))-1;
+	double x = -0.5 * (xa + 1);
 	xb += x;
-	ja = jb - 1 - (int)xa;
-	n = jb - ja;
-	a = (z[ja + 2] + z[jb + 2]);
-	b = (z[ja + 2] - z[jb + 2]) * x;
-	bn = 2 * (x * x);
+	int ja = jb - 1 - static_cast<int>(xa);
+	const int n = jb - ja;
+	double a = (z[ja + 2] + z[jb + 2]);
+	double b = (z[ja + 2] - z[jb + 2]) * x;
+	double bn = 2 * (x * x);
 
 	for (int i = 2; i <= n; ++i) {
 		++ja;
@@ -2061,9 +2032,13 @@ auto qtile(const int &nn, double a[], const int &ir) -> double
 
 auto qerf(const double &z) -> double
 {
-	const double b1 = 0.319381530, b2 = -0.356563782, b3 = 1.781477937;
-	const double b4 = -1.821255987, b5 = 1.330274429;
-	const double rp = 4.317008, rrt2pi = 0.398942280;
+	constexpr double b1 = 0.319381530;
+	constexpr double b2 = -0.356563782;
+	constexpr double b3 = 1.781477937;
+	constexpr double b4 = -1.821255987;
+	constexpr double b5 = 1.330274429;
+	constexpr double rp = 4.317008;
+	constexpr double rrt2pi = 0.398942280;
 	double qerfv = 0.0;
 
 	const double x = z;
@@ -2085,30 +2060,26 @@ auto qerf(const double &z) -> double
 
 auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 {
-	int np, ka, kb, n, k;
-	double d1thxv, sn, xa, xb;
-	double *s;
 
-	np = (int)pfl[0];
-	xa = x1 / pfl[1];
-	xb = x2 / pfl[1];
-	d1thxv = 0.0;
+	const int np = static_cast<int>(pfl[0]);
+	double xa = x1 / pfl[1];
+	double xb = x2 / pfl[1];
+	double d1thxv = 0.0;
 
 	if (xb - xa < 2.0) {	// exit out
 		return d1thxv;
 	}
 
-	ka = (int)(0.1 * (xb - xa + 8.0));
-	ka = std::clamp(ka, 4, 25);
-	n = 10 * ka - 5;
-	kb = n - ka + 1;
-	sn = n - 1;
-	assert((s = new double[n + 2])!=0);
+	const int ka = std::clamp(static_cast<int>(0.1 * (xb - xa + 8.0)), 4, 25);
+	const int n = 10 * ka - 5;
+	const int kb = n - ka + 1;
+	const double sn = n - 1;
+	double* s = new double[n + 2];
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;
-	k = (int)(xa + 1.0);
-	xa -= (double)k;
+	int k = static_cast<int>(xa + 1.0);
+	xa -= static_cast<double>(k);
 
 	for (int j = 0; j < n; j++) {
 		while (xa > 0.0 && k < np) {
@@ -2138,26 +2109,21 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 auto d1thx2(double pfl[], const double &x1, const double &x2,
 	      propa_type & propa) -> double
 {
-	int np, ka, kb, n, kmx;
-	double d1thx2v, sn, xa, xb;
-	double *s;
-
-	np = (int)pfl[0];
-	xa = x1 / pfl[1];
-	xb = x2 / pfl[1];
-	d1thx2v = 0.0;
+	const int np = static_cast<int>(pfl[0]);
+	double xa = x1 / pfl[1];
+	double xb = x2 / pfl[1];
+	double d1thx2v = 0.0;
 
 	if (xb - xa < 2.0) {	// exit out
 		return d1thx2v;
 	}
 
-	ka = (int)(0.1 * (xb - xa + 8.0));
-	kmx = std::max(25, (int)(83350 / (pfl[1])));
-	ka = std::clamp(ka, 4, kmx);
-	n = 10 * ka - 5;
-	kb = n - ka + 1;
-	sn = n - 1;
-	assert((s = new double[n + 2])!=0);
+	const int kmx = std::max(25, static_cast<int>(83350 / (pfl[1])));
+	const int ka = std::clamp(static_cast<int>(0.1 * (xb - xa + 8.0)), 4, kmx);
+	const int n = 10 * ka - 5;
+	const int kb = n - ka + 1;
+	const double sn = n - 1;
+	double* s = new double[n + 2];
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;
@@ -2191,14 +2157,16 @@ auto d1thx2(double pfl[], const double &x1, const double &x2,
 void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	    propa_type & propa, propv_type & propv)
 {
-	int np, j;
-	double xl[2], q, za, zb, temp;
+	double xl[2];
+	double za = 0.0;
+	double zb = 0.0;
+	double q = 0.0;
 
 	prop.dist = pfl[0] * pfl[1];
-	np = (int)pfl[0];
+	const int np = static_cast<int>(pfl[0]);
 	hzns(pfl, prop);
 
-	for (j = 0; j < 2; j++) {
+	for (int j = 0; j < 2; j++) {
 		xl[j] = std::min(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
 	}
 
@@ -2222,10 +2190,10 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 
 		if (q <= prop.dist) {	/* if there is a rounded horizon, or two obstructions, in the path */
 			/* q=pow(prop.dist/q,2.0); */
-			temp = prop.dist / q;
+			const double temp = prop.dist / q;
 			q = temp * temp;
 
-			for (j = 0; j < 2; j++) {
+			for (int j = 0; j < 2; j++) {
 				prop.he[j] *= q;	/* tx effective height set to be path dist/distance between obstacles */
 				prop.dl[j] =
 				    std::sqrt(2.0 * prop.he[j] / prop.gme) *
@@ -2234,7 +2202,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 			}
 		}
 
-		for (j = 0; j < 2; j++) {	/* original empirical adjustment?  uses delta-h to adjust grazing angles */
+		for (int j = 0; j < 2; j++) {	/* original empirical adjustment?  uses delta-h to adjust grazing angles */
 			q = std::sqrt(2.0 * prop.he[j] / prop.gme);
 			prop.the[j] =
 			    (0.65 * prop.dh * (q / prop.dl[j] - 1.0) -
@@ -2268,8 +2236,10 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	     propa_type & propa, propv_type & propv)
 {
-	int j;
-	double xl[2], q, za, zb, temp, rad, rae1, rae2;
+	double xl[2];
+	double q = 0.0;
+	double za = 0.0;
+	double zb = 0.0;
 
 	prop.dist = pfl[0] * pfl[1];
 	const int np = static_cast<int>(pfl[0]);
@@ -2278,7 +2248,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	prop.rch[0] = prop.hg[0] + pfl[2];
 	prop.rch[1] = prop.hg[1] + pfl[np + 2];
 
-	for (j = 0; j < 2; j++) {
+	for (int j = 0; j < 2; j++) {
 		xl[j] = std::min(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
 	}
 
@@ -2300,21 +2270,21 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 			prop.he[0] = prop.hg[0] + FORTRAN_DIM(pfl[2], za);
 			prop.he[1] = prop.hg[1] + FORTRAN_DIM(pfl[np + 2], zb);
 
-			for (j = 0; j < 2; j++) {
+			for (int j = 0; j < 2; j++) {
 				prop.dl[j] =
 				    std::sqrt(2.0 * prop.he[j] / prop.gme) *
 				    std::exp(-0.07 *
-					sqrt(prop.dh / std::max(prop.he[j], 5.0)));
+					std::sqrt(prop.dh / std::max(prop.he[j], 5.0)));
 			}
 
 			/* for one or more obstructions only NOTE buried as in ITM FORTRAN and DLL, not functional  */
 			if ((prop.dl[0] + prop.dl[1]) <= prop.dist) {
 				/* q=pow(prop.dist/(dl[0]+dl[1])),2.0); */
-				temp = prop.dist / (prop.dl[0] + prop.dl[1]);
+				const double temp = prop.dist / (prop.dl[0] + prop.dl[1]);
 				q = temp * temp;
 			}
 
-			for (j = 0; j < 2; j++) {
+			for (int j = 0; j < 2; j++) {
 				prop.he[j] *= q;
 				prop.dl[j] =
 				    std::sqrt(2.0 * prop.he[j] / prop.gme) *
@@ -2323,7 +2293,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 			}
 
 			/* this sets (or resets) prop.the, and is not in The Guide FORTRAN QLRPFL */
-			for (j = 0; j < 2; j++) {
+			for (int j = 0; j < 2; j++) {
 				q = std::sqrt(2.0 * prop.he[j] / prop.gme);
 				prop.the[j] =
 				    (0.65 * prop.dh * (q / prop.dl[j] - 1.0) -
@@ -2337,7 +2307,9 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 		prop.he[0] = prop.hg[0] + (pfl[2]);
 		prop.he[1] = prop.hg[1] + (pfl[np + 2]);
 
-		rad = (prop.dist - 500.0);
+		const double rad = (prop.dist - 500.0);
+		double rae1 = 0.0;
+		double rae2 = 0.0;
 
 		if (prop.dist > 550.0) {
 			z1sq2(pfl, rad, prop.dist, rae1, rae2);
@@ -2417,9 +2389,6 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	propv_type propv;
 	propa_type propa;
 	double zsys = 0;
-	double zc, zr;
-	double eno, enso, q;
-	long ja, jb, np;
 	/* double dkm, xkm; */
 
 	prop.hg[0] = tht_m;
@@ -2428,18 +2397,18 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	prop.kwx = 0;
 	propv.lvar = 5;
 	prop.mdp = -1;
-	zc = qerfi(conf);
-	zr = qerfi(rel);
-	np = (long)elev[0];
+	const double zc = qerfi(conf);
+	const double zr = qerfi(rel);
+	long np = static_cast<long>(elev[0]);
 	/* dkm=(elev[1]*elev[0])/1000.0; */
 	/* xkm=elev[1]/1000.0; */
-	eno = eno_ns_surfref;
-	enso = 0.0;
-	q = enso;
+	const double eno = eno_ns_surfref;
+	const double enso = 0.0;
+	double q = enso;
 
 	if (q <= 0.0) {
-		ja = (long)(3.0 + 0.1 * elev[0]);	/* added (long) to correct */
-		jb = np - ja + 6;
+		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);	/* added (long) to correct */
+		const long jb = np - ja + 6;
 
 		for (long i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
@@ -2452,7 +2421,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
 	qlrpfl(elev, propv.klim, propv.mdvar, prop, propa, propv);
-	double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
+	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	q = prop.dist - propa.dla;
 
 	if (static_cast<int> (q) < 0.0) {
@@ -2543,7 +2512,6 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	propa_type propa;
 
 	double zsys = 0;
-	long ja, jb, i;
 	/* double dkm, xkm; */
 
 	prop.hg[0] = tht_m;
@@ -2575,8 +2543,8 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	prop.dhd = 0.0;		/* delta_h_diff preset */
 
 	if (q <= 0.0) {
-		ja = (long)(3.0 + 0.1 * elev[0]);
-		jb = np - ja + 6;
+		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);
+		const long jb = np - ja + 6;
 
 		for (long i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
@@ -2662,9 +2630,6 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	propv_type propv;
 	propa_type propa;
 	double zsys = 0;
-	double ztime, zloc, zconf;
-	double eno, enso, q;
-	long ja, jb, i, np;
 	/* double dkm, xkm; */
 
 	propmode = -1;		// mode is undefined
@@ -2681,15 +2646,15 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	prop.ptx = pol;
 	prop.thera = 0.0;
 	prop.thenr = 0.0;
-	ztime = qerfi(timepct);
-	zloc = qerfi(locpct);
-	zconf = qerfi(confpct);
-	np = (long)elev[0];
+	const double ztime = qerfi(timepct);
+	const double zloc = qerfi(locpct);
+	const double zconf = qerfi(confpct);
+	const long np = static_cast<long>(elev[0]);
 	/* dkm = (elev[1] * elev[0]) / 1000.0; */
 	/* xkm = elev[1] / 1000.0; */
-	eno = eno_ns_surfref;
-	enso = 0.0;
-	q = enso;
+	const double eno = eno_ns_surfref;
+	const double enso = 0.0;
+	double q = enso;
 
 	/* PRESET VALUES for Basic Version w/o additional inputs active */
 
@@ -2699,9 +2664,9 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	mode_var = 1;		/* int mode_var set for FCC ILLR */
 
 	if (q <= 0.0) {
-		ja = (long)(3.0 + 0.1 * elev[0]);	/* to match addition of (long) */
-		jb = np - ja + 6;
-		for (i = ja - 1; i < jb; ++i) {
+		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);	/* to match addition of (long) */
+		const long jb = np - ja + 6;
+		for (long i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
 		}
 		zsys /= (jb - ja + 1);
@@ -2765,7 +2730,6 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	propv_type propv;
 	propa_type propa;
 	double zsys = 0;
-	long ja, jb, i;
 	/* double dkm, xkm; */
 
 	prop.hg[0] = tht_m;
@@ -2797,9 +2761,9 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	prop.cd = 1.00;		/* double clutter_density */
 
 	if (q <= 0.0) {
-		ja = (long)(3.0 + 0.1 * elev[0]);	/* to match KD2BD addition of (long)  */
-		jb = np - ja + 6;
-		for (i = ja - 1; i < jb; ++i) {
+		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);	/* to match KD2BD addition of (long)  */
+		const long jb = np - ja + 6;
+		for (long i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
 		}
 		zsys /= (jb - ja + 1);
@@ -2865,32 +2829,28 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	prop_type prop;
 	propv_type propv;
 	propa_type propa;
-	double zt, zl, zc;
-	long ivar;
-	double eps, eno, sgm;
-	long ipol;
 	int kst[2];
-
 	kst[0] = (int)TSiteCriteria;
 	kst[1] = (int)RSiteCriteria;
-	zt = qerfi(pctTime / 100.0);
-	zl = qerfi(pctLoc / 100.0);
-	zc = qerfi(pctConf / 100.0);
-	eps = eps_dielect;
-	sgm = sgm_conductivity;
-	eno = eno_ns_surfref;
+
+	const double zt = qerfi(pctTime / 100.0);
+	const double zl = qerfi(pctLoc / 100.0);
+	const double zc = qerfi(pctConf / 100.0);
+	const double eps = eps_dielect;
+	const double sgm = sgm_conductivity;
+	const double eno = eno_ns_surfref;
 	prop.dh = deltaH;
 	prop.hg[0] = tht_m;
 	prop.hg[1] = rht_m;
-	propv.klim = (long)radio_climate;
+	propv.klim = static_cast<long>(radio_climate);
 	prop.encc = enc_ncc_clcref;
 	prop.cch = clutter_height;
 	prop.cd = clutter_density;
 	prop.dhd = delta_h_diff;
 	prop.ens = eno;
 	prop.kwx = 0;
-	ivar = ModVar;
-	ipol = (long)pol;
+	const long ivar = ModVar;
+	const long ipol = static_cast<long>(pol);
 	qlrps(frq_mhz, 0.0, eno, ipol, eps, sgm, prop);
 	qlra(kst, propv.klim, ivar, prop, propv);
 
@@ -2920,8 +2880,8 @@ auto ITMAreadBLoss(long ModVar, double deltaH, double tht_m, double rht_m,
 		     double pctConf) -> double
 {
 	char strmode[200];
-	int errnum;
-	double dbloss;
+	int errnum = 0;
+	double dbloss = NAN;
 	area(ModVar, deltaH, tht_m, rht_m, dist_km, TSiteCriteria,
 	     RSiteCriteria, eps_dielect, sgm_conductivity, eno_ns_surfref,
 	     enc_ncc_clcref, clutter_height, clutter_density, delta_h_diff,
