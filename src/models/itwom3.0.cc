@@ -297,7 +297,7 @@ auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> 
 								       cttc +
 								       encca *
 								       ctic));
-						rsp = (q * q + rsp * rsp) / 2;
+						rsp = (q * q + rsp * rsp) * 0.5;
 						tsp = 1 - rsp;
 					}
 				} else {	/* ptx is 0, horizontal, or undefined */
@@ -392,11 +392,17 @@ auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> 
 	return saalosv;
 }
 
-double adiff(double d, prop_type & prop, propa_type & propa)
+auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 {
-	std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
-	static thread_local double wd1, xd1, afo, qk, aht, xht;
-	double a, q, pk, ds, th, wa, ar, wd, adiffv;
+	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
+	static thread_local double wd1 = 0.0;
+	static thread_local double xd1 = 0.0;
+	static thread_local double afo = 0.0;
+	static thread_local double qk = 0.0;
+	static thread_local double aht = 0.0;
+	static thread_local double xht = 0.0;
+	double q = 0.0;
+	double adiffv = 0.0;
 
 	if (d == 0) {
 		q = prop.hg[0] * prop.hg[1];
@@ -406,13 +412,13 @@ double adiff(double d, prop_type & prop, propa_type & propa)
 			q += 10.0;
 		}
 
-		wd1 = sqrt(1.0 + qk / q);
+		wd1 = std::sqrt(1.0 + qk / q);
 		xd1 = propa.dla + propa.tha / prop.gme;
-		q = (1.0 - 0.8 * exp(-propa.dlsa / 50e3)) * prop.dh;
-		q *= 0.78 * exp(-pow(q / 16.0, 0.25));
+		q = (1.0 - 0.8 * std::exp(-propa.dlsa / 50e3)) * prop.dh;
+		q *= 0.78 * std::exp(-std::pow(q / 16.0, 0.25));
 		afo =
 		    std::min(15.0,
-			  2.171 * log(1.0 +
+			  2.171 * std::log(1.0 +
 				      4.77e-4 * prop.hg[0] * prop.hg[1] *
 				      prop.wn * q));
 		qk = 1.0 / abs(prop_zgnd);
@@ -421,9 +427,9 @@ double adiff(double d, prop_type & prop, propa_type & propa)
 
 		for (int j = 0; j < 2; ++j) {
 			/* a=0.5*pow(prop.dl[j],2.0)/prop.he[j]; */
-			a = 0.5 * (prop.dl[j] * prop.dl[j]) / prop.he[j];
-			wa = pow(a * prop.wn, THIRD);
-			pk = qk / wa;
+			const double a = 0.5 * (prop.dl[j] * prop.dl[j]) / prop.he[j];
+			const double wa = pow(a * prop.wn, THIRD);
+			const double pk = qk / wa;
 			q = (1.607 - pk) * 151.0 * wa * prop.dl[j] / a;
 			xht += q;
 			aht += fht(q, pk);
@@ -433,21 +439,21 @@ double adiff(double d, prop_type & prop, propa_type & propa)
 	}
 
 	else {
-		th = propa.tha + d * prop.gme;
-		ds = d - propa.dla;
+		const double th = propa.tha + d * prop.gme;
+		const double ds = d - propa.dla;
 		/* q=0.0795775*prop.wn*ds*pow(th,2.0); */
 		q = 0.0795775 * prop.wn * ds * th * th;
 		adiffv =
 		    aknfe(q * prop.dl[0] / (ds + prop.dl[0])) +
 		    aknfe(q * prop.dl[1] / (ds + prop.dl[1]));
-		a = ds / th;
-		wa = pow(a * prop.wn, THIRD);
-		pk = qk / wa;
+		const double a = ds / th;
+		double wa = pow(a * prop.wn, THIRD);
+		const double pk = qk / wa;
 		q = (1.607 - pk) * 151.0 * wa * th + xht;
-		ar = 0.05751 * q - 4.343 * log(q) - aht;
+		const double ar = 0.05751 * q - 4.343 * std::log(q) - aht;
 		q = (wd1 +
-		     xd1 / d) * std::min(((1.0 - 0.8 * exp(-d / 50e3)) * prop.dh * prop.wn), 6283.2);
-		wd = 25.1 / (25.1 + sqrt(q));
+		     xd1 / d) * std::min(((1.0 - 0.8 * std::exp(-d / 50e3)) * prop.dh * prop.wn), 6283.2);
+		const double wd = 25.1 / (25.1 + std::sqrt(q));
 		adiffv = ar * wd + (1.0 - wd) * adiffv + afo;
 	}
 
@@ -481,10 +487,10 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		}
 
 		/* coefficients for a standard four radii, rounded earth computation are prepared */
-		wd1 = sqrt(1.0 + qk / q);
+		wd1 = std::sqrt(1.0 + qk / q);
 		xd1 = propa.dla + propa.tha / prop.gme;
-		q = (1.0 - 0.8 * exp(-propa.dlsa / 50e3)) * prop.dh;
-		q *= 0.78 * exp(-pow(q / 16.0, 0.25));
+		q = (1.0 - 0.8 * std::exp(-propa.dlsa / 50e3)) * prop.dh;
+		q *= 0.78 * std::exp(-std::pow(q / 16.0, 0.25));
 		qk = 1.0 / abs(prop_zgnd);
 		aht = 20.0;
 		xht = 0.0;
@@ -495,7 +501,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		xht = q;
 		aht += fht(q, pk);
 
-		if ((int (prop.dl[1]) == 0.0)||(prop.the[1] > 0.2)) {
+		if ((static_cast<int>(prop.dl[1]) == 0.0)||(prop.the[1] > 0.2)) {
 			xht += xht;
 			aht += (aht - 20.0);
 		}
@@ -512,10 +518,10 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 	}
 
 	else {
-		th = propa.tha + d * prop.gme;
+		const double th = propa.tha + d * prop.gme;
 
-		dsl = std::max(d - propa.dla, 0.0);
-		ds = d - propa.dla;
+		const double dsl = std::max(d - propa.dla, 0.0);
+		const double ds = d - propa.dla;
 		a = ds / th;
 		wa = pow(a * prop.wn, THIRD);
 		pk = qk / wa;
