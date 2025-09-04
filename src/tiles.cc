@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
@@ -39,7 +40,7 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	*tile = tile_t{};
 
 	/* Open the file handle and return on error */
-	if ( (fd = fopen(filename.data(),"r")) == nullptr ) {
+	if ( fd = fopen(filename.data(),"r"); fd == nullptr ) {
 		return errno;
 	}
 
@@ -101,7 +102,7 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 
 	/* Read the actual tile data */
 	/* Allocate the array for the lidar data */
-	if ( (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short))) == nullptr ) {
+	if (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short)); tile->data == nullptr ) {
 		fclose(fd);
 		tile->filename.clear();
 		return ENOMEM;
@@ -180,8 +181,8 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 		return ENOMEM;
 	}
 
-	tile->max_el = -32768;
-	tile->min_el = 32768;
+	tile->max_el = std::numeric_limits<short>::min();
+	tile->min_el = std::numeric_limits<short>::max();
 
 	/* Making the tile data smaller */
 	if (scale < 1) {

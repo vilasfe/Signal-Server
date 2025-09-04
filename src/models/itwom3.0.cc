@@ -422,7 +422,7 @@ auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 			  2.171 * std::log(1.0 +
 				      4.77e-4 * prop.hg[0] * prop.hg[1] *
 				      prop.wn * q));
-		qk = 1.0 / abs(prop_zgnd);
+		qk = 1.0 / std::abs(prop_zgnd);
 		aht = 20.0;
 		xht = 0.0;
 
@@ -526,7 +526,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		xd1 = propa.dla + propa.tha / prop.gme;
 		q = (1.0 - 0.8 * std::exp(-propa.dlsa / 50e3)) * prop.dh;
 		q *= 0.78 * std::exp(-std::pow(q / 16.0, 0.25));
-		qk = 1.0 / abs(prop_zgnd);
+		qk = 1.0 / std::abs(prop_zgnd);
 		aht = 20.0;
 		xht = 0.0;
 		a = 0.5 * (prop.dl[0] * prop.dl[0]) / prop.he[0];
@@ -704,7 +704,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						kedr =
 						    0.159155 * prop.wn *
 						    std::abs(dto + dro - dtr);
-						arp = std::abs(kedr - (int (kedr)));
+						arp = std::abs(kedr - (static_cast<int>(kedr)));
 						kem = aknfe(vv);
 						kem = std::pow(10, (-kem / 20));
 						/* scatter path phase with respect to direct t-r line */
@@ -712,7 +712,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						    0.5 +
 						    0.159155 * prop.wn *
 						    std::abs(dtof + drof - dtr);
-						srp = std::abs(sdr - (int (sdr)));
+						srp = std::abs(sdr - (static_cast<int>(sdr)));
 						/* difference between scatter and ke phase in radians */
 						pd = 6.283185307 * std::abs(srp - arp);
 						/* report pd prior to restriction 
@@ -818,7 +818,7 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 			h0 = FORTRAN_DIM(h0, 0.0);
 
 			if (et < 1.0) {
-				/* h0=et*h0+(1.0-et)*4.343*log(pow((1.0+1.4142/r1)*(1.0+1.4142/r2),2.0)*(r1+r2)/(r1+r2+2.8284)); */
+				/* h0=et*h0+(1.0-et)*4.343*log(pow((1.0+std::numbers::sqrt2/r1)*(1.0+std::numbers::sqrt2/r2),2.0)*(r1+r2)/(r1+r2+2*std::numbers::sqrt2)); */
 
 				temp =
 				    ((1.0 + std::numbers::sqrt2 / r1) * (1.0 + std::numbers::sqrt2 / r2));
@@ -1297,7 +1297,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 	/* ITWOM_lrprop2 */
 	static thread_local bool wlos, wscat;
 	static thread_local double dmin, xae;
-	std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
+	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	double pd1;
 	double a0, a1, a2, a3, a4, a5, a6, iw;
 	double d0, d1, d2, d3, d4, d5, d6;
@@ -1565,13 +1565,12 @@ auto curve(double const &c1, double const &c2, double const &x1,
 	     double const &x2, double const &x3, double const &de) -> double
 {
 	/* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
-	double temp1 = (de - x2) / x3;
+	const double temp1 = (de - x2) / x3;
 	double temp2 = de / x1;
 
-	temp1 *= temp1;
 	temp2 *= temp2;
 
-	return (c1 + c2 / (1.0 + temp1)) * temp2 / (1.0 + temp2);
+	return (c1 + c2 / (1.0 + temp1 * temp1)) * temp2 / (1.0 + temp2);
 }
 
 auto avar(double zzt, double zzl, double zzc, prop_type & prop,
@@ -1583,40 +1582,41 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	    ysm3, csp1, csp2, ysp1, ysp2, ysp3, csd1, zd, cfm1, cfm2,
 	    cfm3, cfp1, cfp2, cfp3;
 
-	double bv1[7] = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
-	double bv2[7] = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
-	double xv1[7] =
+	const double bv1[7] = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
+	const double bv2[7] = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
+	const double xv1[7] =
 	    { 144.9e3, 228.9e3, 262.6e3, 84.1e3, 228.9e3, 141.7e3, 2222.e3 };
-	double xv2[7] =
+	const double xv2[7] =
 	    { 190.3e3, 205.2e3, 185.2e3, 101.1e3, 205.2e3, 315.9e3, 164.8e3 };
-	double xv3[7] =
+	const double xv3[7] =
 	    { 133.8e3, 143.6e3, 99.8e3, 98.6e3, 143.6e3, 167.4e3, 116.3e3 };
-	double bsm1[7] = { 2.13, 2.66, 6.11, 1.98, 2.68, 6.86, 8.51 };
-	double bsm2[7] = { 159.5, 7.67, 6.65, 13.11, 7.16, 10.38, 169.8 };
-	double xsm1[7] =
+	const double bsm1[7] = { 2.13, 2.66, 6.11, 1.98, 2.68, 6.86, 8.51 };
+	const double bsm2[7] = { 159.5, 7.67, 6.65, 13.11, 7.16, 10.38, 169.8 };
+	const double xsm1[7] =
 	    { 762.2e3, 100.4e3, 138.2e3, 139.1e3, 93.7e3, 187.8e3, 609.8e3 };
-	double xsm2[7] =
+	const double xsm2[7] =
 	    { 123.6e3, 172.5e3, 242.2e3, 132.7e3, 186.8e3, 169.6e3, 119.9e3 };
-	double xsm3[7] =
+	const double xsm3[7] =
 	    { 94.5e3, 136.4e3, 178.6e3, 193.5e3, 133.5e3, 108.9e3, 106.6e3 };
-	double bsp1[7] = { 2.11, 6.87, 10.08, 3.68, 4.75, 8.58, 8.43 };
-	double bsp2[7] = { 102.3, 15.53, 9.60, 159.3, 8.12, 13.97, 8.19 };
-	double xsp1[7] =
+	const double bsp1[7] = { 2.11, 6.87, 10.08, 3.68, 4.75, 8.58, 8.43 };
+	const double bsp2[7] = { 102.3, 15.53, 9.60, 159.3, 8.12, 13.97, 8.19 };
+	const double xsp1[7] =
 	    { 636.9e3, 138.7e3, 165.3e3, 464.4e3, 93.2e3, 216.0e3, 136.2e3 };
-	double xsp2[7] =
+	const double xsp2[7] =
 	    { 134.8e3, 143.7e3, 225.7e3, 93.1e3, 135.9e3, 152.0e3, 188.5e3 };
-	double xsp3[7] =
+	const double xsp3[7] =
 	    { 95.6e3, 98.6e3, 129.7e3, 94.2e3, 113.4e3, 122.7e3, 122.9e3 };
-	double bsd1[7] = { 1.224, 0.801, 1.380, 1.000, 1.224, 1.518, 1.518 };
-	double bzd1[7] = { 1.282, 2.161, 1.282, 20., 1.282, 1.282, 1.282 };
-	double bfm1[7] = { 1.0, 1.0, 1.0, 1.0, 0.92, 1.0, 1.0 };
-	double bfm2[7] = { 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0 };
-	double bfm3[7] = { 0.0, 0.0, 0.0, 0.0, 1.77, 0.0, 0.0 };
-	double bfp1[7] = { 1.0, 0.93, 1.0, 0.93, 0.93, 1.0, 1.0 };
-	double bfp2[7] = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
-	double bfp3[7] = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
+	const double bsd1[7] = { 1.224, 0.801, 1.380, 1.000, 1.224, 1.518, 1.518 };
+	const double bzd1[7] = { 1.282, 2.161, 1.282, 20., 1.282, 1.282, 1.282 };
+	const double bfm1[7] = { 1.0, 1.0, 1.0, 1.0, 0.92, 1.0, 1.0 };
+	const double bfm2[7] = { 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0 };
+	const double bfm3[7] = { 0.0, 0.0, 0.0, 0.0, 1.77, 0.0, 0.0 };
+	const double bfp1[7] = { 1.0, 0.93, 1.0, 0.93, 0.93, 1.0, 1.0 };
+	const double bfp2[7] = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
+	const double bfp3[7] = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
 	static thread_local bool ws, w1;
-	double rt = 7.8, rl = 24.0, avarv, q, vs, zt, zl, zc;
+	const double rt = 7.8;
+	double rl = 24.0, avarv, q, vs, zt, zl, zc;
 	double sgt, yr, temp1, temp2;
 	int temp_klim = propv.klim - 1;
 
@@ -1845,7 +1845,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 {
 	bool wq;
 	int np, rp, i, j;
-	double xi, za, zb, qc, q, sb, sa, dr, dshh;
+	double xi, za, zb, sb, sa, dr, dshh;
 
 	np = (int)pfl[0];
 	xi = pfl[1];
@@ -1854,8 +1854,8 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 	prop.tiw = xi;
 	prop.ght = za;
 	prop.ghr = zb;
-	qc = 0.5 * prop.gme;
-	q = qc * prop.dist;
+	const double qc = 0.5 * prop.gme;
+	double q = qc * prop.dist;
 	prop.the[1] = atan((zb - za) / prop.dist);
 	prop.the[0] = (prop.the[1]) - q;
 	prop.the[1] = -prop.the[1] - q;
@@ -1930,27 +1930,24 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0,
 	   double &zn)
 {
 	/* Used only with ITM 1.2.2 */
-	double xn, xa, xb, x, a, b;
-	int n, ja, jb;
-
-	xn = z[0];
-	xa = int (FORTRAN_DIM(x1 / z[1], 0.0));
-	xb = xn - int (FORTRAN_DIM(xn, x2 / z[1]));
+	const double xn = z[0];
+	double xa = int (FORTRAN_DIM(x1 / z[1], 0.0));
+	double xb = xn - int (FORTRAN_DIM(xn, x2 / z[1]));
 
 	if (xb <= xa) {
 		xa = FORTRAN_DIM(xa, 1.0);
 		xb = xn - FORTRAN_DIM(xn, xb + 1.0);
 	}
 
-	ja = (int)xa;
-	jb = (int)xb;
-	n = jb - ja;
+	int ja = static_cast<int>(xa);
+	const int jb = static_cast<int>(xb);
+	const int n = jb - ja;
 	xa = xb - xa;
-	x = -0.5 * xa;
+	double x = -0.5 * xa;
 	xb += x;
 	
-	a = 0.5 * (z[ja + 2] + z[jb + 2]);
-	b = 0.5 * (z[ja + 2] - z[jb + 2]) * x;
+	double a = 0.5 * (z[ja + 2] + z[jb + 2]);
+	double b = 0.5 * (z[ja + 2] - z[jb + 2]) * x;
 
 	for (int i = 2; i <= n; ++i) {
 		++ja;
@@ -1965,8 +1962,7 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0,
 	zn = a + b * (xn - xb);
 }
 
-void z1sq2(double z[], const double &x1, const double &x2, double &z0,
-	   double &zn)
+void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
 {
 	/* corrected for use with ITWOM */
 	double xn, xa, xb, x, a, b, bn;
@@ -2008,7 +2004,7 @@ void z1sq2(double z[], const double &x1, const double &x2, double &z0,
 
 auto qtile(const int &nn, double a[], const int &ir) -> double
 {
-	double q = 0.0, r;	/* q initialization -- KD2BD */
+	double q = 0.0;	/* q initialization -- KD2BD */
 	int i, j, j1 = 0, i0 = 0;	/* more initializations -- KD2BD */
 	bool done = false;
 	bool goto10 = true;
@@ -2070,7 +2066,7 @@ auto qerf(const double &z) -> double
 	const double rp = 4.317008, rrt2pi = 0.398942280;
 	double qerfv = 0.0;
 
-	double x = z;
+	const double x = z;
 	double t = fabs(x);
 
 	if (t < 10.0) {
@@ -2089,7 +2085,7 @@ auto qerf(const double &z) -> double
 
 auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 {
-	int np, ka, kb, n, k, j;
+	int np, ka, kb, n, k;
 	double d1thxv, sn, xa, xb;
 	double *s;
 
@@ -2114,7 +2110,7 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 	k = (int)(xa + 1.0);
 	xa -= (double)k;
 
-	for (j = 0; j < n; j++) {
+	for (int j = 0; j < n; j++) {
 		while (xa > 0.0 && k < np) {
 			xa -= 1.0;
 			++k;
@@ -2127,7 +2123,7 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 	z1sq1(s, 0.0, sn, xa, xb);
 	xb = (xb - xa) / sn;
 
-	for (j = 0; j < n; j++) {
+	for (int j = 0; j < n; j++) {
 		s[j + 2] -= xa;
 		xa = xa + xb;
 	}
@@ -2142,8 +2138,8 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 auto d1thx2(double pfl[], const double &x1, const double &x2,
 	      propa_type & propa) -> double
 {
-	int np, ka, kb, n, k, kmx, j;
-	double d1thx2v, sn, xa, xb, xc;
+	int np, ka, kb, n, kmx;
+	double d1thx2v, sn, xa, xb;
 	double *s;
 
 	np = (int)pfl[0];
@@ -2165,10 +2161,10 @@ auto d1thx2(double pfl[], const double &x1, const double &x2,
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;
-	k = (int (xa + 1.0));
-	xc = xa - (double (k));
+	int k = static_cast<int>(xa + 1.0);
+	double xc = xa - static_cast<double>(k);
 
-	for (j = 0; j < n; j++) {
+	for (int j = 0; j < n; j++) {
 		while (xc > 0.0 && k < np) {
 			xc -= 1.0;
 			++k;
@@ -2181,7 +2177,7 @@ auto d1thx2(double pfl[], const double &x1, const double &x2,
 	z1sq2(s, 0.0, sn, xa, xb);
 	xb = (xb - xa) / sn;
 
-	for (j = 0; j < n; j++) {
+	for (int j = 0; j < n; j++) {
 		s[j + 2] -= xa;
 		xa = xa + xb;
 	}
@@ -2425,7 +2421,6 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	double eno, enso, q;
 	long ja, jb, np;
 	/* double dkm, xkm; */
-	double fs;
 
 	prop.hg[0] = tht_m;
 	prop.hg[1] = rht_m;
@@ -2457,7 +2452,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
 	qlrpfl(elev, propv.klim, propv.mdvar, prop, propa, propv);
-	fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
+	double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	q = prop.dist - propa.dla;
 
 	if (static_cast<int> (q) < 0.0) {
@@ -2770,9 +2765,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	propv_type propv;
 	propa_type propa;
 	double zsys = 0;
-	double zc, zr;
-	double eno, enso, q;
-	long ja, jb, i, np;
+	long ja, jb, i;
 	/* double dkm, xkm; */
 
 	prop.hg[0] = tht_m;
@@ -2788,14 +2781,14 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	prop.ptx = pol;
 	prop.thera = 0.0;
 	prop.thenr = 0.0;
-	zc = qerfi(conf);
-	zr = qerfi(rel);
-	np = (long)elev[0];
+	const double zc = qerfi(conf);
+	const double zr = qerfi(rel);
+	const long np = static_cast<long>(elev[0]);
 	/* dkm = (elev[1] * elev[0]) / 1000.0; */
 	/* xkm = elev[1] / 1000.0; */
-	eno = eno_ns_surfref;
-	enso = 0.0;
-	q = enso;
+	const double eno = eno_ns_surfref;
+	const double enso = 0.0;
+	double q = enso;
 
 	/* PRESET VALUES for Basic Version w/o additional inputs active */
 

@@ -1,21 +1,26 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <math.h>
-#include <errno.h>
-#include <limits.h>
+#include <algorithm>
+#include <array>
+#include <cerrno>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <print>
+
+#include <unistd.h>
+
 #include "common.h"
+#include "inputs.hh"
 #include "main.hh"
 #include "tiles.hh"
+
 #include <bzlib.h>
 #include <zlib.h>
 
-#define BZBUFFER 65536
-#define GZBUFFER 32768
-
+enum { BZBUFFER = 65536 };
+enum { GZBUFFER = 32768 };
 
 static char buffer[BZBUFFER+1];
 
@@ -85,10 +90,7 @@ auto loadClutter(std::string_view filename, double radius, struct site_t tx) -> 
 		std::println(stderr, "\nxll {:.2f} yll {:.2f}", xll, yll);
 	}
 
-	s = fgets(line, 25, fd); // cellsize
-
-	if (s)
-	  ;
+	fgets(line, 25, fd); // cellsize
 
 	//loop over matrix
 	for (y = h; y > 0; y--) {
@@ -102,17 +104,21 @@ auto loadClutter(std::string_view filename, double radius, struct site_t tx) -> 
 				clh = 0.0;
 
 				// evergreen, evergreen, urban
-				if(z == 1 || z == 2 || z == 13)
+				if(z == 1 || z == 2 || z == 13) {
 					clh = 20.0;
+				}
 				// deciduous, deciduous, mixed
-				if(z==3 || z==4 || z==5)
+				else if(z==3 || z==4 || z==5) {
 					clh = 15.0;
+				}
 				// woody shrublands & savannas
-				if(z==6 || z==8)
+				else if(z==6 || z==8) {
 					clh = 4.0;
+				}
 				// shrublands, savannas, croplands...
-				if(z==7 || z==9 || z==10 || z==12 || z==14)
+				else if(z==7 || z==9 || z==10 || z==12 || z==14) {
 					clh = 2.0;
+				}
 
 				if(clh>1){
 					xOffset=x*cellsize; // 12 deg wide
@@ -235,14 +241,14 @@ auto loadLIDAR(const std::string& filenames, int resample) -> int
 			min_north = tiles[indx].min_north;
 
 		//Meridian switch. max_west=0
-		if (abs(tiles[indx].max_west - max_west) < 180 || tiles[indx].max_west < 360) {
+		if (std::abs(tiles[indx].max_west - max_west) < 180 || tiles[indx].max_west < 360) {
 		        if (tiles[indx].max_west > max_west)
 			        max_west = tiles[indx].max_west; // update highest value
 		} else {
 		        if (tiles[indx].max_west < max_west)
 			        max_west = tiles[indx].max_west;
 		}
-		if (fabs(tiles[indx].min_west - min_west) < 180.0 || tiles[indx].min_west <= 360) {
+		if (std::abs(tiles[indx].min_west - min_west) < 180.0 || tiles[indx].min_west <= 360) {
 			if (tiles[indx].min_west < min_west)
 				min_west = tiles[indx].min_west;
 		} else {
@@ -644,7 +650,7 @@ int LoadSDF_SDF(char *name)
 			max_west = dem[indx].max_west;
 
 		else {
-			if (abs(dem[indx].max_west - max_west) < 180) {
+			if (std::abs(dem[indx].max_west - max_west) < 180) {
 				if (dem[indx].max_west > max_west)
 					max_west = dem[indx].max_west;
 			}
@@ -659,7 +665,7 @@ int LoadSDF_SDF(char *name)
 			min_west = dem[indx].min_west;
 
 		else {
-			if (fabs(dem[indx].min_west - min_west) < 180.0) {
+			if (std::abs(dem[indx].min_west - min_west) < 180.0) {
 				if (dem[indx].min_west < min_west)
 					min_west = dem[indx].min_west;
 			}
@@ -913,7 +919,7 @@ int LoadSDF_BZ(char *name)
 			max_west = dem[indx].max_west;
 
 		else {
-			if (abs(dem[indx].max_west - max_west) < 180) {
+			if (std::abs(dem[indx].max_west - max_west) < 180) {
 				if (dem[indx].max_west > max_west)
 					max_west = dem[indx].max_west;
 			}
@@ -928,7 +934,7 @@ int LoadSDF_BZ(char *name)
 			min_west = dem[indx].min_west;
 
 		else {
-			if (fabs(dem[indx].min_west - min_west) < 180.0) {
+			if (std::abs(dem[indx].min_west - min_west) < 180.0) {
 				if (dem[indx].min_west < min_west)
 					min_west = dem[indx].min_west;
 			}
@@ -1209,7 +1215,7 @@ int LoadSDF_GZ(char *name)
 			max_west = dem[indx].max_west;
 
 		else {
-			if (abs(dem[indx].max_west - max_west) < 180) {
+			if (std::abs(dem[indx].max_west - max_west) < 180) {
 				if (dem[indx].max_west > max_west)
 					max_west = dem[indx].max_west;
 			}
@@ -1224,7 +1230,7 @@ int LoadSDF_GZ(char *name)
 			min_west = dem[indx].min_west;
 
 		else {
-			if (fabs(dem[indx].min_west - min_west) < 180.0) {
+			if (std::abs(dem[indx].min_west - min_west) < 180.0) {
 				if (dem[indx].min_west < min_west)
 					min_west = dem[indx].min_west;
 			}
@@ -1266,13 +1272,15 @@ int LoadSDF(char *name)
 
 	/* If that fails, try loading a BZ2 compressed SDF. */
 
-	if ( return_value <= 0 )
-	        return_value = LoadSDF_BZ(name);
+	if ( return_value <= 0 ) {
+		return_value = LoadSDF_BZ(name);
+	}
 
 	/* If that fails, try loading a gzip compressed SDF. */
 
-	if ( return_value <= 0 )
-	        return_value = LoadSDF_GZ(name);
+	if ( return_value <= 0 ) {
+		return_value = LoadSDF_GZ(name);
+	}
 
 	/* If no file format can be found, then assume the area is water. */
 
@@ -1344,33 +1352,31 @@ int LoadSDF(char *name)
 			else if (dem[indx].min_north < min_north)
 				min_north = dem[indx].min_north;
 
-			if (max_west == -1)
+			if (max_west == -1) {
 				max_west = dem[indx].max_west;
+			}
 
 			else {
-				if (abs(dem[indx].max_west - max_west) < 180) {
-					if (dem[indx].max_west > max_west)
-						max_west = dem[indx].max_west;
+				if (std::abs(dem[indx].max_west - max_west) < 180) {
+					max_west = std::max<double>(dem[indx].max_west, max_west);
 				}
 
 				else {
-					if (dem[indx].max_west < max_west)
-						max_west = dem[indx].max_west;
+					max_west = std::min<double>(dem[indx].max_west, max_west);
 				}
 			}
 
-			if (min_west == 360)
+			if (min_west == 360) {
 				min_west = dem[indx].min_west;
+			}
 
 			else {
-				if (abs(dem[indx].min_west - min_west) < 180) {
-					if (dem[indx].min_west < min_west)
-						min_west = dem[indx].min_west;
+				if (std::abs(dem[indx].min_west - min_west) < 180) {
+					min_west = std::min<double>(dem[indx].min_west, min_west);
 				}
 
 				else {
-					if (dem[indx].min_west > min_west)
-						min_west = dem[indx].min_west;
+					min_west = std::max<double>(dem[indx].min_west, min_west);
 				}
 			}
 
