@@ -463,13 +463,47 @@ auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 
 auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 {
-	std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
-	static thread_local double wd1, xd1, qk, aht, xht, toh, toho, roh, roho, dto, dto1,
-	    dtro, dro, dro2, drto, dtr, dhh1, dhh2, /* dhec, */ dtof, dto1f,
-	    drof, dro2f;
-	double a, q, pk, rd, ds, dsl, /* dfdh, */ th, wa, /* ar, wd, sf1, */
-	    /* ec, */ vv, kedr = 0.0, arp = 0.0, sdr = 0.0, pd = 0.0, srp =
-	    0.0, kem = 0.0, csd = 0.0, sdl = 0.0, adiffv2 = 0.0, closs = 0.0;
+	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
+	static thread_local double wd1 = 0.0;
+	static thread_local double xd1 = 0.0;
+	static thread_local double qk = 0.0;
+	static thread_local double aht = 0.0;
+	static thread_local double xht = 0.0;
+	static thread_local double toh = 0.0;
+	static thread_local double toho = 0.0;
+	static thread_local double roh = 0.0;
+	static thread_local double roho = 0.0;
+	static thread_local double dto = 0.0;
+	static thread_local double dto1 = 0.0;
+	static thread_local double dtro = 0.0;
+	static thread_local double dro = 0.0;
+	static thread_local double dro2 = 0.0;
+	static thread_local double drto = 0.0;
+	static thread_local double dtr = 0.0;
+	static thread_local double dhh1 = 0.0;
+	static thread_local double dhh2 = 0.0;
+	/* dhec, */
+	static thread_local double dtof = 0.0;
+	static thread_local double dto1f = 0.0;
+	static thread_local double drof = 0.0;
+	static thread_local double dro2f = 0.0;
+	double a = 0.0;
+	double q = 0.0;
+	double pk = 0.0;
+	/* dfdh, */
+	double wa = 0.0;
+	/* ar, wd, sf1, ec, */
+	double vv = 0.0;
+	double kedr = 0.0;
+	double arp = 0.0;
+	double sdr = 0.0;
+	double pd = 0.0;
+	double srp = 0.0;
+	double kem = 0.0;
+	double csd = 0.0;
+	double sdl = 0.0;
+	double adiffv2 = 0.0;
+	double closs = 0.0;
 
 	/* sf1=1.0; *//* average empirical hilltop foliage scatter factor for 1 obstruction  */
 	const double sf2 = 1.0;		/* average empirical hilltop foliage scatter factor for 2 obstructions */
@@ -576,17 +610,17 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		/* saalos coefficients preset for post-obstacle receive path */
 		prop.tgh = prop.cch + 1.0;
 		prop.tsgh = prop.hhr;
-		rd = prop.dl[1];
+		double rd = prop.dl[1];
 
 		/* two obstacle diffraction calculation */
-		if (int (ds) > 0) {	/* there are 2 obstacles */
-			if (int (prop.dl[1]) > 0.0) {	/* receive site past 2nd peak */
+		if (static_cast<int>(ds) > 0) {	/* there are 2 obstacles */
+			if (static_cast<int>(prop.dl[1]) > 0.0) {	/* receive site past 2nd peak */
 				/* rounding attenuation */
 				q = (1.607 - pk) * 151.0 * wa * th + xht;
 				/* ar=0.05751*q-10*log10(q)-aht; */
 
 				/* knife edge vs round weighting */
-				q = (1.0 - 0.8 * exp(-d / 50e3)) * prop.dh;
+				q = (1.0 - 0.8 * std::exp(-d / 50e3)) * prop.dh;
 				q = (wd1 + xd1 / d) * std::min((q * prop.wn), 6283.2);
 				/* wd=25.1/(25.1+sqrt(q)); */
 
@@ -665,7 +699,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 			}
 		} else {	/* for single obstacle */
 
-			if (int (prop.dl[1]) > 0.0) {	/* receive site past 1st peak */
+			if (static_cast<int>(prop.dl[1]) > 0.0) {	/* receive site past 1st peak */
 
 				if (prop.the[1] < 0.2) {	/* receive grazing angle less than .2 radians */
 					vv = 0.6365 * prop.wn * abs(dto + dro -
@@ -673,14 +707,14 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 
 					if (prop.hht < 3400) {
 						sdl = 18.0;
-						sdl = pow(10, (-sdl / 20));
+						sdl = std::pow(10, (-sdl / 20));
 						/* ke phase difference with respect to direct t-r line */
 						kedr =
 						    0.159155 * prop.wn *
 						    abs(dto + dro - dtr);
 						arp = abs(kedr - (int (kedr)));
 						kem = aknfe(vv);
-						kem = pow(10, (-kem / 20));
+						kem = std::pow(10, (-kem / 20));
 						/* scatter path phase with respect to direct t-r line */
 						sdr =
 						    0.5 +
@@ -742,9 +776,11 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 
 auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 {
-	static thread_local double ad, rr, etq, h0s;
-	double h0, r1, r2, z0, ss, et, ett, th, q;
-	double ascatv, temp;
+	static thread_local double ad = 0.0;
+	static thread_local double rr = 0.0;
+	static thread_local double etq = 0.0;
+	static thread_local double h0s = 0.0;
+	double ascatv = 0.0;
 
 	if (d == 0.0) {
 		ad = prop.dl[0] - prop.dl[1];
@@ -761,34 +797,33 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 	}
 
 	else {
-		if (h0s > 15.0)
-			h0 = h0s;
-		else {
-			th = prop.the[0] + prop.the[1] + d * prop.gme;
-			r2 = 2.0 * prop.wn * th;
-			r1 = r2 * prop.he[0];
+		double h0 = h0s;
+
+		if (h0s <= 15.0) {
+			const double th = prop.the[0] + prop.the[1] + d * prop.gme;
+			double r2 = 2.0 * prop.wn * th;
+			const double r1 = r2 * prop.he[0];
 			r2 *= prop.he[1];
 
 			if (r1 < 0.2 && r2 < 0.2) {
 				return 1001.0;	// <==== early return
 			}
 
-			ss = (d - ad) / (d + ad);
-			q = rr / ss;
+			double ss = (d - ad) / (d + ad);
+			const double q = std::clamp(rr / ss, 0.1, 10.0);
 			ss = std::max(0.1, ss);
-			q = std::clamp(q, 0.1, 10.0);
-			z0 = (d - ad) * (d + ad) * th * 0.25 / d;
+			const double z0 = (d - ad) * (d + ad) * th * 0.25 / d;
 			/* et=(etq*exp(-pow(std::min(1.7,z0/8.0e3),6.0))+1.0)*z0/1.7556e3; */
 
-			temp = std::min(1.7, z0 / 8.0e3);
+			double temp = std::min(1.7, z0 / 8.0e3);
 			temp = temp * temp * temp * temp * temp * temp;
-			et = (etq * exp(-temp) + 1.0) * z0 / 1.7556e3;
+			const double et = (etq * std::exp(-temp) + 1.0) * z0 / 1.7556e3;
 
-			ett = std::max(et, 1.0);
+			const double ett = std::max(et, 1.0);
 			h0 = (h0f(r1, ett) + h0f(r2, ett)) * 0.5;
 			h0 +=
 			    std::min(h0,
-				  (1.38 - log(ett)) * log(ss) * log(q) * 0.49);
+				  (1.38 - std::log(ett)) * std::log(ss) * std::log(q) * 0.49);
 			h0 = FORTRAN_DIM(h0, 0.0);
 
 			if (et < 1.0) {
@@ -797,7 +832,7 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 				temp =
 				    ((1.0 + 1.4142 / r1) * (1.0 + 1.4142 / r2));
 				h0 = et * h0 + (1.0 -
-						et) * 4.343 * log((temp *
+						et) * 4.343 * std::log((temp *
 								   temp) * (r1 +
 									    r2)
 								  / (r1 + r2 +
@@ -810,12 +845,12 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 		}
 
 		h0s = h0;
-		th = propa.tha + d * prop.gme;
+		const double th = propa.tha + d * prop.gme;
 		/* ascatv=ahd(th*d)+4.343*log(47.7*prop.wn*pow(th,4.0))-0.1*(prop.ens-301.0)*exp(-th*d/40e3)+h0; */
 		ascatv =
 		    ahd(th * d) +
-		    4.343 * log(47.7 * prop.wn * (th * th * th * th)) -
-		    0.1 * (prop.ens - 301.0) * exp(-th * d / 40e3) + h0;
+		    4.343 * std::log(47.7 * prop.wn * (th * th * th * th)) -
+		    0.1 * (prop.ens - 301.0) * std::exp(-th * d / 40e3) + h0;
 	}
 
 	return ascatv;
@@ -832,7 +867,7 @@ auto qerfi(double q) -> double
 
 	const double x = 0.5 - q;
 	double t = std::max(0.5 - fabs(x), 0.000001);
-	t = std::sqrt(-2.0 * log(t));
+	t = std::sqrt(-2.0 * std::log(t));
 	const double v = t - ((c2 * t + c1) * t + c0) / (((d3 * t + d2) * t + d1) * t + 1.0);
 
 	if (x < 0.0) {
@@ -855,9 +890,8 @@ void qlrps(double fmhz, double zsys, double en0, int ipol, double eps,
 	}
 
 	prop.gme = gma * (1.0 - 0.04665 * std::exp(prop.ens / 179.3));
-	std::complex < double >zq, prop_zgnd(prop.zgndreal, prop.zgndimag);
-	zq = std::complex < double >(eps, 376.62 * sgm / prop.wn);
-	prop_zgnd = sqrt(zq - 1.0);
+	const std::complex < double >zq (eps, 376.62 * sgm / prop.wn);
+	std::complex < double >prop_zgnd = std::sqrt(zq - 1.0);
 
 	if (ipol != 0.0) {
 		prop_zgnd = prop_zgnd / zq;
@@ -871,9 +905,7 @@ void qlrps(double fmhz, double zsys, double en0, int ipol, double eps,
 auto alos(double d, prop_type & prop, propa_type & propa) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
-	static thread_local double wls;
-	std::complex < double >r;
-	double s, sps, q;
+	static thread_local double wls = 0.0;
 	double alosv = 0.0;
 
 	if (d == 0.0) {
@@ -884,11 +916,11 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 	}
 
 	else {
-		q = (1.0 - 0.8 * exp(-d / 50e3)) * prop.dh;
-		s = 0.78 * q * exp(-pow(q / 16.0, 0.25));
+		double q = (1.0 - 0.8 * std::exp(-d / 50e3)) * prop.dh;
+		const double s = 0.78 * q * std::exp(-std::pow(q / 16.0, 0.25));
 		q = prop.he[0] + prop.he[1];
-		sps = q / std::hypot(d, q);
-		r = (sps - prop_zgnd) / (sps +
+		const double sps = q / std::hypot(d, q);
+		std::complex < double > r = (sps - prop_zgnd) / (sps +
 					 prop_zgnd) * std::exp(-std::min(10.0,
 								 prop.wn * s *
 								 sps));
@@ -918,7 +950,7 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	std::complex < double >r;
-	double cd, cr, dr, hr, hrg, ht, htg, hrp, s, sps, q, pd, drh;
+	double cd, cr, dr, hr, hrg, ht, htg, hrp, s, pd, drh;
 	/* int rp; */
 	double alosv;
 
@@ -937,8 +969,8 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 	}
 
 	else {
-		q = prop.he[0] + prop.he[1];
-		sps = q / std::hypot(pd, q);
+		double q = prop.he[0] + prop.he[1];
+		const double sps = q / std::hypot(pd, q);
 		q = (1.0 - 0.8 * exp(-pd / 50e3)) * prop.dh;
 
 		if (prop.mdp < 0) {
@@ -1018,7 +1050,7 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 void qlra(int kst[], int klimx, int mdvarx, prop_type & prop,
 	  propv_type & propv)
 {
-	double q;
+	double q = 0.0;
 
 	for (int j = 0; j < 2; ++j) {
 		if (kst[j] <= 0) {
@@ -1068,14 +1100,12 @@ void qlra(int kst[], int klimx, int mdvarx, prop_type & prop,
 void lrprop(double d, prop_type & prop, propa_type & propa)
 {
 	/* PaulM_lrprop used for ITM */
-	static thread_local bool wlos, wscat;
-	static thread_local double dmin, xae;
-	std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
-	double a0, a1, a2, a3, a4, a5, a6;
-	double d0, d1, d2, d3, d4, d5, d6;
-	bool wq;
-	double q;
-	int j;
+	static thread_local bool wlos = false;
+	static thread_local bool wscat = false;
+	static thread_local double dmin = 0.0;
+	static thread_local double xae = 0.0;
+	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
+	double q = 0.0;
 
 	if (prop.mdp != 0) {
 		for (int j = 0; j < 2; j++) {
@@ -1123,11 +1153,11 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 		dmin = abs(prop.he[0] - prop.he[1]) / 200e-3;
 		q = adiff(0.0, prop, propa);
 		/* xae=pow(prop.wn*pow(prop.gme,2.),-THIRD); -- JDM made argument 2 a double */
-		xae = pow(prop.wn * (prop.gme * prop.gme), -THIRD);	/* No 2nd pow() */
-		d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
-		d4 = d3 + 2.7574 * xae;
-		a3 = adiff(d3, prop, propa);
-		a4 = adiff(d4, prop, propa);
+		xae = std::pow(prop.wn * (prop.gme * prop.gme), -THIRD);	/* No 2nd pow() */
+		const double d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
+		const double d4 = d3 + 2.7574 * xae;
+		const double a3 = adiff(d3, prop, propa);
+		const double a4 = adiff(d4, prop, propa);
 		propa.emd = (a4 - a3) / (d4 - d3);
 		propa.aed = a3 - propa.emd * d3;
 	}
@@ -1154,25 +1184,21 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 	if (prop.dist < propa.dlsa) {
 		if (!wlos) {
 			q = alos(0.0, prop, propa);
-			d2 = propa.dlsa;
-			a2 = propa.aed + d2 * propa.emd;
-			d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
-
+			const double d2 = propa.dlsa;
+			const double a2 = propa.aed + d2 * propa.emd;
+			double d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
+			double d1 = std::max(-propa.aed / propa.emd,
+						  0.25 * propa.dla);
 			if (propa.aed >= 0.0) {
 				d0 = std::min(d0, 0.5 * propa.dla);
 				d1 = d0 + 0.25 * (propa.dla - d0);
 			}
 
-			else {
-				d1 = std::max(-propa.aed / propa.emd,
-					   0.25 * propa.dla);
-			}
-
-			a1 = alos(d1, prop, propa);
-			wq = false;
+			const double a1 = alos(d1, prop, propa);
+			bool wq = false;
 
 			if (d0 < d1) {
-				a0 = alos(d0, prop, propa);
+				const double a0 = alos(d0, prop, propa);
 				q = std::log(d2 / d0);
 				propa.ak2 =
 				    std::max(0.0,
@@ -1235,10 +1261,10 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 	if (prop.dist <= 0.0 || prop.dist >= propa.dlsa) {
 		if (!wscat) {
 			q = ascat(0.0, prop, propa);
-			d5 = propa.dla + 200e3;
-			d6 = d5 + 200e3;
-			a6 = ascat(d6, prop, propa);
-			a5 = ascat(d5, prop, propa);
+			const double d5 = propa.dla + 200e3;
+			const double d6 = d5 + 200e3;
+			const double a6 = ascat(d6, prop, propa);
+			const double a5 = ascat(d5, prop, propa);
 
 			if (a5 < 1000.0) {
 				propa.ems = (a6 - a5) / 200e3;
