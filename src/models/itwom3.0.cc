@@ -630,24 +630,20 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 					/* knife edge attenuation for two obstructions */
 
 					if (prop.hht < 3400) {	/* if below tree line, foliage top loss */
-						vv = q * abs(dto1 + dhh1 -
-							     dtro);
+						vv = q * std::abs(dto1 + dhh1 - dtro);
 						adiffv2 =
 						    -18.0 + sf2 * aknfe(vv);
 					} else {
-						vv = q * abs(dto1 + dhh1 -
-							     dtro);
+						vv = q * std::abs(dto1 + dhh1 - dtro);
 						adiffv2 = aknfe(vv);
 					}
 
 					if (prop.hhr < 3400) {
-						vv = q * abs(dro2 + dhh2 -
-							     drto);
+						vv = q * std::abs(dro2 + dhh2 - drto);
 						adiffv2 +=
 						    (-18.0 + sf2 * aknfe(vv));
 					} else {
-						vv = q * abs(dro2 + dhh2 -
-							     drto);
+						vv = q * std::abs(dro2 + dhh2 - drto);
 						adiffv2 += aknfe(vv);
 					}
 					/* finally, add clutter loss */
@@ -659,13 +655,11 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 					/* knife edge attenuation for 1st obs */
 
 					if (prop.hht < 3400) {
-						vv = q * abs(dto1 + dhh1 -
-							     dtro);
+						vv = q * std::abs(dto1 + dhh1 - dtro);
 						adiffv2 =
 						    -18.0 + sf2 * aknfe(vv);
 					} else {
-						vv = q * abs(dto1 + dhh1 -
-							     dtro);
+						vv = q * std::abs(dto1 + dhh1 - dtro);
 						adiffv2 = aknfe(vv);
 					}
 
@@ -681,8 +675,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						} else {	/* close to foliage, rcvr in foliage downslope */
 
 							vv = 0.6365 * prop.wn *
-							    abs(dro2 + dhh2 -
-								drto);
+							    std::abs(dro2 + dhh2 - drto);
 						}
 						adiffv2 += aknfe(vv);
 						closs = saalos(rd, prop, propa);
@@ -694,7 +687,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 				}
 			} else {	/* receive site is atop a 2nd peak */
 
-				vv = 0.6365 * prop.wn * abs(dto + dro - dtr);
+				vv = 0.6365 * prop.wn * std::abs(dto + dro - dtr);
 				adiffv2 = 5.8 + aknfe(vv);
 			}
 		} else {	/* for single obstacle */
@@ -702,8 +695,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 			if (static_cast<int>(prop.dl[1]) > 0.0) {	/* receive site past 1st peak */
 
 				if (prop.the[1] < 0.2) {	/* receive grazing angle less than .2 radians */
-					vv = 0.6365 * prop.wn * abs(dto + dro -
-								    dtr);
+					vv = 0.6365 * prop.wn * std::abs(dto + dro - dtr);
 
 					if (prop.hht < 3400) {
 						sdl = 18.0;
@@ -711,16 +703,16 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						/* ke phase difference with respect to direct t-r line */
 						kedr =
 						    0.159155 * prop.wn *
-						    abs(dto + dro - dtr);
-						arp = abs(kedr - (int (kedr)));
+						    std::abs(dto + dro - dtr);
+						arp = std::abs(kedr - (int (kedr)));
 						kem = aknfe(vv);
 						kem = std::pow(10, (-kem / 20));
 						/* scatter path phase with respect to direct t-r line */
 						sdr =
 						    0.5 +
 						    0.159155 * prop.wn *
-						    abs(dtof + drof - dtr);
-						srp = abs(sdr - (int (sdr)));
+						    std::abs(dtof + drof - dtr);
+						srp = std::abs(sdr - (int (sdr)));
 						/* difference between scatter and ke phase in radians */
 						pd = 6.283185307 * abs(srp -
 								       arp);
