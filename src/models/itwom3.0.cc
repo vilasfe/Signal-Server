@@ -47,7 +47,7 @@
 #include <complex>
 #include <cstring>
 #include <numbers>
-#include <vector>
+#include <string>
 
 #include "../common.h"
 #include "itwom3.0.hh"
@@ -714,8 +714,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						    std::abs(dtof + drof - dtr);
 						srp = std::abs(sdr - (int (sdr)));
 						/* difference between scatter and ke phase in radians */
-						pd = 6.283185307 * abs(srp -
-								       arp);
+						pd = 6.283185307 * std::abs(srp - arp);
 						/* report pd prior to restriction 
 						   keep pd between 0 and pi radians and adjust for 3&4 quadrant */
 						if (pd >= std::numbers::pi) {
@@ -822,13 +821,13 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 				/* h0=et*h0+(1.0-et)*4.343*log(pow((1.0+1.4142/r1)*(1.0+1.4142/r2),2.0)*(r1+r2)/(r1+r2+2.8284)); */
 
 				temp =
-				    ((1.0 + 1.4142 / r1) * (1.0 + 1.4142 / r2));
+				    ((1.0 + std::numbers::sqrt2 / r1) * (1.0 + std::numbers::sqrt2 / r2));
 				h0 = et * h0 + (1.0 -
 						et) * 4.343 * std::log((temp *
 								   temp) * (r1 +
 									    r2)
 								  / (r1 + r2 +
-								     2.8284));
+								     2 * std::numbers::sqrt2));
 			}
 
 			if (h0 > 15.0 && h0s >= 0.0) {
@@ -963,20 +962,20 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 	else {
 		double q = prop.he[0] + prop.he[1];
 		const double sps = q / std::hypot(pd, q);
-		q = (1.0 - 0.8 * exp(-pd / 50e3)) * prop.dh;
+		q = (1.0 - 0.8 * std::exp(-pd / 50e3)) * prop.dh;
 
 		if (prop.mdp < 0) {
 			dr = pd / (1 + hrg / htg);
 
 			if (dr < (0.5 * pd)) {
 				drh =
-				    6378137.0 - sqrt(-(0.5 * pd) * (0.5 * pd) +
+				    6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
 						     6378137.0 * 6378137.0 +
 						     (0.5 * pd -
 						      dr) * (0.5 * pd - dr));
 			} else {
 				drh =
-				    6378137.0 - sqrt(-(0.5 * pd) * (0.5 * pd) +
+				    6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
 						     6378137.0 * 6378137.0 +
 						     (dr - 0.5 * pd) * (dr -
 									0.5 *
@@ -990,39 +989,39 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 					   pd - dr + dr * (prop.cch -
 							   drh) / htg);
 				q = ((1.0 -
-				      0.8 * exp(-pd / 50e3)) * prop.dh *
-				     (std::min(-20 * log10(cd / cr), 1.0)));
+				      0.8 * std::exp(-pd / 50e3)) * prop.dh *
+				     (std::min(-20 * std::log10(cd / cr), 1.0)));
 			}
 		}
 
 		s = 0.78 * q * exp(-pow(q / 16.0, 0.25));
-		q = exp(-std::min(10.0, prop.wn * s * sps));
+		q = std::exp(-std::min(10.0, prop.wn * s * sps));
 		r = q * (sps - prop_zgnd) / (sps + prop_zgnd);
 		q = std::norm(r);
 		q = std::min(q, 1.0);
 
 		if (q < 0.25 || q < sps) {
-			r = r * sqrt(sps / q);
+			r = r * std::sqrt(sps / q);
 		}
-		q = prop.wn * prop.he[0] * prop.he[1] / (pd * 3.1415926535897);
+		q = prop.wn * prop.he[0] * prop.he[1] / (pd * std::numbers::pi);
 
 		if (prop.mdp < 0) {
 			q = prop.wn * ((ht - hrp) * (hr - hrp)) / (pd *
-								   3.1415926535897);
+								   std::numbers::pi);
 		}
-		q -= floor(q);
+		q -= std::floor(q);
 
 		if (q < 0.5) {
-			q *= 3.1415926535897;
+			q *= std::numbers::pi;
 		}
 
 		else {
-			q = (1 - q) * 3.1415926535897;
+			q = (1 - q) * std::numbers::pi;
 		}
 		/* no longer valid complex conjugate removed 
 		   by removing minus sign from in front of sin function */
 		const double re = std::norm(std::complex < double >(std::cos(q), std::sin(q)) + r);
-		alosv = -10 * log10(re);
+		alosv = -10 * std::log10(re);
 		prop.tgh = prop.hg[0];	/*tx above gnd hgt set to antenna height AGL */
 		prop.tsgh = prop.rch[0] - prop.hg[0];	/* tsgh set to tx site gl AMSL */
 
@@ -1142,7 +1141,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 			}
 		}
 
-		dmin = abs(prop.he[0] - prop.he[1]) / 200e-3;
+		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
 		q = adiff(0.0, prop, propa);
 		/* xae=pow(prop.wn*pow(prop.gme,2.),-THIRD); -- JDM made argument 2 a double */
 		xae = std::pow(prop.wn * (prop.gme * prop.gme), -THIRD);	/* No 2nd pow() */
@@ -1361,7 +1360,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 			}
 		}
 
-		dmin = abs(prop.he[0] - prop.he[1]) / 200e-3;
+		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
 		q = adiff2(0.0, prop, propa);
 		xae = std::pow(prop.wn * (prop.gme * prop.gme), -THIRD);
 		d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
@@ -1566,10 +1565,8 @@ auto curve(double const &c1, double const &c2, double const &x1,
 	     double const &x2, double const &x3, double const &de) -> double
 {
 	/* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
-	double temp1, temp2;
-
-	temp1 = (de - x2) / x3;
-	temp2 = de / x1;
+	double temp1 = (de - x2) / x3;
+	double temp2 = de / x1;
 
 	temp1 *= temp1;
 	temp2 *= temp2;
@@ -2068,17 +2065,15 @@ auto qtile(const int &nn, double a[], const int &ir) -> double
 
 auto qerf(const double &z) -> double
 {
-	double b1 = 0.319381530, b2 = -0.356563782, b3 = 1.781477937;
-	double b4 = -1.821255987, b5 = 1.330274429;
-	double rp = 4.317008, rrt2pi = 0.398942280;
-	double t, x, qerfv;
+	const double b1 = 0.319381530, b2 = -0.356563782, b3 = 1.781477937;
+	const double b4 = -1.821255987, b5 = 1.330274429;
+	const double rp = 4.317008, rrt2pi = 0.398942280;
+	double qerfv = 0.0;
 
-	x = z;
-	t = fabs(x);
+	double x = z;
+	double t = fabs(x);
 
-	if (t >= 10.0)
-		qerfv = 0.0;
-	else {
+	if (t < 10.0) {
 		t = rp / (t + rp);
 		qerfv =
 		    std::exp(-0.5 * x * x) * rrt2pi *
@@ -2355,7 +2350,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 			rae2 = 0.0;
 		}
 
-		prop.thera = std::atan(abs(rae2 - rae1) / prop.dist);
+		prop.thera = std::atan(std::abs(rae2 - rae1) / prop.dist);
 
 		if (rae2 < rae1) {
 			prop.thera = -prop.thera;
@@ -2580,7 +2575,7 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	prop.cch = 22.5;	/* double clutter_height preset to ILLR calibration.;  
 				   use 25.3 for ITU-P1546-2 calibration */
 	prop.cd = 1.00;		/* double clutter_density preset */
-	int mode_var = 1;	/* int mode_var set to 1 for FCC compatibility;
+	const int mode_var = 1;	/* int mode_var set to 1 for FCC compatibility;
 				   normally, SPLAT presets this to 12 */
 	prop.dhd = 0.0;		/* delta_h_diff preset */
 
@@ -2901,7 +2896,7 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	prop.dhd = delta_h_diff;
 	prop.ens = eno;
 	prop.kwx = 0;
-	ivar = (long)ModVar;
+	ivar = ModVar;
 	ipol = (long)pol;
 	qlrps(frq_mhz, 0.0, eno, ipol, eps, sgm, prop);
 	qlra(kst, propv.klim, ivar, prop, propv);
