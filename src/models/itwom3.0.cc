@@ -57,8 +57,8 @@ static constexpr double THIRD = 1.0/3.0;
 struct prop_type {
 	double aref;
 	double dist;
-	double hg[2];
-	double rch[2];
+	std::array<double, 2> hg;
+	std::array<double, 2> rch;
 	double wn;
 	double dh;
 	double dhd;
@@ -69,9 +69,9 @@ struct prop_type {
 	double gme;
 	double zgndreal;
 	double zgndimag;
-	double he[2];
-	double dl[2];
-	double the[2];
+	std::array<double, 2> he;
+	std::array<double, 2> dl;
+	std::array<double, 2> the;
 	double tiw;
 	double ght;
 	double ghr;
@@ -106,7 +106,7 @@ struct propa_type {
 	double emd;
 	double aes;
 	double ems;
-	double dls[2];
+	std::array<double, 2> dls;
 	double dla;
 	double tha;
 };
@@ -1011,7 +1011,7 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 	return std::min(22.0, alosv);
 }
 
-void qlra(int kst[], int klimx, int mdvarx, prop_type & prop,
+void qlra(const std::array<int, 2>& kst, int klimx, int mdvarx, prop_type & prop,
 	  propv_type & propv)
 {
 	double q = 0.0;
@@ -1268,18 +1268,15 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 void lrprop2(double d, prop_type & prop, propa_type & propa)
 {
 	/* ITWOM_lrprop2 */
-	static thread_local bool wlos, wscat;
-	static thread_local double dmin, xae;
+	static thread_local bool wlos = false;
+	static thread_local bool wscat = false;
+	static thread_local double dmin = 0.0;
+	static thread_local double xae = 0.0;
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
-	double pd1;
-	double a0, a1, a2, a3, a4, a5, a6, iw;
-	double d0, d1, d2, d3, d4, d5, d6;
-	bool wq;
-	double q;
-	int j;
+	double q = 0.0;
 
-	iw = prop.tiw;
-	pd1 = prop.dist;
+	const double iw = prop.tiw;
+	const double pd1 = prop.dist;
 	propa.dx = 2000000.0;
 
 	if (prop.mdp != 0) {	/* if oper. mode is not 0, i.e. not area mode ongoing */
@@ -1549,41 +1546,43 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	    ysm3, csp1, csp2, ysp1, ysp2, ysp3, csd1, zd, cfm1, cfm2,
 	    cfm3, cfp1, cfp2, cfp3;
 
-	const double bv1[7] = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
-	const double bv2[7] = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
-	const double xv1[7] =
+	std::array<double, 7> bv1 = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
+	std::array<double, 7> bv2 = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
+	std::array<double, 7> xv1 =
 	    { 144.9e3, 228.9e3, 262.6e3, 84.1e3, 228.9e3, 141.7e3, 2222.e3 };
-	const double xv2[7] =
+	std::array<double, 7> xv2 =
 	    { 190.3e3, 205.2e3, 185.2e3, 101.1e3, 205.2e3, 315.9e3, 164.8e3 };
-	const double xv3[7] =
+	std::array<double, 7> xv3 =
 	    { 133.8e3, 143.6e3, 99.8e3, 98.6e3, 143.6e3, 167.4e3, 116.3e3 };
-	const double bsm1[7] = { 2.13, 2.66, 6.11, 1.98, 2.68, 6.86, 8.51 };
-	const double bsm2[7] = { 159.5, 7.67, 6.65, 13.11, 7.16, 10.38, 169.8 };
-	const double xsm1[7] =
+	std::array<double, 7> bsm1 = { 2.13, 2.66, 6.11, 1.98, 2.68, 6.86, 8.51 };
+	std::array<double, 7> bsm2 = { 159.5, 7.67, 6.65, 13.11, 7.16, 10.38, 169.8 };
+	std::array<double, 7> xsm1 =
 	    { 762.2e3, 100.4e3, 138.2e3, 139.1e3, 93.7e3, 187.8e3, 609.8e3 };
-	const double xsm2[7] =
+	std::array<double, 7> xsm2 =
 	    { 123.6e3, 172.5e3, 242.2e3, 132.7e3, 186.8e3, 169.6e3, 119.9e3 };
-	const double xsm3[7] =
+	std::array<double, 7>xsm3 =
 	    { 94.5e3, 136.4e3, 178.6e3, 193.5e3, 133.5e3, 108.9e3, 106.6e3 };
-	const double bsp1[7] = { 2.11, 6.87, 10.08, 3.68, 4.75, 8.58, 8.43 };
-	const double bsp2[7] = { 102.3, 15.53, 9.60, 159.3, 8.12, 13.97, 8.19 };
-	const double xsp1[7] =
+	std::array<double, 7> bsp1 = { 2.11, 6.87, 10.08, 3.68, 4.75, 8.58, 8.43 };
+	std::array<double, 7> bsp2 = { 102.3, 15.53, 9.60, 159.3, 8.12, 13.97, 8.19 };
+	std::array<double, 7> xsp1 =
 	    { 636.9e3, 138.7e3, 165.3e3, 464.4e3, 93.2e3, 216.0e3, 136.2e3 };
-	const double xsp2[7] =
+	std::array<double, 7> xsp2 =
 	    { 134.8e3, 143.7e3, 225.7e3, 93.1e3, 135.9e3, 152.0e3, 188.5e3 };
-	const double xsp3[7] =
+	std::array<double, 7> xsp3 =
 	    { 95.6e3, 98.6e3, 129.7e3, 94.2e3, 113.4e3, 122.7e3, 122.9e3 };
-	const double bsd1[7] = { 1.224, 0.801, 1.380, 1.000, 1.224, 1.518, 1.518 };
-	const double bzd1[7] = { 1.282, 2.161, 1.282, 20., 1.282, 1.282, 1.282 };
-	const double bfm1[7] = { 1.0, 1.0, 1.0, 1.0, 0.92, 1.0, 1.0 };
-	const double bfm2[7] = { 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0 };
-	const double bfm3[7] = { 0.0, 0.0, 0.0, 0.0, 1.77, 0.0, 0.0 };
-	const double bfp1[7] = { 1.0, 0.93, 1.0, 0.93, 0.93, 1.0, 1.0 };
-	const double bfp2[7] = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
-	const double bfp3[7] = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
-	static thread_local bool ws, w1;
+	std::array<double, 7> bsd1 = { 1.224, 0.801, 1.380, 1.000, 1.224, 1.518, 1.518 };
+	std::array<double, 7> bzd1 = { 1.282, 2.161, 1.282, 20., 1.282, 1.282, 1.282 };
+	std::array<double, 7> bfm1 = { 1.0, 1.0, 1.0, 1.0, 0.92, 1.0, 1.0 };
+	std::array<double, 7> bfm2 = { 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0 };
+	std::array<double, 7> bfm3 = { 0.0, 0.0, 0.0, 0.0, 1.77, 0.0, 0.0 };
+	std::array<double, 7> bfp1 = { 1.0, 0.93, 1.0, 0.93, 0.93, 1.0, 1.0 };
+	std::array<double, 7> bfp2 = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
+	std::array<double, 7> bfp3 = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
+	static thread_local bool ws = false;
+	static thread_local bool w1 = false;
 	const double rt = 7.8;
-	double rl = 24.0, q;
+	const double rl = 24.0;
+	double q = 0.0;
 	int temp_klim = propv.klim - 1;
 
 	if (propv.lvar > 0) {
@@ -2223,7 +2222,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	     propa_type & propa, propv_type & propv)
 {
-	double xl[2];
+	std::array<double, 2> xl = {0};
 	double q = 0.0;
 	double za = 0.0;
 	double zb = 0.0;
@@ -2813,12 +2812,10 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	//                          Results are probably invalid.
 	// NOTE: strmode is not used at this time.
 
-	prop_type prop;
-	propv_type propv;
-	propa_type propa;
-	int kst[2];
-	kst[0] = (int)TSiteCriteria;
-	kst[1] = (int)RSiteCriteria;
+	prop_type prop = {};
+	propv_type propv = {};
+	propa_type propa = {};
+	const std::array<int, 2> kst = {TSiteCriteria, RSiteCriteria};
 
 	const double zt = qerfi(pctTime / 100.0);
 	const double zl = qerfi(pctLoc / 100.0);
