@@ -926,102 +926,89 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
-	std::complex < double >r;
-	double cd, cr, dr, hr, hrg, ht, htg, hrp, s, pd, drh;
+	double drh = 0.0;
 	/* int rp; */
-	double alosv;
+	double alosv = 0.0;
 
-	cd = 0.0;
-	cr = 0.0;
-	htg = prop.hg[0];
-	hrg = prop.hg[1];
-	ht = prop.ght;
-	hr = prop.ghr;
+	const double htg = prop.hg[0];
+	const double hrg = prop.hg[1];
+	const double ht = prop.ght;
+	const double hr = prop.ghr;
 	/* rp=prop.rpl; */
-	hrp = prop.rph;
-	pd = prop.dist;
+	const double hrp = prop.rph;
+	const double pd = prop.dist;
 
 	if (d == 0.0) {
-		alosv = 0.0;
+		return 0;
+	}
+
+	double q = prop.he[0] + prop.he[1];
+	const double sps = q / std::hypot(pd, q);
+	q = (1.0 - 0.8 * std::exp(-pd / 50e3)) * prop.dh;
+
+	if (prop.mdp < 0) {
+		const double dr = pd / (1 + hrg / htg);
+
+		if (dr < (0.5 * pd)) {
+			drh =
+				6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
+							6378137.0 * 6378137.0 +
+							(0.5 * pd - dr) * (0.5 * pd - dr));
+		} else {
+			drh =
+				6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
+							6378137.0 * 6378137.0 +
+							(dr - 0.5 * pd) * (dr - 0.5 * pd));
+		}
+
+		if ((sps < 0.05) && (prop.cch > hrg) && (prop.dist < prop.dl[0])) {	/* if far from transmitter and receiver below canopy */
+			const double cd = std::fmax(0.01, pd * (prop.cch - hrg) / (htg - hrg));
+			const double cr = std::fmax(0.01, pd - dr + dr * (prop.cch - drh) / htg);
+			q = ((1.0 -
+					0.8 * std::exp(-pd / 50e3)) * prop.dh *
+					(std::min(-20 * std::log10(cd / cr), 1.0)));
+		}
+	}
+
+	const double s = 0.78 * q * std::exp(-std::pow(q / 16.0, 0.25));
+	q = std::exp(-std::min(10.0, prop.wn * s * sps));
+	std::complex < double > r = q * (sps - prop_zgnd) / (sps + prop_zgnd);
+	q = std::min(std::norm(r), 1.0);
+
+	if (q < 0.25 || q < sps) {
+		r = r * std::sqrt(sps / q);
+	}
+	q = prop.wn * prop.he[0] * prop.he[1] / (pd * std::numbers::pi);
+
+	if (prop.mdp < 0) {
+		q = prop.wn * ((ht - hrp) * (hr - hrp)) / (pd * std::numbers::pi);
+	}
+	q -= std::floor(q);
+
+	if (q < 0.5) {
+		q *= std::numbers::pi;
 	}
 
 	else {
-		double q = prop.he[0] + prop.he[1];
-		const double sps = q / std::hypot(pd, q);
-		q = (1.0 - 0.8 * std::exp(-pd / 50e3)) * prop.dh;
+		q = (1 - q) * std::numbers::pi;
+	}
+	/* no longer valid complex conjugate removed
+		by removing minus sign from in front of sin function */
+	const double re = std::norm(std::complex < double >(std::cos(q), std::sin(q)) + r);
+	alosv = -10 * std::log10(re);
+	prop.tgh = prop.hg[0];	/*tx above gnd hgt set to antenna height AGL */
+	prop.tsgh = prop.rch[0] - prop.hg[0];	/* tsgh set to tx site gl AMSL */
 
-		if (prop.mdp < 0) {
-			dr = pd / (1 + hrg / htg);
-
-			if (dr < (0.5 * pd)) {
-				drh =
-				    6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
-						     6378137.0 * 6378137.0 +
-						     (0.5 * pd -
-						      dr) * (0.5 * pd - dr));
-			} else {
-				drh =
-				    6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
-						     6378137.0 * 6378137.0 +
-						     (dr - 0.5 * pd) * (dr -
-									0.5 *
-									pd));
-			}
-
-			if ((sps < 0.05) && (prop.cch > hrg) && (prop.dist < prop.dl[0])) {	/* if far from transmitter and receiver below canopy */
-				cd = std::max(0.01,
-					   pd * (prop.cch - hrg) / (htg - hrg));
-				cr = std::max(0.01,
-					   pd - dr + dr * (prop.cch -
-							   drh) / htg);
-				q = ((1.0 -
-				      0.8 * std::exp(-pd / 50e3)) * prop.dh *
-				     (std::min(-20 * std::log10(cd / cr), 1.0)));
-			}
-		}
-
-		s = 0.78 * q * exp(-pow(q / 16.0, 0.25));
-		q = std::exp(-std::min(10.0, prop.wn * s * sps));
-		r = q * (sps - prop_zgnd) / (sps + prop_zgnd);
-		q = std::norm(r);
-		q = std::min(q, 1.0);
-
-		if (q < 0.25 || q < sps) {
-			r = r * std::sqrt(sps / q);
-		}
-		q = prop.wn * prop.he[0] * prop.he[1] / (pd * std::numbers::pi);
-
-		if (prop.mdp < 0) {
-			q = prop.wn * ((ht - hrp) * (hr - hrp)) / (pd *
-								   std::numbers::pi);
-		}
-		q -= std::floor(q);
-
-		if (q < 0.5) {
-			q *= std::numbers::pi;
-		}
-
-		else {
-			q = (1 - q) * std::numbers::pi;
-		}
-		/* no longer valid complex conjugate removed 
-		   by removing minus sign from in front of sin function */
-		const double re = std::norm(std::complex < double >(std::cos(q), std::sin(q)) + r);
-		alosv = -10 * std::log10(re);
-		prop.tgh = prop.hg[0];	/*tx above gnd hgt set to antenna height AGL */
-		prop.tsgh = prop.rch[0] - prop.hg[0];	/* tsgh set to tx site gl AMSL */
-
-		if ((prop.hg[1] < prop.cch) && (prop.thera < 0.785)
-		    && (prop.thenr < 0.785)) {
-			if (sps < 0.05) {
-				alosv = alosv + saalos(pd, prop, propa);
-			} else {
-				alosv = saalos(pd, prop, propa);
-			}
+	if ((prop.hg[1] < prop.cch) && (prop.thera < 0.785)
+		&& (prop.thenr < 0.785)) {
+		if (sps < 0.05) {
+			alosv += saalos(pd, prop, propa);
+		} else {
+			alosv = saalos(pd, prop, propa);
 		}
 	}
-	alosv = std::min(22.0, alosv);
-	return alosv;
+
+	return std::min(22.0, alosv);
 }
 
 void qlra(int kst[], int klimx, int mdvarx, prop_type & prop,
