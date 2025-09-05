@@ -1,4 +1,4 @@
-double version = 3.21;
+const double version = 3.21;
 /****************************************************************************\
 *  Signal Server: Radio propagation simulator by Alex Farrant QCVS, 2E0TDW   *
 ******************************************************************************
@@ -376,17 +376,17 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 	   elevation and distance information for points
 	   along that path in the "path" structure. */
 
-	int c;
-	double beta, den, num,
-	    miles_per_sample = 0.0, samples_per_radian = 68755.0;
+	int c = 0;
+	double beta = 0.0;
+	double miles_per_sample = 0.0;
 	struct site_t tempsite;
 
 	double lat1 = source.lat * DEG2RAD;
 	double lon1 = source.lon * DEG2RAD;
 	double lat2 = destination.lat * DEG2RAD;
 	double lon2 = destination.lon * DEG2RAD;
-	samples_per_radian = ppd * 57.295833;
-	double azimuth = Azimuth(source, destination) * DEG2RAD;
+	const double samples_per_radian = ppd * 57.295833;
+	const double azimuth = Azimuth(source, destination) * DEG2RAD;
 
 	double total_distance = Distance(source, destination);
 
@@ -596,24 +596,23 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 	   path between receiver and transmitter. */
 
 	struct site_t site_x;
-	double h_r, h_t, h_x, h_r_orig, cos_tx_angle, cos_test_angle,
-	    cos_tx_angle_f1, cos_tx_angle_fpt6, d_tx, d_x,
-	    h_r_f1, h_r_fpt6, h_f, h_los, lambda = 0.0;
+	double cos_test_angle = 0.0;
+	double h_f = 0.0;
+	double h_los = 0.0;
+	double lambda = 0.0;
 	std::string string_fpt6;
 	std::string string_f1;
 	std::string outstr;
 
 	ReadPath(xmtr, rcvr);
-	h_r = GetElevation(rcvr) + rcvr.alt + earthradius;
-	h_r_f1 = h_r;
-	h_r_fpt6 = h_r;
-	h_r_orig = h_r;
-	h_t = GetElevation(xmtr) + xmtr.alt + earthradius;
-	d_tx = FEET_PER_MILE * Distance(rcvr, xmtr);
-	cos_tx_angle =
+	double h_r = GetElevation(rcvr) + rcvr.alt + earthradius;
+	double h_r_f1 = h_r;
+	double h_r_fpt6 = h_r;
+	const double h_r_orig = h_r;
+	const double h_t = GetElevation(xmtr) + xmtr.alt + earthradius;
+	const double d_tx = FEET_PER_MILE * Distance(rcvr, xmtr);
+	double cos_tx_angle =
 	    ((h_r * h_r) + (d_tx * d_tx) - (h_t * h_t)) / (2.0 * h_r * d_tx);
-	cos_tx_angle_f1 = cos_tx_angle;
-	cos_tx_angle_fpt6 = cos_tx_angle;
 
 	if (f) {
 		lambda = 9.8425e8 / (f * 1e6);
@@ -715,13 +714,13 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 		if (f) {
 			/* Now clear the first Fresnel zone... */
 
-			cos_tx_angle_f1 =
+			double cos_tx_angle_f1 =
 			    ((h_r_f1 * h_r_f1) + (d_tx * d_tx) -
 			     (h_t * h_t)) / (2.0 * h_r_f1 * d_tx);
 			h_los =
-			    sqrt(h_r_f1 * h_r_f1 + d_x * d_x -
+			    std::sqrt(h_r_f1 * h_r_f1 + d_x * d_x -
 				 2 * h_r_f1 * d_x * cos_tx_angle_f1);
-			h_f = h_los - sqrt(lambda * d_x * (d_tx - d_x) / d_tx);
+			h_f = h_los - std::sqrt(lambda * d_x * (d_tx - d_x) / d_tx);
 
 			while (h_f < h_x) {
 				h_r_f1 += 1;
@@ -729,25 +728,22 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 				    ((h_r_f1 * h_r_f1) + (d_tx * d_tx) -
 				     (h_t * h_t)) / (2.0 * h_r_f1 * d_tx);
 				h_los =
-				    sqrt(h_r_f1 * h_r_f1 + d_x * d_x -
+				    std::sqrt(h_r_f1 * h_r_f1 + d_x * d_x -
 					 2 * h_r_f1 * d_x * cos_tx_angle_f1);
 				h_f =
 				    h_los -
-				    sqrt(lambda * d_x * (d_tx - d_x) / d_tx);
+				    std::sqrt(lambda * d_x * (d_tx - d_x) / d_tx);
 			}
 
 			/* and clear the 60% F1 zone. */
 
-			cos_tx_angle_fpt6 =
+			double cos_tx_angle_fpt6 =
 			    ((h_r_fpt6 * h_r_fpt6) + (d_tx * d_tx) -
 			     (h_t * h_t)) / (2.0 * h_r_fpt6 * d_tx);
 			h_los =
-			    sqrt(h_r_fpt6 * h_r_fpt6 + d_x * d_x -
+			    std::sqrt(h_r_fpt6 * h_r_fpt6 + d_x * d_x -
 				 2 * h_r_fpt6 * d_x * cos_tx_angle_fpt6);
-			h_f =
-			    h_los -
-			    fzone_clearance * sqrt(lambda * d_x * (d_tx - d_x) /
-						   d_tx);
+			h_f = h_los - fzone_clearance * std::sqrt(lambda * d_x * (d_tx - d_x) / d_tx);
 
 			while (h_f < h_x) {
 				h_r_fpt6 += 1;
@@ -755,12 +751,12 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 				    ((h_r_fpt6 * h_r_fpt6) + (d_tx * d_tx) -
 				     (h_t * h_t)) / (2.0 * h_r_fpt6 * d_tx);
 				h_los =
-				    sqrt(h_r_fpt6 * h_r_fpt6 + d_x * d_x -
+				    std::sqrt(h_r_fpt6 * h_r_fpt6 + d_x * d_x -
 					 2 * h_r_fpt6 * d_x *
 					 cos_tx_angle_fpt6);
 				h_f =
 				    h_los -
-				    fzone_clearance * sqrt(lambda * d_x *
+				    fzone_clearance * std::sqrt(lambda * d_x *
 							   (d_tx - d_x) / d_tx);
 			}
 		}
@@ -910,18 +906,25 @@ void do_allocs()
 
 auto main(int argc, char *argv[]) -> int
 {
-	int x, y, z = 0, propmodel, knifeedge = 0, ppa = 0, normalise = 0,
-	  haf = 0, pmenv = 1, lidar=0, result;
-
-	double rxlat, rxlon,
-	  west_min, west_max, nortRxHin, nortRxHax;
+	int x = 0;
+	int z = 0;
+	int propmodel = 0;
+	int knifeedge = 0;
+	int ppa = 0;
+	bool normalise = false;
+	int haf = 0;
+	int pmenv = 1;
+	bool lidar=false;
+	int result = 0;
 
 	bool use_threads = true;
 
-	unsigned char LRmap = 0, txsites = 0, topomap = 0;
+	unsigned char LRmap = 0;
+	unsigned char txsites = 0;
 	bool geo = false;
 	bool kml = false;
-	unsigned char area_mode = 0, max_txsites;
+	unsigned char area_mode = 0;
+	unsigned char max_txsites;
 	bool ngs = false;
 
 	// TODO: convert string filenames to std::filesystem
@@ -935,8 +938,13 @@ auto main(int argc, char *argv[]) -> int
 	std::string el_filename;
 	char *udt_file = nullptr;
 
-	double altitude = 0.0, altitudeLR = 0.0, tx_range = 0.0,
-	    rx_range = 0.0, deg_range = 0.0, deg_limit = 0.0, deg_range_lon;
+	double altitude = 0.0;
+	double altitudeLR = 0.0;
+	double tx_range = 0.0;
+	double rx_range = 0.0;
+	double deg_range = 0.0;
+	double deg_limit = 0.0;
+	double deg_range_lon = 0.0;
 
 	if (strstr(argv[0], "signalserverHD")) {
 		MAXPAGES = 32;  // was 9
@@ -946,7 +954,7 @@ auto main(int argc, char *argv[]) -> int
 
 	if (strstr(argv[0], "signalserverLIDAR")) {
 		MAXPAGES = 100; // 10x10
-		lidar = 1;
+		lidar = true;
 		IPPD = 6000; // will be overridden based upon file header...
 	}
 
@@ -1023,16 +1031,13 @@ auto main(int argc, char *argv[]) -> int
 		do_allocs();
 	}
 
-	y = argc - 1;
-	kml = false;
+	int y = argc - 1;
 	geo = false;
 	dbm = false;
-	gpsav = 0;
 	metric = false;
 	mapfile[0] = 0;
 	clutter_file[0] = 0;
 	clutter = 0.0;
-	forced_erp = -1.0;
 	forced_freq = 0.0;
 	sdf_path[0] = 0;
 	udt_file = nullptr;
@@ -1598,7 +1603,7 @@ auto main(int argc, char *argv[]) -> int
 		exit(EINVAL);
 	}
 
-	if (to_stdout == true && ppa != 0) {
+	if (to_stdout && ppa != 0) {
 		std::println(stderr,
 			"ERROR: Cannot write to stdout in ppa mode");
 		exit(EINVAL);
@@ -1630,8 +1635,8 @@ auto main(int argc, char *argv[]) -> int
 	double min_lon = std::floor(tx_site[0].lon);
 	double max_lon = std::floor(tx_site[0].lon);
 
-	double txlat = static_cast<int>(std::floor(tx_site[0].lat));
-	double txlon = static_cast<int>(std::floor(tx_site[0].lon));
+	const double txlat = static_cast<int>(std::floor(tx_site[0].lat));
+	const double txlon = static_cast<int>(std::floor(tx_site[0].lon));
 
 	double min_lat = std::min(txlat, 70.0);
 	double max_lat = std::max(txlat, -70.0);
@@ -1645,8 +1650,8 @@ auto main(int argc, char *argv[]) -> int
 	}
 
 	if (ppa == 1) {
-		rxlat = (int)floor(tx_site[1].lat);
-		rxlon = (int)floor(tx_site[1].lon);
+		const double rxlat = static_cast<int>(std::floor(tx_site[1].lat));
+		const double rxlon = static_cast<int>(std::floor(tx_site[1].lon));
 
 		if (rxlat < min_lat)
 			min_lat = rxlat;
@@ -1665,7 +1670,7 @@ auto main(int argc, char *argv[]) -> int
 
 	/* Load the required tiles */
 	if (lidar) {
-		if( (result = loadLIDAR(lidar_tiles, resample)) != 0 ){
+		if(result = loadLIDAR(lidar_tiles, resample); result != 0 ){
 			std::println(stderr, "Couldn't find one or more of the "
 				"lidar files. Please ensure their paths are "
 				"correct and try again.");
@@ -1673,7 +1678,7 @@ auto main(int argc, char *argv[]) -> int
 			exit(result);
 		}
 
-		ppd=((double)height / (max_north-min_north));
+		ppd=(static_cast<double>(height) / (max_north-min_north));
 		yppd=ppd;
 		
 		if (debug) {
@@ -1697,25 +1702,27 @@ auto main(int argc, char *argv[]) -> int
 
 		//max_lon-=3;
 
-		if( (result = LoadTopoData(max_lon, min_lon, max_lat, min_lat)) != 0 ){
+		if(result = LoadTopoData(max_lon, min_lon, max_lat, min_lat); result != 0 ){
 			// This only fails on errors loading SDF tiles
 			std::println(stderr, "Error loading topo data");
 			return result;
 		}
 
-		if (area_mode || topomap) {
+		if (area_mode) {
 			for (z = 0; z < txsites && z < max_txsites; z++) {
 				/* "Ball park" estimates used to load any additional
 				   SDF files required to conduct this analysis. */
 
 				tx_range =
-					sqrt(1.5 *
+					std::sqrt(1.5 *
 					 (tx_site[z].alt + GetElevation(tx_site[z])));
 
-				if (LRmap)
-					rx_range = sqrt(1.5 * altitudeLR);
-				else
-					rx_range = sqrt(1.5 * altitude);
+				if (LRmap) {
+					rx_range = std::sqrt(1.5 * altitudeLR);
+				}
+				else {
+					rx_range = std::sqrt(1.5 * altitude);
+				}
 
 				/* deg_range determines the maximum
 				   amount of topo data we read */
@@ -1739,11 +1746,13 @@ auto main(int argc, char *argv[]) -> int
 				// No more than 8 degs
 				deg_limit = 3.5;
 
-				if (fabs(tx_site[z].lat) < 70.0)
+				if (fabs(tx_site[z].lat) < 70.0) {
 					deg_range_lon =
-						deg_range / cos(DEG2RAD * tx_site[z].lat);
-				else
-					deg_range_lon = deg_range / cos(DEG2RAD * 70.0);
+						deg_range / std::cos(DEG2RAD * tx_site[z].lat);
+				}
+				else {
+					deg_range_lon = deg_range / std::cos(DEG2RAD * 70.0);
+				}
 
 				/* Correct for squares in degrees not being square in miles */
 
@@ -1753,10 +1762,10 @@ auto main(int argc, char *argv[]) -> int
 				if (deg_range_lon > deg_limit)
 					deg_range_lon = deg_limit;
 
-				nortRxHin = (int)floor(tx_site[z].lat - deg_range);
-				nortRxHax = (int)floor(tx_site[z].lat + deg_range);
+				double nortRxHin = static_cast<int>(std::floor(tx_site[z].lat - deg_range));
+				double nortRxHax = static_cast<int>(std::floor(tx_site[z].lat + deg_range));
 
-				west_min = (int)floor(tx_site[z].lon - deg_range_lon);
+				double west_min = static_cast<int>(std::floor(tx_site[z].lon - deg_range_lon));
 
 				while (west_min < 0) {
 					west_min += 360;
@@ -1766,7 +1775,7 @@ auto main(int argc, char *argv[]) -> int
 					west_min -= 360;
 				}
 
-				west_max = (int)floor(tx_site[z].lon + deg_range_lon);
+				double west_max = static_cast<int>(std::floor(tx_site[z].lon + deg_range_lon));
 
 				while (west_max < 0) {
 					west_max += 360;
@@ -1793,17 +1802,17 @@ auto main(int argc, char *argv[]) -> int
 
 			/* Load any additional SDF files, if required */
 
-			if( (result = LoadTopoData(max_lon, min_lon, max_lat, min_lat)) != 0 ){
+			if(result = LoadTopoData(max_lon, min_lon, max_lat, min_lat); result != 0 ){
 				// This only fails on errors loading SDF tiles
 				std::println(stderr, "Error loading topo data");
 				return result;
 			}
 		}
-		ppd=(double)ippd;
+		ppd=static_cast<double>(ippd);
 		yppd=ppd; 
 
-		width = (unsigned)(ippd * ReduceAngle(max_west - min_west));
-		height = (unsigned)(ippd * ReduceAngle(max_north - min_north));
+		width = static_cast<unsigned>(ippd * ReduceAngle(max_west - min_west));
+		height = static_cast<unsigned>(ippd * ReduceAngle(max_north - min_north));
 	}
 
 	dpp = 1 / ppd;
@@ -1821,7 +1830,7 @@ auto main(int argc, char *argv[]) -> int
 		Clutter tiles cover 16 x 12 degs but we only need a fraction of that area.
 		Limit by max_range / miles per degree (at equator)
 		*/
-		if( (result = loadClutter(clutter_file,max_range/45,tx_site[0])) != 0 ){
+		if(result = loadClutter(clutter_file,max_range/45,tx_site[0]); result != 0 ){
 			std::println(stderr, "Error, invalid or clutter file not found");
 			return result;
 		}
@@ -1866,8 +1875,8 @@ auto main(int argc, char *argv[]) -> int
 				if (debug) {
 					std::println(stderr,"Cropping 1: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.4f} longitude: {:.5f} dpp {:.7f}",max_west,cropLat,cropLon,tx_site[0].lon,dpp);
 				}
-				width=(int)((cropLon*ppd)*2);
-				height=(int)((cropLat*ppd)*2);
+				width=static_cast<int>((cropLon*ppd)*2);
+				height=static_cast<int>((cropLat*ppd)*2);
 
 				if (debug) {
 					std::println(stderr,"Cropping 2: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f} width {}",max_west,cropLat,cropLon,tx_site[0].lon,width);
