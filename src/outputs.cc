@@ -31,10 +31,11 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 
 	std::string mapfile;
 	unsigned red, green, blue, terrain = 0;
-	unsigned char found, mask, cityorcounty;
-	int indx, x, y, z, x0 = 0, y0 = 0, loss, match;
-	double lat, lon;
-	FILE *fd;
+	unsigned char mask = 0;
+	bool found = false;
+	bool cityorcounty = false;
+	int indx, x0 = 0, y0 = 0, loss, match;
+	FILE *fd = nullptr;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
@@ -87,24 +88,20 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
-	for (y = 0, lat = north; y < (int)height;
-	     y++, lat = north - (dpp * (double)y)) {
-		for (x = 0, lon = max_west; x < (int)width;
-		     x++, lon = max_west - (dpp * (double)x)) {
+	double lat = north;
+	for (int y = 0; y < (int)height;
+	     y++, lat = north - (dpp * y)) {
+		double lon = max_west;
+		for (int x = 0; x < (int)width;
+		     x++, lon = max_west - (dpp * x)) {
 			if (lon < 0.0) {
 				lon += 360.0;
 			}
 
-			for (indx = 0, found = 0;
-			     indx < MAXPAGES && found == 0;) {
-				x0 = (int)rint(ppd *
-					       (lat -
-						(double)dem[indx].min_north));
-				y0 = mpi -
-				    (int)rint(ppd *
-					      (LonDiff
-					       ((double)dem[indx].max_west,
-						lon)));
+			found = false;
+			for (indx = 0; indx < MAXPAGES && !found;) {
+				x0 = static_cast<int>(std::rint(ppd * (lat - static_cast<double>(dem[indx].min_north))));
+				y0 = mpi - static_cast<int>(std::rint(ppd * (LonDiff((double)dem[indx].max_west, lon))));
 				 // fix for multi-tile lidar
                               /*  if(width==10000 && (indx==1 || indx==3)){
                                         if(y0 >= 3432){ //3535
@@ -113,7 +110,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
                                 }*/
 
 				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
-					found = 1;
+					found = true;
 				}
 				else {
 					indx++;
@@ -122,7 +119,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 
 			if (found) {
 				mask = dem[indx].mask[x0][y0];
-				loss = (dem[indx].signal[x0][y0]);
+				loss = dem[indx].signal[x0][y0];
 				cityorcounty = 0;
 
 				match = 255;
@@ -134,11 +131,8 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 				if (loss <= region.level[0]) {
 					match = 0;
 				} else {
-					for (z = 1;
-					     (z < region.levels
-					      && match == 255); z++) {
-						if (loss >= region.level[z - 1]
-						    && loss < region.level[z]) {
+					for (int z = 1; (z < region.levels && match == 255); z++) {
+						if (loss >= region.level[z - 1] && loss < region.level[z]) {
 							match = z;
 						}
 					}
@@ -171,8 +165,8 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 					cityorcounty = 1;
 				}
 
-				if (cityorcounty == 0) {
-					if (loss == 0 || (contour_threshold != 0 && loss > abs(contour_threshold))) {
+				if (!cityorcounty) {
+					if (loss == 0 || (contour_threshold != 0 && loss > std::abs(contour_threshold))) {
 						if (ngs) {	/* No terrain */
 							ctx->add_pixel(255, 255, 255);
 						}
@@ -184,9 +178,9 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 							}
 							else {
 								terrain =
-								    (unsigned)
-								    (0.5 +
-								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+								    static_cast<unsigned>(
+								    std::lround(
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -206,9 +200,9 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 							else {
 								/* Elevation: Greyscale */
 								terrain =
-								    (unsigned)
-								    (0.5 +
-								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+								    static_cast<unsigned>(
+								    std::lround(
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -295,6 +289,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
+	// TODO: The ant bug is HERE
 	for (y = 0, lat = north; y < (int)height;
 	     y++, lat = north - (dpp * (double)y)) {
 		for (x = 0, lon = max_west; x < (int)width;
@@ -390,9 +385,9 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 							}
 							else {
 								terrain =
-								    (unsigned)
-								    (0.5 +
-								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+								    static_cast<unsigned>(
+								    std::lround(
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -417,11 +412,10 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 									/* Elevation: Greyscale */
 									terrain
 									    =
-									    (unsigned)
-									    (0.5
-									     +
-									     pow
-									     ((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+									    static_cast<unsigned>(
+									    std::lround(
+									     std::pow
+									     (static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 									ctx->add_pixel(terrain, terrain, terrain);
 								}
 							}
@@ -603,9 +597,9 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 								ctx->add_pixel(0, 0, 170);
 							else {
 								terrain =
-								    (unsigned)
-								    (0.5 +
-								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+								    static_cast<unsigned>(
+								    std::lround(
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -630,11 +624,10 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 									/* Elevation: Greyscale */
 									terrain
 									    =
-									    (unsigned)
-									    (0.5
-									     +
-									     pow
-									     ((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+									    static_cast<unsigned>(
+									    std::lround(
+									     std::pow
+									     (static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 									ctx->add_pixel(terrain, terrain, terrain);
 								}
 							}
@@ -731,11 +724,11 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 			}
 
 			for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-				x0 = (int)rint(ppd *
+				x0 = (int)std::rint(ppd *
 					       (lat -
 						(double)dem[indx].min_north));
 				y0 = mpi -
-				    (int)rint(ppd *
+				    (int)std::rint(ppd *
 					      (LonDiff
 					       ((double)dem[indx].max_west,
 						lon)));
@@ -847,9 +840,9 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 							else {
 								/* Elevation: Greyscale */
 								terrain =
-								    (unsigned)
-								    (0.5 +
-								     pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
+								    static_cast<unsigned>(
+								    std::lround(
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -1365,7 +1358,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			/* Integrate the antenna's radiation
 			   pattern into the overall path loss. */
 
-			int x = (int)rint(10.0 * (10.0 - elevation));
+			int x = static_cast<int>(std::rint(10.0 * (10.0 - elevation)));
 
 			if (x >= 0 && x <= 1000) {
 				pattern = static_cast<double>(LR.antenna_pattern[static_cast<int>(azimuth)][x]);
