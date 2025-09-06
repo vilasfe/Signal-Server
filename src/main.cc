@@ -920,7 +920,7 @@ auto main(int argc, char *argv[]) -> int
 	bool use_threads = true;
 
 	unsigned char LRmap = 0;
-	unsigned char txsites = 0;
+	bool txsites = false;
 	bool geo = false;
 	bool kml = false;
 	unsigned char area_mode = 0;
@@ -1844,7 +1844,7 @@ auto main(int argc, char *argv[]) -> int
 	  if (propmodel == 2) {  // Modl 2 = LOS
 			cropping = false;
 			PlotLOSMap(tx_site[0], altitudeLR, ano_filename, use_threads);
-			DoLOS(mapfile, geo, kml, ngs, tx_site, txsites);
+			DoLOS(mapfile, geo, kml, ngs, tx_site);
 		} else {
 			// 90% of effort here
 			PlotPropagation(tx_site[0], altitudeLR, ano_filename, propmodel, knifeedge, haf, pmenv, use_threads);
@@ -1889,13 +1889,13 @@ auto main(int argc, char *argv[]) -> int
 
 			// Write bitmap
 			if (LR.erp == 0.0) {
-				DoPathLoss(mapfile, geo, kml, ngs, tx_site, txsites);
+				DoPathLoss(mapfile, geo, kml, ngs, tx_site);
 			}
 			else if (dbm) {
-				DoRxdPwr((to_stdout ? "" : mapfile), geo, kml, ngs, tx_site, txsites);
+				DoRxdPwr((to_stdout ? "" : mapfile), geo, kml, ngs, tx_site);
 			}
 			else {
-				if (result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites); result != 0) {
+				if (result = DoSigStr(mapfile, geo, kml, ngs, tx_site); result != 0) {
 					return result;
 				}
 			}

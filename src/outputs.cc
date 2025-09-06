@@ -21,7 +21,7 @@
 #include "models/sui.hh"
 
 void DoPathLoss(std::string& filename, bool geo, bool kml,
-		bool ngs, struct site_t *xmtr, unsigned char txsites)
+		bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the content of flags held in the mask[][]
@@ -33,14 +33,14 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 	unsigned red, green, blue, terrain = 0;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z, x0 = 0, y0 = 0, loss, match;
-	double lat, lon, conversion, minwest;
+	double lat, lon;
 	FILE *fd;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
 	constexpr double one_over_gamma = 1.0 / GAMMA;
-	conversion =
-	    255.0 / pow((double)(max_elevation - min_elevation),
+	const double conversion =
+	    255.0 / std::pow(max_elevation - min_elevation,
 			one_over_gamma);
 
 	if( success = LoadLossColors(xmtr[0]); success != 0 ){
@@ -65,22 +65,22 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 		fd = stdout;
 	}
 
-	minwest = ((double)min_west) + dpp;
+	double minwest = min_west + dpp;
 
 	if (minwest > 360.0) {
 		minwest -= 360.0;
 	}
 
-	north = (double)max_north - dpp;
+	north = max_north - dpp;
 
 	if (kml || geo) {
-		south = (double)min_north;	/* No bottom legend */
+		south = min_north;	/* No bottom legend */
 	} else {
-		south = (double)min_north - (30.0 / ppd);	/* 30 pixels for bottom legend */
+		south = min_north - (30.0 / ppd);	/* 30 pixels for bottom legend */
 	}
 
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
-	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
+	west = (max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
@@ -238,7 +238,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 }
 
 auto DoSigStr(std::string& filename, bool geo, bool kml,
-	      bool ngs, struct site_t *xmtr, unsigned char txsites) -> int
+	      bool ngs, struct site_t *xmtr) -> int
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal strength values held in the
@@ -250,15 +250,13 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 	unsigned terrain, red, green, blue;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z = 1, x0 = 0, y0 = 0, signal, match;
-	double conversion, lat, lon, minwest;
+	double lat, lon;
 	FILE *fd;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success;
 
 	constexpr double one_over_gamma = 1.0 / GAMMA;
-	conversion =
-	    255.0 / pow((double)(max_elevation - min_elevation),
-			one_over_gamma);
+	const double conversion = 255.0 / std::pow(static_cast<double>(max_elevation - min_elevation), one_over_gamma);
 
 	if( (success = LoadSignalColors(xmtr[0])) != 0 ){
 		std::println(stderr,"Error loading signal colors");
@@ -279,18 +277,18 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 		fd = stdout;
 	}
 
-	minwest = ((double)min_west) + dpp;
+	double minwest = min_west + dpp;
 
 	if (minwest > 360.0) {
 		minwest -= 360.0;
 	}
 
-	north = (double)max_north - dpp;
+	north = max_north - dpp;
 
-	south = (double)min_north;	/* No bottom legend */
+	south = min_north;	/* No bottom legend */
 
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
-	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
+	west = max_west < 180 ? -max_west : 360 - max_west;
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
@@ -455,7 +453,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 }
 
 void DoRxdPwr(std::string filename, bool geo, bool kml,
-	      bool ngs, struct site_t *xmtr, unsigned char txsites)
+	      bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -467,14 +465,14 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 	unsigned terrain, red, green, blue;
 	unsigned char found, mask, cityorcounty;
 	int indx, x, y, z = 1, x0 = 0, y0 = 0, dBm, match;
-	double conversion, lat, lon, minwest;
+	double lat, lon;
 	FILE *fd = stdout;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
-	int success;
+	int success = 0;
 
 	constexpr double one_over_gamma = 1.0 / GAMMA;
-	conversion =
-	    255.0 / pow((double)(max_elevation - min_elevation),
+	const double conversion =
+	    255.0 / std::pow(max_elevation - min_elevation,
 			one_over_gamma);
 
 	if( success = LoadDBMColors(xmtr[0]); success != 0 ){
@@ -497,18 +495,18 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 		std::println(stderr,"Writing to stdout");
 	}
 
-	minwest = ((double)min_west) + dpp;
+	double minwest = min_west + dpp;
 
 	if (minwest > 360.0) {
 		minwest -= 360.0;
 	}
 
-	north = (double)max_north - dpp;
+	north = max_north - dpp;
 
-	south = (double)min_north;	/* No bottom legend */
+	south = min_north;	/* No bottom legend */
 
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
-	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
+	west = (max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
@@ -669,7 +667,7 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 }
 
 void DoLOS(std::string& filename, bool geo, bool kml,
-	   bool ngs, struct site_t *xmtr, unsigned char txsites)
+	   bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -680,15 +678,14 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 	std::string mapfile;
 	unsigned terrain;
 	unsigned char found, mask;
-	int indx, x, y, x0 = 0, y0 = 0;
-	double conversion, lat, lon, minwest;
+	int indx, x0 = 0, y0 = 0;
 	FILE *fd;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success;
 
 	constexpr double one_over_gamma = 1.0 / GAMMA;
-	conversion =
-	    255.0 / pow((double)(max_elevation - min_elevation),
+	const double conversion =
+	    255.0 / std::pow(max_elevation - min_elevation,
 			one_over_gamma);
 
 	if( !filename.empty() ){
@@ -709,34 +706,31 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 
 	}
 
-	minwest = ((double)min_west) + dpp;
+	double minwest = min_west + dpp;
 
 	if (minwest > 360.0) {
 		minwest -= 360.0;
 	}
 
-	north = (double)max_north - dpp;
+	north = max_north - dpp;
 
-	south = (double)min_north;	/* No bottom legend */
+	south = min_north;	/* No bottom legend */
 
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
-	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
+	west = (max_west < 180 ? -max_west : 360 - max_west);
 
 	if (debug) {
 		std::println(stderr, "\nWriting \"{}\" ({}x{} pixmap image)...",
 			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
-	for (y = 0, lat = north; y < (int)height;
-	     y++, lat = north - (dpp * (double)y)) {
-		for (x = 0, lon = max_west; x < (int)width;
-		     x++, lon = max_west - (dpp * (double)x)) {
+	for (int y = 0, lat = north; y < (int)height; y++, lat = north - (dpp * (double)y)) {
+		for (int x = 0, lon = max_west; x < (int)width; x++, lon = max_west - (dpp * (double)x)) {
 			if (lon < 0.0) {
 				lon += 360.0;
 			}
 
-			for (indx = 0, found = 0;
-			     indx < MAXPAGES && found == 0;) {
+			for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
 				x0 = (int)rint(ppd *
 					       (lat -
 						(double)dem[indx].min_north));
@@ -900,8 +894,8 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 	char term[30], ext[15],
 	    report_name[80], block = 0;
 	std::string strmode;
-	double maxloss = -100000.0, minloss = 100000.0, angle1, angle2,
-	    azimuth, pattern = 1.0, patterndB = 0.0,
+	double maxloss = -100000.0, minloss = 100000.0,
+	    pattern = 1.0, patterndB = 0.0,
 	    total_loss = 0.0, cos_xmtr_angle, cos_test_angle = 0.0,
 	    source_alt, test_alt, dest_alt, source_alt2, dest_alt2,
 	    distance, elevation,
@@ -949,19 +943,19 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			source.alt, source.alt + GetElevation(source));
 	}
 
-	azimuth = Azimuth(source, destination);
-	angle1 = ElevationAngle(source, destination);
-	angle2 = ElevationAngle2(source, destination, earthradius);
+	double azimuth = Azimuth(source, destination);
+	double angle1 = ElevationAngle(source, destination);
+	double angle2 = ElevationAngle2(source, destination, earthradius);
 
 	if (got_azimuth_pattern || got_elevation_pattern) {
-		int x = (int)rint(10.0 * (10.0 - angle2));
+		const int x = static_cast<int>(std::rint(10.0 * (10.0 - angle2)));
 
 		if (x >= 0 && x <= 1000) {
 			pattern =
-			    (double)LR.antenna_pattern[(int)rint(azimuth)][x];
+			    static_cast<double>(LR.antenna_pattern[(int)rint(azimuth)][x]);
 		}
 
-		patterndB = 20.0 * log10(pattern);
+		patterndB = 20.0 * std::log10(pattern);
 	}
 
 	if (metric) {
@@ -1203,7 +1197,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 		elev[path.length + 1] =
 		    path.elevation[path.length - 1] * METERS_PER_FOOT;
 
-		azimuth = rint(Azimuth(source, destination));
+		azimuth = std::rint(Azimuth(source, destination));
 
 		for (int y = 2; y < (path.length - 1); y++) {	/* path.length-1 avoids LR error */
 			distance = FEET_PER_MILE * path.distance[y];
@@ -1240,10 +1234,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 					cos_test_angle =
 					    ((source_alt2) +
 					     (distance * distance) -
-					     (test_alt * test_alt)) / (2.0 *
-								       source_alt
-								       *
-								       distance);
+					     (test_alt * test_alt)) / (2.0 * source_alt * distance);
 
 					/* Compare these two angles to determine if
 					   an obstruction exists.  Since we're comparing
@@ -1364,13 +1355,11 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 			}
 
-			if (block) {
-				elevation =
-				    ((std::acos(cos_test_angle)) / DEG2RAD) - 90.0;
+			if (block != 0) {
+				elevation = (std::acos(cos_test_angle) / DEG2RAD) - 90.0;
 			}
 			else {
-				elevation =
-				    ((std::acos(cos_xmtr_angle)) / DEG2RAD) - 90.0;
+				elevation = (std::acos(cos_xmtr_angle) / DEG2RAD) - 90.0;
 			}
 
 			/* Integrate the antenna's radiation
@@ -1379,11 +1368,10 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			int x = (int)rint(10.0 * (10.0 - elevation));
 
 			if (x >= 0 && x <= 1000) {
-				pattern =
-				    (double)LR.antenna_pattern[(int)azimuth][x];
+				pattern = static_cast<double>(LR.antenna_pattern[static_cast<int>(azimuth)][x]);
 
 				if (pattern != 0.0){
-					patterndB = 20.0 * log10(pattern);
+					patterndB = 20.0 * std::log10(pattern);
 				}else{
 					patterndB = 0.0;
 				}
@@ -1430,17 +1418,16 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 		if (LR.erp != 0.0) {
 			field_strength =
-			    (139.4 + (20.0 * log10(LR.frq_mhz)) - total_loss) +
-			    (10.0 * log10(LR.erp / 1000.0));
+			    (139.4 + (20.0 * std::log10(LR.frq_mhz)) - total_loss) +
+			    (10.0 * std::log10(LR.erp / 1000.0));
 
 			/* dBm is referenced to EIRP */
 
-			rxp = eirp / (pow(10.0, (total_loss / 10.0)));
-			dBm = 10.0 * (log10(rxp * 1000.0));
+			rxp = eirp / (std::pow(10.0, (total_loss / 10.0)));
+			dBm = 10.0 * (std::log10(rxp * 1000.0));
 			power_density =
 			    (eirp /
-			     (pow
-			      (10.0, (total_loss - free_space_loss) / 10.0)));
+			     (std::pow(10.0, (total_loss - free_space_loss) / 10.0)));
 			/* divide by 4*PI*distance_in_meters squared */
 			power_density /= (4.0 * std::numbers::pi * distance * distance * 2589988.11);
 
@@ -1593,7 +1580,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 		const int x = system("gnuplot ppa.gp");
 
 		if (x != -1) {
-			if (gpsav == 0) {
+			if (!gpsav) {
 				//unlink("ppa.gp");
 				//unlink("profile.gp");
 				//unlink("reference.gp");
@@ -1610,7 +1597,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 }
 
 void SeriesData(struct site_t source, struct site_t destination, const std::string& name,
-		unsigned char fresnel_plot, unsigned char normalised)
+		bool fresnel_plot, bool normalised)
 {
 	int x, y, z;
 	std::string basename;
@@ -1621,7 +1608,9 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 	    0.0, d = 0.0, d1 = 0.0, terrain, minterrain =
 	    100000.0, minearth = 100000.0;
 	struct site_t remote;
-	FILE *fd1 = nullptr, *fd3 = nullptr, *fd4 = nullptr;
+	FILE *fd1 = nullptr;
+	FILE *fd3 = nullptr;
+	FILE *fd4 = nullptr;
 
 	ReadPath(destination, source);
 	const double azimuth = Azimuth(destination, source);
@@ -1675,7 +1664,7 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 
 		a = terrain + earthradius;
 		cangle = FEET_PER_MILE * Distance(destination, remote) / earthradius;
-		c = b * sin(refangle * DEG2RAD + HALFPI) / sin(HALFPI -
+		c = b * std::sin(refangle * DEG2RAD + HALFPI) / std::sin(HALFPI -
 							       refangle *
 							       DEG2RAD -
 							       cangle);
@@ -1690,10 +1679,9 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 		 * path to the first Fresnel zone boundary.
 		 */
 
-		if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0)
-		    && fresnel_plot) {
+		if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
 			d1 = FEET_PER_MILE * path.distance[x];
-			f_zone = -1.0 * sqrt(lambda * d1 * (d - d1) / d);
+			f_zone = -1.0 * std::sqrt(lambda * d1 * (d - d1) / d);
 			fpt6_zone = f_zone * fzone_clearance;
 		}
 
@@ -1701,8 +1689,7 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 			r = -(nm * path.distance[x]) - nb;
 			height += r;
 
-			if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0)
-			    && fresnel_plot) {
+			if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
 				f_zone += r;
 				fpt6_zone += r;
 			}
@@ -1849,9 +1836,9 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 		y = name.length();
 		basename = name;
 
-		for (x = y - 1; x > 0 && name[x] != '.'; x--) ;
+		x = name.find_last_of('.');
 
-		if (x > 0) {
+		if (x != std::string::npos) {
 			for (z = x + 1; z <= y && (z - (x + 1)) < 10; z++) {
 				ext[z - (x + 1)] = tolower(name[z]);
 				term[z - (x + 1)] = name[z];
