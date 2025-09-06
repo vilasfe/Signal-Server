@@ -30,7 +30,10 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 	   points up and east points right in the image generated. */
 
 	std::string mapfile;
-	unsigned red, green, blue, terrain = 0;
+	unsigned red = 0;
+	unsigned green = 0;
+	unsigned blue = 0;
+	unsigned terrain = 0;
 	unsigned char mask = 0;
 	bool found = false;
 	bool cityorcounty = false;
@@ -89,11 +92,9 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 	}
 
 	double lat = north;
-	for (int y = 0; y < (int)height;
-	     y++, lat = north - (dpp * y)) {
+	for (int y = 0; y < height; y++) {
 		double lon = max_west;
-		for (int x = 0; x < (int)width;
-		     x++, lon = max_west - (dpp * x)) {
+		for (int x = 0; x < width; x++) {
 			if (lon < 0.0) {
 				lon += 360.0;
 			}
@@ -120,7 +121,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 			if (found) {
 				mask = dem[indx].mask[x0][y0];
 				loss = dem[indx].signal[x0][y0];
-				cityorcounty = 0;
+				cityorcounty = false;
 
 				match = 255;
 
@@ -154,7 +155,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 						ctx->add_pixel(255, 0, 0);
 					}
 
-					cityorcounty = 1;
+					cityorcounty = true;
 				}
 
 				else if (mask & 4) {
@@ -162,7 +163,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 
 					ctx->add_pixel(0, 0, 0);
 
-					cityorcounty = 1;
+					cityorcounty = true;
 				}
 
 				if (!cityorcounty) {
@@ -216,7 +217,9 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 
 				ctx->add_pixel(0, 0, 0);
 			}
+			lon = max_west - (dpp * (x+1));
 		}
+		lat = north - (dpp * (y+1));
 	}
 
 	if(success = ctx->write(fd); success != 0){
@@ -242,10 +245,9 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 
 	std::string mapfile;
 	unsigned terrain, red, green, blue;
-	unsigned char found, mask, cityorcounty;
-	int indx, x, y, z = 1, x0 = 0, y0 = 0, signal, match;
-	double lat, lon;
-	FILE *fd;
+	unsigned char mask, cityorcounty;
+	int indx, z = 1, x0 = 0, y0 = 0, signal, match;
+	FILE *fd = nullptr;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success;
 
@@ -290,24 +292,22 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 	}
 
 	// TODO: The ant bug is HERE
-	for (y = 0, lat = north; y < (int)height;
-	     y++, lat = north - (dpp * (double)y)) {
-		for (x = 0, lon = max_west; x < (int)width;
-		     x++, lon = max_west - (dpp * (double)x)) {
+	double lat = north;
+	for (int y = 0; y < height; y++) {
+		double lon = max_west;
+		for (int x = 0; x < width; x++) {
 			if (lon < 0.0) {
 				lon += 360.0;
 			}
 
-			for (indx = 0, found = 0;
-			     indx < MAXPAGES && found == 0;) {
-				x0 = (int)rint(ppd *
-					       (lat -
-						(double)dem[indx].min_north));
+			bool found = false;
+			for (indx = 0;
+			     indx < MAXPAGES && !found;) {
+				x0 = static_cast<int>(std::rint(ppd *
+					       (lat - static_cast<double>(dem[indx].min_north))));
 				y0 = mpi -
-				    (int)rint(ppd *
-					      (LonDiff
-					       ((double)dem[indx].max_west,
-						lon)));
+				    static_cast<int>(std::rint(ppd *
+					      (LonDiff(static_cast<double>(dem[indx].max_west), lon))));
 
 				 // fix for multi-tile lidar
                            /*     if(width==10000 && (indx==1 || indx==3)){
@@ -318,7 +318,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 				*/
 
 				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
-					found = 1;
+					found = true;
 				}
 				else {
 					indx++;
@@ -430,7 +430,9 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 
 				ctx->add_pixel(255, 255, 255);
 			}
+			lon = max_west - (dpp * (x+1));
 		}
+		lat = north - (dpp * (y+1));
 	}
 
 	if(success = ctx->write(fd); success != 0){
@@ -1806,8 +1808,9 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 
 	fclose(fd);
 
-	if (fd1 != nullptr)
+	if (fd1 != nullptr) {
 		fclose(fd1);
+	}
 
 	fclose(fd2);
 	fclose(fd5);
@@ -1815,37 +1818,6 @@ void SeriesData(struct site_t source, struct site_t destination, const std::stri
 	if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
 		fclose(fd3);
 		fclose(fd4);
-	}
-
-	if (name[0] == '.') {
-		basename = "profile";
-		strncpy(term, "png\0", 4);
-		strncpy(ext, "png\0", 4);
-	}
-
-	else {
-
-		ext[0] = 0;
-		y = name.length();
-		basename = name;
-
-		x = name.find_last_of('.');
-
-		if (x != std::string::npos) {
-			for (z = x + 1; z <= y && (z - (x + 1)) < 10; z++) {
-				ext[z - (x + 1)] = tolower(name[z]);
-				term[z - (x + 1)] = name[z];
-			}
-
-			ext[z - (x + 1)] = 0;
-			term[z - (x + 1)] = 0;
-			basename[x] = 0;
-		}
-
-		if (ext[0] == 0) {
-			strncpy(term, "png\0", 4);
-			strncpy(ext, "png\0", 4);
-		}
 	}
 
 	std::println(stderr, "");
