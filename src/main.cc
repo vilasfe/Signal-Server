@@ -32,37 +32,32 @@ const double version = 3.21;
 #include <format>
 #include <numbers>
 #include <print>
-#include <ranges>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "common.h"
 #include "inputs.hh"
 #include "main.hh"
 #include "outputs.hh"
-#include "models/itwom3.0.hh"
 #include "models/los.hh"
-#include "models/pel.hh"
-#include "image.hh"
 
 int MAXPAGES = 10*10;
 int IPPD = 1200;
 int ARRAYSIZE = (MAXPAGES * IPPD) + 10;
 
 std::string sdf_path;
-char opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = nullptr;
+char *color_file = nullptr;
 
-double earthradius, max_range = 0.0, forced_erp, dpp, ppd, yppd,
-    fzone_clearance = 0.6, forced_freq, clutter, lat, lon, txh, tercon, terdic,
-    north, east, south, west, dBm, loss, field_strength,
+double earthradius, max_range = 0.0, dpp, ppd, yppd,
+    fzone_clearance = 0.6, clutter, tercon, terdic,
+    east, west,
     min_north = 90, max_north = -90, min_west = 360, max_west = -1,
     westoffset=180, eastoffset=-180, delta=0, rxGain=0, antenna_rotation,
     antenna_downtilt,antenna_dt_direction, cropLat=-70, cropLon=0,cropLonNeg=0;
 
 int ippd, mpi, max_elevation = -32768, min_elevation = 32768, bzerror, gzerr,
     contour_threshold, pred, pblue, pgreen, ter, multiplier = 256,
-    loops = 100, jgets = 0, MAXRAD, hottest = 0, height = 0, width = 0;
+    jgets = 0, MAXRAD, hottest = 0, height = 0, width = 0;
 int resample = 0;
 bool bzbuf_empty = true;
 bool gzbuf_empty = true;
@@ -78,12 +73,12 @@ bool to_stdout = false;
 bool cropping = true;
 
 thread_local double *elev;
-thread_local struct path path;
+thread_local struct path_t path;
 struct site_t tx_site[2];
-struct dem *dem;
+struct dem_t *dem;
 
-struct LR LR;
-struct region region;
+struct LR_t LR;
+struct region_t region;
 
 constexpr auto arccos(double x, double y) -> double
 {
@@ -841,7 +836,7 @@ void alloc_elev()
 
 void alloc_dem()
 {
-	dem = new struct dem[MAXPAGES];
+	dem = new struct dem_t[MAXPAGES];
 	for (int i = 0; i < MAXPAGES; i++) {
 		dem[i].data = new short *[IPPD];
 		dem[i].mask = new unsigned char *[IPPD];
@@ -1013,7 +1008,6 @@ auto main(int argc, char *argv[]) -> int
 	mapfile[0] = 0;
 	clutter_file[0] = 0;
 	clutter = 0.0;
-	forced_freq = 0.0;
 	sdf_path[0] = 0;
 	udt_file = nullptr;
 	color_file = nullptr;
@@ -1027,9 +1021,6 @@ auto main(int argc, char *argv[]) -> int
 	earthradius = EARTHRADIUS;
 	max_range = 1.0;
 	propmodel = 1;		//ITM
-	lat = 0;
-	lon = 0;
-	txh = 0;
 	ngs = true;		// no terrain background
 	kml = true;
 	LRmap = 1;
@@ -1819,7 +1810,7 @@ auto main(int argc, char *argv[]) -> int
 	  if (propmodel == 2) {  // Modl 2 = LOS
 			cropping = false;
 			PlotLOSMap(tx_site[0], altitudeLR, ano_filename, use_threads);
-			DoLOS(mapfile, geo, kml, ngs, tx_site);
+			Output::DoLOS(mapfile, kml, ngs, tx_site);
 		} else {
 			// 90% of effort here
 			PlotPropagation(tx_site[0], altitudeLR, ano_filename, propmodel, knifeedge, haf, pmenv, use_threads);
@@ -1864,13 +1855,13 @@ auto main(int argc, char *argv[]) -> int
 
 			// Write bitmap
 			if (LR.erp == 0.0) {
-				DoPathLoss(mapfile, geo, kml, ngs, tx_site);
+				Output::DoPathLoss(mapfile, geo, kml, ngs, tx_site);
 			}
 			else if (dbm) {
-				DoRxdPwr((to_stdout ? "" : mapfile), geo, kml, ngs, tx_site);
+				Output::DoRxdPwr((to_stdout ? "" : mapfile), kml, ngs, tx_site);
 			}
 			else {
-				if (result = DoSigStr(mapfile, geo, kml, ngs, tx_site); result != 0) {
+				if (result = Output::DoSigStr(mapfile, kml, ngs, tx_site); result != 0) {
 					return result;
 				}
 			}
@@ -1905,9 +1896,9 @@ auto main(int argc, char *argv[]) -> int
 		strncpy(tx_site[0].name, "Tx", 3);
 		strncpy(tx_site[1].name, "Rx", 3);
 		PlotPath(tx_site[0], tx_site[1], 1);
-		PathReport(tx_site[0], tx_site[1], tx_site[0].filename, 0, propmodel, pmenv, rxGain);
+		Output::PathReport(tx_site[0], tx_site[1], tx_site[0].filename, 0, propmodel, pmenv, rxGain);
 		// Order flipped for benefit of graph. Makes no difference to data.
-		SeriesData(tx_site[1], tx_site[0], tx_site[0].filename, 1, normalise);
+		Output::SeriesData(tx_site[1], tx_site[0], tx_site[0].filename, 1, normalise);
 	}
 
 	return 0;

@@ -21,8 +21,14 @@
 #include "models/itwom3.0.hh"
 #include "models/sui.hh"
 
-void DoPathLoss(std::string& filename, bool geo, bool kml,
-		bool ngs, struct site_t *xmtr)
+double Output::north = 0.0;
+double Output::south = 0.0;
+double Output::dBm = 0.0;
+double Output::loss = 0.0;
+double Output::field_strength = 0.0;
+bool Output::gpsav = false;
+
+void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the content of flags held in the mask[][]
@@ -35,10 +41,9 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
-	constexpr double one_over_gamma = 1.0 / GAMMA;
 	const double conversion =
 	    255.0 / std::pow(max_elevation - min_elevation,
-			one_over_gamma);
+			INV_GAMMA);
 
 	if( success = LoadLossColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading loss colors");
@@ -177,7 +182,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
-								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -199,7 +204,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
-								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -230,8 +235,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 
 }
 
-auto DoSigStr(std::string& filename, bool geo, bool kml,
-	      bool ngs, struct site_t *xmtr) -> int
+auto Output::DoSigStr(std::string& filename, bool kml, bool ngs, struct site_t *xmtr) -> int
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal strength values held in the
@@ -244,8 +248,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
-	constexpr double one_over_gamma = 1.0 / GAMMA;
-	const double conversion = 255.0 / std::pow(static_cast<double>(max_elevation - min_elevation), one_over_gamma);
+	const double conversion = 255.0 / std::pow(static_cast<double>(max_elevation - min_elevation), INV_GAMMA);
 
 	if(success = LoadSignalColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading signal colors");
@@ -382,7 +385,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
-								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -410,7 +413,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 									    static_cast<unsigned>(
 									    std::lround(
 									     std::pow
-									     (static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+									     (static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 									ctx->add_pixel(terrain, terrain, terrain);
 								}
 							}
@@ -443,8 +446,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 	return 0;
 }
 
-void DoRxdPwr(std::string filename, bool geo, bool kml,
-	      bool ngs, struct site_t *xmtr)
+void Output::DoRxdPwr(std::string filename, bool kml, bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -457,10 +459,9 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
-	constexpr double one_over_gamma = 1.0 / GAMMA;
 	const double conversion =
 	    255.0 / std::pow(max_elevation - min_elevation,
-			one_over_gamma);
+			INV_GAMMA);
 
 	if( success = LoadDBMColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading DBM colors");
@@ -593,7 +594,7 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
-								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -621,7 +622,7 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 									    static_cast<unsigned>(
 									    std::lround(
 									     std::pow
-									     (static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+									     (static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 									ctx->add_pixel(terrain, terrain, terrain);
 								}
 							}
@@ -655,8 +656,7 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 
 }
 
-void DoLOS(std::string& filename, bool geo, bool kml,
-	   bool ngs, struct site_t *xmtr)
+void Output::DoLOS(std::string& filename, bool kml, bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
 	   (PPM) format based on the signal power level values held in the
@@ -669,10 +669,9 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
-	constexpr double one_over_gamma = 1.0 / GAMMA;
 	const double conversion =
 	    255.0 / std::pow(max_elevation - min_elevation,
-			one_over_gamma);
+			INV_GAMMA);
 
 	if( !filename.empty() ){
 
@@ -839,7 +838,7 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
-								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
+								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), INV_GAMMA) * conversion));
 								ctx->add_pixel(terrain, terrain, terrain);
 							}
 						}
@@ -869,7 +868,7 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 
 }
 
-void PathReport(struct site_t source, struct site_t destination, std::string& name,
+void Output::PathReport(struct site_t source, struct site_t destination, std::string& name,
 		char graph_it, int propmodel, int pmenv, double rxGain)
 {
 	/* This function writes a PPA Path Report (name.txt) to
@@ -1586,7 +1585,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 }
 
-void SeriesData(struct site_t source, struct site_t destination, const std::string& name,
+void Output::SeriesData(struct site_t source, struct site_t destination, const std::string& name,
 		bool fresnel_plot, bool normalised)
 {
 	int x, y, z;

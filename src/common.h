@@ -5,7 +5,8 @@
 #include <numbers>
 #include <string>
 
-#define GAMMA 		2.5
+constexpr double GAMMA = 2.5;
+constexpr double INV_GAMMA = 1 / GAMMA;
 
 constexpr double TWOPI = std::numbers::pi * 2;
 
@@ -20,7 +21,7 @@ constexpr double FEET_PER_MILE =5280.0;
 
 constexpr double FOUR_THIRDS = 4.0/3.0;
 
-struct dem {
+struct dem_t {
 	float min_north;
 	float max_north;
 	float min_west;
@@ -40,7 +41,7 @@ struct site_t {
 	std::string filename;
 };
 
-struct path {
+struct path_t {
 	double *lat;
 	double *lon;
 	double *elevation;
@@ -48,7 +49,7 @@ struct path {
 	int length;
 };
 
-struct LR {
+struct LR_t {
 	double eps_dielect;
 	double sgm_conductivity;
 	double eno_ns_surfref;
@@ -61,7 +62,7 @@ struct LR {
 	float antenna_pattern[361][1001];
 };
 
-struct region {
+struct region_t {
 	unsigned char color[128][3];
 	int level[128];
 	int levels;
@@ -76,20 +77,16 @@ extern double max_north;
 extern double min_west;
 extern double max_west;
 extern int ippd;
-extern int MAXRAD;
 extern int mpi;
 extern int max_elevation;
 extern int min_elevation;
 extern int contour_threshold;
-extern int loops;
 extern int jgets;
 extern int width;
 extern int height;
 
 extern double earthradius;
-extern double north;
 extern double east;
-extern double south;
 extern double west;
 extern double max_range;
 extern double dpp;
@@ -97,9 +94,6 @@ extern double ppd;
 extern double yppd;
 extern double fzone_clearance;
 extern double clutter;
-extern double dBm;
-extern double loss;
-extern double field_strength;
 extern thread_local double *elev;
 extern double westoffset;
 extern double eastoffset;
@@ -108,30 +102,29 @@ extern double cropLat;
 extern double cropLon;
 
 extern std::string sdf_path;
-extern char gpsav;
 
 extern unsigned char got_elevation_pattern;
 extern unsigned char got_azimuth_pattern;
 extern bool metric;
 extern bool dbm;
 
-extern struct dem *dem;
-extern thread_local struct path path;
-extern struct LR LR;
-extern struct region region;
+extern struct dem_t *dem;
+extern thread_local struct path_t path;
+extern struct LR_t LR;
+extern struct region_t region;
 
 extern bool debug;
 
-constexpr auto _10log10(auto x)
+constexpr auto _10log10(auto&& x)
 {
-	return(4.342944f*std::log(x));
+	return(4.342944F*std::log(x));
 }
 
 // use call with log/ln as this may be faster
 // use constant of value 20.0/log(10.0)
-constexpr auto _20log10(auto x)
+constexpr auto _20log10(auto&& x)
 {
-	return(8.685889f*std::log(x));
+	return(8.685889F*std::log(x));
 }
 
 #endif /* _COMMON_H_ */
