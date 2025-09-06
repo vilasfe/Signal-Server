@@ -101,31 +101,6 @@ constexpr auto arccos(double x, double y) -> double
 	return 0.0;
 }
 
-// TODO: Is this used? or can it be removed?
-auto dec2dms(double decimal) -> std::string
-{
-	/* Converts decimal degrees to degrees, minutes, seconds,
-	   (DMS) and returns the result as a character string. */
-
-	char sign = 1;
-
-	if (decimal < 0.0) {
-		decimal = -decimal;
-		sign = -1;
-	}
-
-	const double a = std::floor(decimal);
-	const double b = 60.0 * (decimal - a);
-	const double c = std::floor(b);
-	const double d = 60.0 * (b - c);
-
-	const int degrees = static_cast<int>(a);
-	const int minutes = static_cast<int>(c);
-	const int seconds = std::clamp(static_cast<int>(d), 0, 59);
-
-	return std::format("{}{:c} {}\' {}\"", degrees * sign, 176, minutes, seconds);
-}
-
 auto PutMask(double lat, double lon, int value) -> int
 {
 	/* Lines, text, markings, and coverage areas are stored in a
