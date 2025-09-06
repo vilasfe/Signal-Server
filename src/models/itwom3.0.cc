@@ -461,14 +461,10 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 	static thread_local double dhh2 = 0.0;
 	/* dhec, */
 	static thread_local double dtof = 0.0;
-	static thread_local double dto1f = 0.0;
 	static thread_local double drof = 0.0;
-	static thread_local double dro2f = 0.0;
-	double a = 0.0;
 	double q = 0.0;
 	double pk = 0.0;
 	/* dfdh, */
-	double wa = 0.0;
 	/* ar, wd, sf1, ec, */
 	double vv = 0.0;
 	double kedr = 0.0;
@@ -501,14 +497,14 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		/* coefficients for a standard four radii, rounded earth computation are prepared */
 		wd1 = std::sqrt(1.0 + qk / q);
 		xd1 = propa.dla + propa.tha / prop.gme;
-		q = (1.0 - 0.8 * std::exp(-propa.dlsa / 50e3)) * prop.dh;
-		q *= 0.78 * std::exp(-std::pow(q / 16.0, 0.25));
+		// q = (1.0 - 0.8 * std::exp(-propa.dlsa / 50e3)) * prop.dh;
+		// q *= 0.78 * std::exp(-std::pow(q / 16.0, 0.25));
 		qk = 1.0 / std::abs(prop_zgnd);
 		aht = 20.0;
 		xht = 0.0;
-		a = 0.5 * (prop.dl[0] * prop.dl[0]) / prop.he[0];
-		wa = std::cbrt(a * prop.wn);
-		pk = qk / wa;
+		double a = 0.5 * (prop.dl[0] * prop.dl[0]) / prop.he[0];
+		double wa = std::cbrt(a * prop.wn);
+		double pk = qk / wa;
 		q = (1.607 - pk) * 151.0 * wa * prop.dl[0] / a;
 		xht = q;
 		aht += fht(q, pk);
@@ -534,9 +530,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 
 		const double dsl = std::max(d - propa.dla, 0.0);
 		const double ds = d - propa.dla;
-		a = ds / th;
-		wa = std::cbrt(a * prop.wn);
-		pk = qk / wa;
+
 		toh =
 		    prop.hht - (prop.rch[0] -
 				prop.dl[0] * ((prop.rch[1] - prop.rch[0]) /
@@ -577,12 +571,9 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		/* for 1 obst tree base path */
 		dtof = std::hypot(prop.dl[0], (toh - prop.cch));
 		dtof += prop.gme * prop.dl[0];
-		dto1f = std::hypot(prop.dl[0], (toho - prop.cch));
-		dto1f += prop.gme * prop.dl[0];
 		drof = std::hypot(prop.dl[1], (roh - prop.cch));
 		drof += prop.gme * (prop.dl[1]);
-		dro2f = std::hypot(prop.dl[1], (roho - prop.cch));
-		dro2f += prop.gme * (prop.dl[1]);
+
 
 		/* saalos coefficients preset for post-obstacle receive path */
 		prop.tgh = prop.cch + 1.0;
@@ -593,12 +584,12 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		if (static_cast<int>(ds) > 0) {	/* there are 2 obstacles */
 			if (static_cast<int>(prop.dl[1]) > 0.0) {	/* receive site past 2nd peak */
 				/* rounding attenuation */
-				q = (1.607 - pk) * 151.0 * wa * th + xht;
+				// q = (1.607 - pk) * 151.0 * wa * th + xht;
 				/* ar=0.05751*q-10*log10(q)-aht; */
 
 				/* knife edge vs round weighting */
-				q = (1.0 - 0.8 * std::exp(-d / 50e3)) * prop.dh;
-				q = (wd1 + xd1 / d) * std::min((q * prop.wn), 6283.2);
+				// q = (1.0 - 0.8 * std::exp(-d / 50e3)) * prop.dh;
+				// q = (wd1 + xd1 / d) * std::min((q * prop.wn), 6283.2);
 				/* wd=25.1/(25.1+sqrt(q)); */
 
 				q = 0.6365 * prop.wn;
@@ -1872,7 +1863,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 
 		dr = (prop.dist) / (1 + zb / za);
 	}
-	const int rp = 2 + (int)(floor(0.5 + dr / xi));
+	const int rp = 2 + static_cast<int>(std::floor(0.5 + dr / xi));
 	prop.rpl = rp;
 	prop.rph = pfl[rp];
 }
@@ -1882,8 +1873,8 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0,
 {
 	/* Used only with ITM 1.2.2 */
 	const double xn = z[0];
-	double xa = int (std::fdim(x1 / z[1], 0.0));
-	double xb = xn - int (std::fdim(xn, x2 / z[1]));
+	double xa = static_cast<int>(std::fdim(x1 / z[1], 0.0));
+	double xb = xn - static_cast<int>(std::fdim(xn, x2 / z[1]));
 
 	if (xb <= xa) {
 		xa = std::fdim(xa, 1.0);
@@ -1918,8 +1909,8 @@ void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &z
 	/* corrected for use with ITWOM */
 
 	const double xn = z[0];
-	double xa = int (std::fdim(x1 / z[1], 0.0));
-	double xb = xn - int (std::fdim(xn, x2 / z[1]));
+	double xa = static_cast<int>(std::fdim(x1 / z[1], 0.0));
+	double xb = xn - static_cast<int>(std::fdim(xn, x2 / z[1]));
 
 	if (xb <= xa) {
 		xa = std::fdim(xa, 1.0);
@@ -2083,8 +2074,7 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 	return d1thxv;
 }
 
-auto d1thx2(double pfl[], const double &x1, const double &x2,
-	      propa_type & propa) -> double
+auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
 {
 	const int np = static_cast<int>(pfl[0]);
 	double xa = x1 / pfl[1];
@@ -2230,7 +2220,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	xl[1] = prop.dist - xl[1];
-	prop.dh = d1thx2(pfl, xl[0], xl[1], propa);
+	prop.dh = d1thx2(pfl, xl[0], xl[1]);
 
 	if ((np < 1) || (pfl[1] > 150.0)) {
 		/* for TRANSHORIZON; diffraction over a mutual horizon, or for one or more obstructions */
@@ -2484,9 +2474,9 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 
 *****************************************************************************/
 {
-	prop_type prop;
-	propv_type propv;
-	propa_type propa;
+	prop_type prop = {};
+	propv_type propv = {};
+	propa_type propa = {};
 
 	double zsys = 0;
 	/* double dkm, xkm; */
@@ -2603,9 +2593,9 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 *************************************************************************************************/
 {
 
-	prop_type prop;
-	propv_type propv;
-	propa_type propa;
+	prop_type prop = {};
+	propv_type propv = {};
+	propa_type propa = {};
 	double zsys = 0;
 	/* double dkm, xkm; */
 
@@ -2702,10 +2692,10 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 *************************************************************************************************/
 {
 
-	char strmode[100];
-	prop_type prop;
-	propv_type propv;
-	propa_type propa;
+	std::string strmode;
+	prop_type prop = {};
+	propv_type propv = {};
+	propa_type propa = {};
 	double zsys = 0;
 	/* double dkm, xkm; */
 
@@ -2752,18 +2742,22 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	deltaH = prop.dh;
 	q = prop.dist - propa.dla;
-	if (int (q) < 0.0) {
-		strcpy(strmode, "Line-Of-Sight Mode");
+	if (static_cast<int>(q) < 0.0) {
+		strmode = "Line-Of-Sight Mode";
 	}
 	else {
-		if (int (q) == 0.0)
-			strcpy(strmode, "Single Horizon");
-		else if (int (q) > 0.0)
-			strcpy(strmode, "Double Horizon");
-		if (prop.dist <= propa.dlsa || prop.dist <= propa.dx)
-			strcat(strmode, ", Diffraction Dominant");
-		else if (prop.dist > propa.dx)
-			strcat(strmode, ", Troposcatter Dominant");
+		if (static_cast<int>(q) == 0.0) {
+			strmode = "Single Horizon";
+		}
+		else if (static_cast<int>(q) > 0.0) {
+			strmode = "Double Horizon";
+		}
+		if (prop.dist <= propa.dlsa || prop.dist <= propa.dx) {
+			strmode += ", Diffraction Dominant";
+		}
+		else if (prop.dist > propa.dx) {
+			strmode += ", Troposcatter Dominant";
+		}
 	}
 	dbloss = avar(zr, 0.0, zc, prop, propv) + fs;	//avar(time,location,confidence)
 	errnum = prop.kwx;
@@ -2779,7 +2773,7 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	  double enc_ncc_clcref, double clutter_height, double clutter_density,
 	  double delta_h_diff, double frq_mhz, int radio_climate, int pol,
 	  int mode_var, double pctTime, double pctLoc, double pctConf,
-	  double &dbloss, char *strmode, int &errnum)
+	  double &dbloss, int &errnum)
 {
 	// pol: 0-Horizontal, 1-Vertical
 	// TSiteCriteria, RSiteCriteria:
@@ -2801,7 +2795,6 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	//                     Results are probably invalid.
 	//         Other-  Warning: Some parameters are out of range.
 	//                          Results are probably invalid.
-	// NOTE: strmode is not used at this time.
 
 	prop_type prop = {};
 	propv_type propv = {};
@@ -2854,14 +2847,13 @@ auto ITMAreadBLoss(long ModVar, double deltaH, double tht_m, double rht_m,
 		     int pol, int mode_var, double pctTime, double pctLoc,
 		     double pctConf) -> double
 {
-	char strmode[200];
 	int errnum = 0;
 	double dbloss = NAN;
 	area(ModVar, deltaH, tht_m, rht_m, dist_km, TSiteCriteria,
 	     RSiteCriteria, eps_dielect, sgm_conductivity, eno_ns_surfref,
 	     enc_ncc_clcref, clutter_height, clutter_density, delta_h_diff,
 	     frq_mhz, radio_climate, pol, mode_var, pctTime, pctLoc, pctConf,
-	     dbloss, strmode, errnum);
+	     dbloss, errnum);
 	return dbloss;
 }
 
