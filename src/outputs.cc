@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <numbers>
 #include <print>
 #include <string>
 
@@ -30,14 +31,6 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 	   points up and east points right in the image generated. */
 
 	std::string mapfile;
-	unsigned red = 0;
-	unsigned green = 0;
-	unsigned blue = 0;
-	unsigned terrain = 0;
-	unsigned char mask = 0;
-	bool found = false;
-	bool cityorcounty = false;
-	int indx, x0 = 0, y0 = 0, loss, match;
 	FILE *fd = nullptr;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
@@ -99,10 +92,13 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 				lon += 360.0;
 			}
 
-			found = false;
-			for (indx = 0; indx < MAXPAGES && !found;) {
+			int x0 = 0;
+			int y0 = 0;
+			int indx = 0;
+			bool found = false;
+			for (; indx < MAXPAGES && !found;) {
 				x0 = static_cast<int>(std::rint(ppd * (lat - static_cast<double>(dem[indx].min_north))));
-				y0 = mpi - static_cast<int>(std::rint(ppd * (LonDiff((double)dem[indx].max_west, lon))));
+				y0 = mpi - static_cast<int>(std::rint(ppd * (LonDiff(static_cast<double>(dem[indx].max_west), lon))));
 				 // fix for multi-tile lidar
                               /*  if(width==10000 && (indx==1 || indx==3)){
                                         if(y0 >= 3432){ //3535
@@ -119,15 +115,15 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 			}
 
 			if (found) {
-				mask = dem[indx].mask[x0][y0];
-				loss = dem[indx].signal[x0][y0];
-				cityorcounty = false;
+				const unsigned char mask = dem[indx].mask[x0][y0];
+				const int loss = dem[indx].signal[x0][y0];
+				bool cityorcounty = false;
 
-				match = 255;
+				int match = 255;
 
-				red = 0;
-				green = 0;
-				blue = 0;
+				unsigned red = 0;
+				unsigned green = 0;
+				unsigned blue = 0;
 
 				if (loss <= region.level[0]) {
 					match = 0;
@@ -178,7 +174,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 								ctx->add_pixel(0, 0, 170);
 							}
 							else {
-								terrain =
+								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
 								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
@@ -200,7 +196,7 @@ void DoPathLoss(std::string& filename, bool geo, bool kml,
 							}
 							else {
 								/* Elevation: Greyscale */
-								terrain =
+								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
 								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
@@ -244,17 +240,14 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 	   points up and east points right in the image generated. */
 
 	std::string mapfile;
-	unsigned terrain, red, green, blue;
-	unsigned char mask, cityorcounty;
-	int indx, z = 1, x0 = 0, y0 = 0, signal, match;
 	FILE *fd = nullptr;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
-	int success;
+	int success = 0;
 
 	constexpr double one_over_gamma = 1.0 / GAMMA;
 	const double conversion = 255.0 / std::pow(static_cast<double>(max_elevation - min_elevation), one_over_gamma);
 
-	if( (success = LoadSignalColors(xmtr[0])) != 0 ){
+	if(success = LoadSignalColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading signal colors");
 		//exit(success);
 	}
@@ -291,7 +284,6 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
-	// TODO: The ant bug is HERE
 	double lat = north;
 	for (int y = 0; y < height; y++) {
 		double lon = max_west;
@@ -300,9 +292,11 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 				lon += 360.0;
 			}
 
+			int x0 = 0;
+			int y0 = 0;
 			bool found = false;
-			for (indx = 0;
-			     indx < MAXPAGES && !found;) {
+			int indx = 0;
+			for (; indx < MAXPAGES && !found;) {
 				x0 = static_cast<int>(std::rint(ppd *
 					       (lat - static_cast<double>(dem[indx].min_north))));
 				y0 = mpi -
@@ -326,17 +320,18 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 			}
 
 			if (found) {
-				mask = dem[indx].mask[x0][y0];
-				signal = (dem[indx].signal[x0][y0]) - 100;
-				cityorcounty = 0;
-				match = 255;
+				const unsigned char mask = dem[indx].mask[x0][y0];
+				const int signal = (dem[indx].signal[x0][y0]) - 100;
+				bool cityorcounty = false;
+				int match = 255;
 
-				red = 0;
-				green = 0;
-				blue = 0;
+				unsigned red = 0;
+				unsigned green = 0;
+				unsigned blue = 0;
 
-				if (signal >= region.level[0])
+				if (signal >= region.level[0]) {
 					match = 0;
+				}
 				else {
 					for (int z = 1; (z < region.levels && match == 255); z++) {
 						if (signal < region.level[z - 1] && signal >= region.level[z]) {
@@ -361,7 +356,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 						ctx->add_pixel(255, 0,	0);
 					}
 
-					cityorcounty = 1;
+					cityorcounty = true;
 				}
 
 				else if (mask & 4) {
@@ -369,10 +364,10 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 
 					ctx->add_pixel(0, 0, 0);
 
-					cityorcounty = 1;
+					cityorcounty = true;
 				}
 
-				if (cityorcounty == 0) {
+				if (!cityorcounty) {
 					if (contour_threshold != 0 && signal < contour_threshold) {
 						if (ngs) {
 							ctx->add_pixel(255, 255, 255);
@@ -384,7 +379,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 								ctx->add_pixel(0, 0, 170);
 							}
 							else {
-								terrain =
+								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
 								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
@@ -410,7 +405,7 @@ auto DoSigStr(std::string& filename, bool geo, bool kml,
 								}
 								else {
 									/* Elevation: Greyscale */
-									terrain
+									auto terrain
 									    =
 									    static_cast<unsigned>(
 									    std::lround(
@@ -458,10 +453,6 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 	   points up and east points right in the image generated. */
 
 	std::string mapfile;
-	unsigned terrain, red, green, blue;
-	unsigned char found, mask, cityorcounty;
-	int indx, x, y, z = 1, x0 = 0, y0 = 0, dBm, match;
-	double lat, lon;
 	FILE *fd = stdout;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
@@ -510,50 +501,52 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 	}
 
 	// Draw image of x by y pixels
-	for (y = 0, lat = north; y < (int)height;
-	     y++, lat = north - (dpp * (double)y)) {
-		for (x = 0, lon = max_west; x < (int)width;
-		     x++, lon = max_west - (dpp * (double)x)) {
+	double lat = north;
+	for (int y = 0; y < height; y++) {
+		double lon = max_west;
+		for (int x = 0; x < width; x++) {
 			if (lon < 0.0) {
 				lon += 360.0;
 			}
 
-			for (indx = 0, found = 0;
-			     indx < MAXPAGES && found == 0;) {
+			int x0 = 0;
+			int y0 = 0;
+			int indx = 0;
+			bool found = false;
+			for (; indx < MAXPAGES && !found;) {
 
-				x0 = (int)rint((ppd *
-					      (lat -
-						(double)dem[indx].min_north))); 
+				x0 = static_cast<int>(std::rint((ppd *
+					      (lat - static_cast<double>(dem[indx].min_north)))));
 				y0 = mpi -
-				    (int)rint(ppd * 
-					      (LonDiff
-					       ((double)dem[indx].max_west,lon)));
+				    static_cast<int>(std::rint(ppd *
+					      (LonDiff(static_cast<double>(dem[indx].max_west),lon))));
 
 
-				if (x0 >= 0 && x0 <= mpi && y0 >= 0
-				    && y0 <= mpi)
-					found = 1;
-				else
+				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
+					found = true;
+				}
+				else {
 					indx++;
+				}
 
 
 			}
 
 			if (found) {
-				mask = dem[indx].mask[x0][y0];
-				dBm = (dem[indx].signal[x0][y0]) - 200;
-				cityorcounty = 0;
-				match = 255;
+				const unsigned char mask = dem[indx].mask[x0][y0];
+				const int dBm = (dem[indx].signal[x0][y0]) - 200;
+				bool cityorcounty = false;
+				int match = 255;
 
-				red = 0;
-				green = 0;
-				blue = 0;
+				unsigned red = 0;
+				unsigned green = 0;
+				unsigned blue = 0;
 
 				if (dBm >= region.level[0]) {
 					match = 0;
 				}
 				else {
-					for (z = 1; (z < region.levels && match == 255); z++) {
+					for (int z = 1; (z < region.levels && match == 255); z++) {
 						if (dBm < region.level[z - 1] && dBm >= region.level[z]) {
 							match = z;
 						}
@@ -569,36 +562,35 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 				if (mask & 2) {
 					/* Text Labels: Red or otherwise */
 
-					if (red >= 180 && green <= 75
-					    && blue <= 75 && dBm != 0)
-						ctx->add_pixel(255 ^ red,
-							255 ^ green,
-							255 ^ blue);
-					else
+					if (red >= 180 && green <= 75 && blue <= 75 && dBm != 0) {
+						ctx->add_pixel(255 ^ red, 255 ^ green, 255 ^ blue);
+					}
+					else {
 						ctx->add_pixel(255, 0, 0);
+					}
 
-					cityorcounty = 1;
+					cityorcounty = true;
 				}
 
 				else if (mask & 4) {
 					/* County Boundaries: Black */
 					ctx->add_pixel(0, 0, 0);
-					cityorcounty = 1;
+					cityorcounty = true;
 				}
 
-				if (cityorcounty == 0) {
-					if (contour_threshold != 0
-					    && dBm < contour_threshold) {
+				if (!cityorcounty) {
+					if (contour_threshold != 0 && dBm < contour_threshold) {
 						if (ngs) {	/* No terrain */
 							ctx->add_pixel(255, 255, 255);
 						}
 						else {
 							/* Display land or sea elevation */
 
-							if (dem[indx].data[x0][y0] == 0)
+							if (dem[indx].data[x0][y0] == 0) {
 								ctx->add_pixel(0, 0, 170);
+							}
 							else {
-								terrain =
+								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
 								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
@@ -624,7 +616,7 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 								}
 								else {
 									/* Elevation: Greyscale */
-									terrain
+									auto terrain
 									    =
 									    static_cast<unsigned>(
 									    std::lround(
@@ -644,7 +636,9 @@ void DoRxdPwr(std::string filename, bool geo, bool kml,
 
 				ctx->add_pixel(255, 255, 255);
 			}
+			lon = max_west - (dpp * (x+1));
 		}
+		lat = north - (dpp * (y+1));
 	}
 
 	if(success = ctx->write(fd); success != 0){
@@ -671,12 +665,9 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 	   points up and east points right in the image generated. */
 
 	std::string mapfile;
-	unsigned terrain;
-	unsigned char found, mask;
-	int indx, x0 = 0, y0 = 0;
-	FILE *fd;
+	FILE *fd = nullptr;
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
-	int success;
+	int success = 0;
 
 	constexpr double one_over_gamma = 1.0 / GAMMA;
 	const double conversion =
@@ -719,24 +710,27 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 			!filename.empty() ? mapfile : "to stdout", width, (kml ? height : height + 30));
 	}
 
-	for (int y = 0, lat = north; y < (int)height; y++, lat = north - (dpp * (double)y)) {
-		for (int x = 0, lon = max_west; x < (int)width; x++, lon = max_west - (dpp * (double)x)) {
+	double lat = north;
+	for (int y = 0; y < height; y++) {
+		double lon = max_west;
+		for (int x = 0; x < width; x++) {
 			if (lon < 0.0) {
 				lon += 360.0;
 			}
 
-			for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-				x0 = (int)std::rint(ppd *
-					       (lat -
-						(double)dem[indx].min_north));
+			int x0 = 0;
+			int y0 = 0;
+			int indx = 0;
+			bool found = false;
+			for (; indx < MAXPAGES && !found;) {
+				x0 = static_cast<int>(std::rint(ppd *
+					       (lat - static_cast<double>(dem[indx].min_north))));
 				y0 = mpi -
-				    (int)std::rint(ppd *
-					      (LonDiff
-					       ((double)dem[indx].max_west,
-						lon)));
+				    static_cast<int>(std::rint(ppd *
+					      (LonDiff(static_cast<double>(dem[indx].max_west), lon))));
 
 				if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
-					found = 1;
+					found = true;
 				}
 				else {
 					indx++;
@@ -744,7 +738,7 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 			}
 
 			if (found) {
-				mask = dem[indx].mask[x0][y0];
+				const unsigned char mask = dem[indx].mask[x0][y0];
 
 				if (mask & 2)
 					/* Text Labels: Red */
@@ -832,8 +826,9 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 						break;
 
 					default:
-						if (ngs)	/* No terrain */
+						if (ngs) {	/* No terrain */
 							ctx->add_pixel(255, 255, 255);
+						}
 						else {
 							/* Sea-level: Medium Blue */
 							if (dem[indx].data[x0][y0] == 0) {
@@ -841,7 +836,7 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 							}
 							else {
 								/* Elevation: Greyscale */
-								terrain =
+								auto terrain =
 								    static_cast<unsigned>(
 								    std::lround(
 								     std::pow(static_cast<double>(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion));
@@ -857,10 +852,12 @@ void DoLOS(std::string& filename, bool geo, bool kml,
 
 				ctx->add_pixel(255, 255, 255);
 			}
+			lon = max_west - (dpp * (x+1));
 		}
+		lat = north - (dpp * (y+1));
 	}
 
-	if((success = ctx->write(fd)) != 0){
+	if(success = ctx->write(fd); success != 0){
 		std::println(stderr,"Error writing image");
 		exit(success);
 	}
@@ -947,7 +944,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 		if (x >= 0 && x <= 1000) {
 			pattern =
-			    static_cast<double>(LR.antenna_pattern[(int)rint(azimuth)][x]);
+			    static_cast<double>(LR.antenna_pattern[static_cast<int>(std::rint(azimuth))][x]);
 		}
 
 		patterndB = 20.0 * std::log10(pattern);
@@ -964,7 +961,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 	std::println(fd2, "Azimuth to {}: {:.2f} degrees grid", destination.name, azimuth);
 
 
-	fprintf(fd2, "Downtilt angle to %s: %+.4f degrees\n", destination.name, angle1);
+	std::println(fd2, "Downtilt angle to {}: {:+.4f} degrees", destination.name, angle1);
 
 
 
@@ -1215,7 +1212,8 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 				   following code determines the elevation angle to
 				   the first obstruction along the path. */
 
-				for (int x = 2, block = 0; x < y && block == 0; x++) {
+				bool block = false;
+				for (int x = 2; x < y && !block; x++) {
 					distance =
 					    FEET_PER_MILE * (path.distance[y] - path.distance[x]);
 					test_alt =
@@ -1240,7 +1238,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 					   were compared. */
 
 					if (cos_xmtr_angle >= cos_test_angle) {
-						block = 1;
+						block = true;
 					}
 				}
 
@@ -1350,7 +1348,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 			}
 
-			if (block != 0) {
+			if (!block) {
 				elevation = (std::acos(cos_test_angle) / DEG2RAD) - 90.0;
 			}
 			else {
@@ -1360,7 +1358,7 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			/* Integrate the antenna's radiation
 			   pattern into the overall path loss. */
 
-			int x = static_cast<int>(std::rint(10.0 * (10.0 - elevation)));
+			const int x = static_cast<int>(std::rint(10.0 * (10.0 - elevation)));
 
 			if (x >= 0 && x <= 1000) {
 				pattern = static_cast<double>(LR.antenna_pattern[static_cast<int>(azimuth)][x]);
@@ -1378,11 +1376,10 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 
 			total_loss = loss - patterndB;
 
-			if (total_loss > maxloss)
-				maxloss = total_loss;
+			maxloss = std::max(maxloss, total_loss);
 
-			if (total_loss < minloss)
-				minloss = total_loss;
+			minloss = std::min(minloss, total_loss);
+
 		}
 
 		distance = Distance(source, destination);
@@ -1427,8 +1424,8 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 			power_density /= (4.0 * std::numbers::pi * distance * distance * 2589988.11);
 
 			std::println(fd2, "Field strength at {}: {:.2f} dBuV/meter", destination.name, field_strength);
-			fprintf(fd2, "Signal power level at %s: %+.2f dBm\n", destination.name, dBm);
-			fprintf(fd2, "Signal power density at %s: %+.2f dBW per square meter\n", destination.name, 10.0 * std::log10(power_density));
+			std::println(fd2, "Signal power level at {}: {:+.2f} dBm", destination.name, dBm);
+			std::println(fd2, "Signal power density at {}: {:+.2f} dBW per square meter", destination.name, 10.0 * std::log10(power_density));
 			voltage =
 			    1.0e6 * std::sqrt(50.0 *
 					 (eirp /
@@ -1458,22 +1455,20 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 				break;
 
 			case 2:
-				fprintf(fd2,
-					"\n  Note: Default parameters have been substituted for impossible ones.\n");
+				std::println(fd2,
+					"\n  Note: Default parameters have been substituted for impossible ones.");
 				break;
 
 			case 3:
-				fprintf(fd2,
-					"\n  Warning: A combination of parameters is out of range for this model.\n");
-				fprintf(fd2,
-					"  Results should be used with caution.\n");
+				std::println(fd2,
+					"\n  Warning: A combination of parameters is out of range for this model.");
+				std::println(fd2,"  Results should be used with caution.");
 				break;
 
 			default:
-				fprintf(fd2,
-					"\n  Warning: Some parameters are out of range for this model.\n");
-				fprintf(fd2,
-					"  Results should be used with caution.\n");
+				std::println(fd2,
+					"\n  Warning: Some parameters are out of range for this model.");
+				std::println(fd2,"  Results should be used with caution.");
 			}
 		}
 
@@ -1482,8 +1477,8 @@ void PathReport(struct site_t source, struct site_t destination, std::string& na
 	ObstructionAnalysis(source, destination, LR.frq_mhz, fd2);
 	fclose(fd2);
 
-	fprintf(stderr,
-		"Path loss (dB), Received Power (dBm), Field strength (dBuV):\n%.1f\n%.1f\n%.1f",
+	std::print(stderr,
+		"Path loss (dB), Received Power (dBm), Field strength (dBuV):\n{:.1f}\n{:.1f}\n{:.1f}",
 		loss, dBm, field_strength);
 
 	/* Skip plotting the graph if ONLY a path-loss report is needed. */
