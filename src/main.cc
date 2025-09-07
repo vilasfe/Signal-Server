@@ -46,31 +46,23 @@ int IPPD = 1200;
 int ARRAYSIZE = (MAXPAGES * IPPD) + 10;
 
 std::string sdf_path;
-char *color_file = nullptr;
 
 double earthradius, max_range = 0.0, dpp, ppd, yppd,
     fzone_clearance = 0.6, clutter, tercon, terdic,
     east, west,
     min_north = 90, max_north = -90, min_west = 360, max_west = -1,
     westoffset=180, eastoffset=-180, delta=0, rxGain=0, antenna_rotation,
-    antenna_downtilt,antenna_dt_direction, cropLat=-70, cropLon=0,cropLonNeg=0;
+    antenna_downtilt,antenna_dt_direction, cropLat=-70, cropLon=0;
 
-int ippd, mpi, max_elevation = -32768, min_elevation = 32768, bzerror, gzerr,
+int ippd, mpi, max_elevation = -32768, min_elevation = 32768,
     contour_threshold, pred, pblue, pgreen, ter, multiplier = 256,
     jgets = 0, MAXRAD, hottest = 0, height = 0, width = 0;
 int resample = 0;
-bool bzbuf_empty = true;
-bool gzbuf_empty = true;
-
-long bzbuf_pointer = 0L, bzbytes_read, gzbuf_pointer = 0L, gzbytes_read;
 
 unsigned char got_elevation_pattern, got_azimuth_pattern;
 bool debug = false;
 bool metric = false;
 bool dbm = false;
-
-bool to_stdout = false;
-bool cropping = true;
 
 thread_local double *elev;
 thread_local struct path_t path;
@@ -888,6 +880,8 @@ auto main(int argc, char *argv[]) -> int
 	int result = 0;
 
 	bool use_threads = true;
+	bool to_stdout = false;
+	bool cropping = true;
 
 	unsigned char LRmap = 0;
 	bool txsites = false;
@@ -1010,7 +1004,6 @@ auto main(int argc, char *argv[]) -> int
 	clutter = 0.0;
 	sdf_path[0] = 0;
 	udt_file = nullptr;
-	color_file = nullptr;
 	path.length = 0;
 	max_txsites = 30;
 	fzone_clearance = 0.6;
@@ -1018,7 +1011,7 @@ auto main(int argc, char *argv[]) -> int
 	resample = 0;
 
 	ano_filename[0] = 0;
-	earthradius = EARTHRADIUS;
+	earthradius = EARTHRADIUS_FT;
 	max_range = 1.0;
 	propmodel = 1;		//ITM
 	ngs = true;		// no terrain background
@@ -1219,11 +1212,11 @@ auto main(int argc, char *argv[]) -> int
 				switch (ippd) {
 				case 300:
 					MAXRAD = 500;
-					jgets = 3; // 3 dummy reads
+					Input::jgets = 3; // 3 dummy reads
 					break;
 				case 600:
 					MAXRAD = 500;
-					jgets = 1;
+					Input::jgets = 1;
 					break;
 				case 1200:
 					MAXRAD = 200;
@@ -1496,11 +1489,7 @@ auto main(int argc, char *argv[]) -> int
 			z = x + 1;
 
 			if (z <= y && argv[z][0]) {
-				color_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if (color_file == nullptr) {
-					return ENOMEM;
-				}
-				strncpy(color_file, argv[z], 253);
+				Input::color_file = argv[z];
 			}
 		}
 	}
@@ -1809,11 +1798,11 @@ auto main(int argc, char *argv[]) -> int
 	if (ppa == 0) {
 	  if (propmodel == 2) {  // Modl 2 = LOS
 			cropping = false;
-			PlotLOSMap(tx_site[0], altitudeLR, ano_filename, use_threads);
+			LOS::PlotLOSMap(tx_site[0], altitudeLR, ano_filename, use_threads);
 			Output::DoLOS(mapfile, kml, ngs, tx_site);
 		} else {
 			// 90% of effort here
-			PlotPropagation(tx_site[0], altitudeLR, ano_filename, propmodel, knifeedge, haf, pmenv, use_threads);
+			LOS::PlotPropagation(tx_site[0], altitudeLR, ano_filename, propmodel, knifeedge, haf, pmenv, use_threads);
 
 			if (debug) {
 				std::println(stderr,"Finished PlotPropagation()");
@@ -1895,10 +1884,10 @@ auto main(int argc, char *argv[]) -> int
 	} else {
 		strncpy(tx_site[0].name, "Tx", 3);
 		strncpy(tx_site[1].name, "Rx", 3);
-		PlotPath(tx_site[0], tx_site[1], 1);
+		LOS::PlotPath(tx_site[0], tx_site[1], 1);
 		Output::PathReport(tx_site[0], tx_site[1], tx_site[0].filename, 0, propmodel, pmenv, rxGain);
 		// Order flipped for benefit of graph. Makes no difference to data.
-		Output::SeriesData(tx_site[1], tx_site[0], tx_site[0].filename, 1, normalise);
+		Output::SeriesData(tx_site[1], tx_site[0], tx_site[0].filename, true, normalise);
 	}
 
 	return 0;

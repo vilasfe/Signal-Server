@@ -36,70 +36,6 @@ namespace {
 	bool ***processed;
 	bool has_init_processed = false;
 
-	struct propagationRange {
-		double min_west = 0.0;
-		double max_west = 0.0;
-		double min_north = 0.0;
-		double max_north = 0.0;
-		double altitude = 0.0;
-		bool eastwest = false;
-		bool los = true;
-		bool use_threads = true;
-		site_t source;
-		unsigned char mask_value = 0;
-		FILE *fd = nullptr;
-		int propmodel = 0;
-		int knifeedge = 0;
-		int pmenv = 0;
-	};
-
-	auto rangePropagation(std::shared_ptr<propagationRange> v) -> void*
-	{
-		if(v->use_threads) {
-			alloc_elev();
-			alloc_path();
-		}
-
-		const double minwest = dpp + v->min_west;
-		double lon = v->eastwest ? minwest : v->min_west;
-		double lat = v->min_north;
-		int y = 0;
-
-		do {
-			if (lon >= 360.0) {
-				lon -= 360.0;
-			}
-
-			site_t edge;
-			edge.lat = lat;
-			edge.lon = lon;
-			edge.alt = v->altitude;
-
-			if(v->los) {
-				PlotLOSPath(v->source, edge, v->mask_value, v->fd);
-			}
-			else {
-				PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
-			}
-
-			++y;
-			if(v->eastwest) {
-				lon = minwest + (dpp * y);
-			}
-			else {
-				lat = v->min_north + (dpp * y);
-			}
-
-
-		} while ( v->eastwest ? (LonDiff(lon, v->max_west) <= 0.0) : (lat < v->max_north) );
-
-		if(v->use_threads) {
-			free_elev();
-			free_path();
-		}
-		return nullptr;
-	}
-
 	void init_processed()
 	{
 		const std::scoped_lock l (maskMutex);
@@ -150,16 +86,6 @@ namespace {
 		}
 		return false;
 	}
-  
-	void beginThread(std::shared_ptr<propagationRange> arg)
-	{
-		if(!has_init_processed)  {
-			init_processed();
-		}
-
-		threads[thread_count] = std::thread(rangePropagation, arg);
-		++thread_count;
-	}
 
 	void finishThreads()
 	{
@@ -168,59 +94,108 @@ namespace {
 		}
 		thread_count = 0;
 	}
-
-	/*
-	* Acute Angle from Rx point to an obstacle of height (opp) and
-	* distance (adj)
-	*/
-	auto incidenceAngle(double opp, double adj) -> double
-	{
-		return std::atan2(opp, adj) * 180 * std::numbers::inv_pi;
-	}
-
-	/*
-	* Knife edge diffraction:
-	* This is based upon a recognised formula like Huygens, but trades
-	* thoroughness for increased speed which adds a proportional diffraction
-	* effect to obstacles.
-	*/
-	auto ked(double freq, double rxh, double dkm) -> double
-	{
-		double rxobaoi = 0;
-		double obh = 0;		// Obstacle height
-		double obd = 0;		// Obstacle distance
-
-		dkm = dkm * 1000;	// KM to metres
-
-		// walk along path
-		for (int n = 2; n < (dkm / elev[1]); n++) {
-
-			const double d = (n - 2) * elev[1];	// no of points * delta = km
-
-			//Find dip(s)
-			if (elev[n] < obh) {
-				// Angle from Rx point to obstacle
-				rxobaoi = incidenceAngle((obh - (elev[n] + rxh)), d - obd);
-			} else {
-				// Line of sight or higher
-				rxobaoi = 0;
-			}
-
-			//note the highest point
-			if (elev[n] > obh) {
-				obh = elev[n];
-				obd = d;
-			}
-		}
-
-		if (rxobaoi >= 0) {
-			return (rxobaoi / (300 / freq))+3;	// Diffraction angle divided by wavelength (m)
-		}
-		return 1;
-	}
 } /* anonymous namespace */
 
-void PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, [[maybe_unused]] FILE *fd)
+/*
+* Knife edge diffraction:
+* This is based upon a recognised formula like Huygens, but trades
+* thoroughness for increased speed which adds a proportional diffraction
+* effect to obstacles.
+*/
+auto LOS::ked(double freq, double rxh, double dkm) -> double
+{
+	double rxobaoi = 0;
+	double obh = 0;		// Obstacle height
+	double obd = 0;		// Obstacle distance
+
+	dkm = dkm * 1000;	// KM to metres
+
+	// walk along path
+	for (int n = 2; n < (dkm / elev[1]); n++) {
+
+		const double d = (n - 2) * elev[1];	// no of points * delta = km
+
+		//Find dip(s)
+		if (elev[n] < obh) {
+			// Angle from Rx point to obstacle
+			rxobaoi = incidenceAngle((obh - (elev[n] + rxh)), d - obd);
+		} else {
+			// Line of sight or higher
+			rxobaoi = 0;
+		}
+
+		//note the highest point
+		if (elev[n] > obh) {
+			obh = elev[n];
+			obd = d;
+		}
+	}
+
+	if (rxobaoi >= 0) {
+		return (rxobaoi / (300 / freq))+3;	// Diffraction angle divided by wavelength (m)
+	}
+	return 1;
+}
+
+
+void LOS::beginThread(std::shared_ptr<propagationRange> arg)
+{
+	if(!has_init_processed)  {
+		init_processed();
+	}
+
+	threads[thread_count] = std::thread(rangePropagation, arg);
+	++thread_count;
+}
+
+auto LOS::rangePropagation(std::shared_ptr<propagationRange> v) -> void*
+{
+	if(v->use_threads) {
+		alloc_elev();
+		alloc_path();
+	}
+
+	const double minwest = dpp + v->min_west;
+	double lon = v->eastwest ? minwest : v->min_west;
+	double lat = v->min_north;
+	int y = 0;
+
+	do {
+		if (lon >= 360.0) {
+			lon -= 360.0;
+		}
+
+		site_t edge;
+		edge.lat = lat;
+		edge.lon = lon;
+		edge.alt = v->altitude;
+
+		if(v->los) {
+			PlotLOSPath(v->source, edge, v->mask_value, v->fd);
+		}
+		else {
+			PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
+		}
+
+		++y;
+		if(v->eastwest) {
+			lon = minwest + (dpp * y);
+		}
+		else {
+			lat = v->min_north + (dpp * y);
+		}
+
+
+	} while ( v->eastwest ? (LonDiff(lon, v->max_west) <= 0.0) : (lat < v->max_north) );
+
+	if(v->use_threads) {
+		free_elev();
+		free_path();
+	}
+	return nullptr;
+}
+
+void LOS::PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, [[maybe_unused]] FILE *fd)
 {
 	/* This function analyzes the path between the source and
 	   destination locations.  It determines which points along
@@ -231,7 +206,6 @@ void PlotLOSPath(const struct site_t& source, const struct site_t& destination, 
 	   mask[][] array, which are displayed in green when PPM
 	   maps are later generated by ss. */
 
-	char block = 0;
 	double cos_xmtr_angle, cos_test_angle, test_alt;
 	double distance, rx_alt, tx_alt;
 
@@ -256,7 +230,8 @@ void PlotLOSPath(const struct site_t& source, const struct site_t& destination, 
 			    ((rx_alt * rx_alt) + (distance * distance) -
 			     (tx_alt * tx_alt)) / (2.0 * rx_alt * distance);
 
-			for (int x = y, block = 0; x >= 0 && block == 0; x--) {
+			bool block = false;
+			for (int x = y; x >= 0 && !block; x--) {
 				distance =
 				    FEET_PER_MILE * (path.distance[y] -
 					      path.distance[x]);
@@ -279,18 +254,18 @@ void PlotLOSPath(const struct site_t& source, const struct site_t& destination, 
 				   be if the actual angles were compared. */
 
 				if (cos_xmtr_angle >= cos_test_angle) {
-					block = 1;
+					block = true;
 				}
 			}
 
-			if (block == 0) {
+			if (!block) {
 				OrMask(path.lat[y], path.lon[y], mask_value);
 			}
 		}
 	}
 }
 
-void PlotPropPath(struct site_t source, struct site_t destination,
+void LOS::PlotPropPath(struct site_t source, struct site_t destination,
 		  unsigned char mask_value, FILE * fd, int propmodel,
 		  int knifeedge, int pmenv)
 {
@@ -308,7 +283,7 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 
 	ReadPath(source, destination);
 
-	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
+	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS_FT;
 
 	for (x = 1; x < path.length - 1; x++) {
 		elev[x + 2] =
@@ -665,7 +640,7 @@ void PlotPropPath(struct site_t source, struct site_t destination,
 	//	cropLon-=360;
 }
 
-void PlotLOSMap(const struct site_t& source, double altitude, const std::string& plo_filename, bool use_threads)
+void LOS::PlotLOSMap(const struct site_t& source, double altitude, const std::string& plo_filename, bool use_threads)
 {
 	/* This function performs a 360 degree sweep around the
 	   transmitter site (source location), and plots the
@@ -692,10 +667,10 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 	// Four sections start here
 	// Process north edge east/west, east edge north/south,
 	// south edge east/west, west edge north/south
-	double range_min_west[] = {min_west, min_west, min_west, max_west};
-	double range_min_north[] = {max_north, min_north, min_north, min_north};
-	double range_max_west[] = {max_west, min_west, max_west, max_west};
-	double range_max_north[] = {max_north, max_north, min_north, max_north};
+	std::array<double, 4> range_min_west = {min_west, min_west, min_west, max_west};
+	std::array<double, 4> range_min_north = {max_north, min_north, min_north, min_north};
+	std::array<double, 4> range_max_west = {max_west, min_west, max_west, max_west};
+	std::array<double, 4> range_max_north = {max_north, max_north, min_north, max_north};
 	std::array<std::shared_ptr<propagationRange>, NUM_SECTIONS> r;
 
 	for(int i = 0; i < NUM_SECTIONS; ++i) {
@@ -742,7 +717,7 @@ void PlotLOSMap(const struct site_t& source, double altitude, const std::string&
 }
 
 
-void PlotPropagation(struct site_t source, double altitude, const std::string& plo_filename,
+void LOS::PlotPropagation(struct site_t source, double altitude, const std::string& plo_filename,
 		     int propmodel, int knifeedge, int haf, int pmenv, bool
 		     use_threads)
 {
@@ -792,10 +767,10 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 	// Four sections start here
 	// Process north edge east/west, east edge north/south,
 	// south edge east/west, west edge north/south
-	double range_min_west[] = {min_west, min_west, min_west, max_west};
-	double range_min_north[] = {max_north, min_north, min_north, min_north};
-	double range_max_west[] = {max_west, min_west, max_west, max_west};
-	double range_max_north[] = {max_north, max_north, min_north, max_north};
+	std::array<double, 4> range_min_west = {min_west, min_west, min_west, max_west};
+	std::array<double, 4> range_min_north = {max_north, min_north, min_north, min_north};
+	std::array<double, 4> range_max_west = {max_west, min_west, max_west, max_west};
+	std::array<double, 4> range_max_north = {max_north, max_north, min_north, max_north};
 	std::array<std::shared_ptr<propagationRange>, NUM_SECTIONS> r;
 
 	for(int i = 0; i < NUM_SECTIONS; ++i) {
@@ -849,7 +824,7 @@ void PlotPropagation(struct site_t source, double altitude, const std::string& p
 	}
 }
 
-void PlotPath(const struct site_t& source, const struct site_t& destination, char mask_value)
+void LOS::PlotPath(const struct site_t& source, const struct site_t& destination, char mask_value)
 {
 	/* This function analyzes the path between the source and
 	   destination locations.  It determines which points along

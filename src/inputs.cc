@@ -8,6 +8,7 @@
 #include <cstring>
 #include <memory>
 #include <print>
+#include <string>
 
 #include <unistd.h>
 
@@ -24,14 +25,16 @@ enum { GZBUFFER = 32768 };
 
 static char buffer[BZBUFFER+1];
 
-extern char *color_file;
+std::string Input::color_file = "";
 
-extern int bzerror, bzbuf_empty, gzerr, gzbuf_empty;
-
-extern long bzbuf_pointer, bzbytes_read, gzbuf_pointer, gzbytes_read;
+int Input::bzerror = BZ_OK;
+int Input::gzerr = Z_OK;
+bool Input::bzbuf_empty = true;
+bool Input::gzbuf_empty = true;
 
 extern double antenna_rotation,antenna_downtilt,antenna_dt_direction;
 
+int Input::jgets = 0;
 
 auto Input::loadClutter(std::string_view filename, double radius, struct site_t tx) -> int
 {
@@ -43,7 +46,10 @@ auto Input::loadClutter(std::string_view filename, double radius, struct site_t 
  	   If tiles are standard 2880 x 3840 then cellsize is constant at 0.004166
 	 */
 	int x, y, z, h = 0, w = 0;
-	double clh, xll, yll, cellsize, cellsize2, xOffset, yOffset, lat, lon;
+	double clh = 0.0;
+	double xll = 0.0;
+	double yll = 0.0;
+	double cellsize, cellsize2, xOffset, yOffset, lat, lon;
 	char line[100000];
 	char *s, *pch = nullptr;
 	FILE *fd;
@@ -690,12 +696,17 @@ char* Input::BZfgets(char *output, BZFILE *bzfd, unsigned length)
 	   is pointed to by *bzfd.   A nullptr string return indicates an
 	   error condition. */
 
-	if (length > BZBUFFER)
-	        return nullptr;
+	long bzbytes_read = 0L;
+	long bzbuf_pointer = 0L;
+
+	if (length > BZBUFFER) {
+		return nullptr;
+	}
+
 	for (size_t i = 0; (unsigned)i < length; i++) {
 		if (bzbuf_empty) {  // Uncompress data into buffer if empty */
 
-		        bzbytes_read = (long)BZ2_bzRead(&bzerror, bzfd, buffer, BZBUFFER);
+			bzbytes_read = (long)BZ2_bzRead(&bzerror, bzfd, buffer, BZBUFFER);
 			buffer[bzbytes_read] = 0;
 			bzbuf_empty = 0;
 			/*
@@ -818,8 +829,6 @@ int Input::LoadSDF_BZ(char *name)
 
 		pos = EOF;
 		bzbuf_empty = 1;
-		bzbuf_pointer = bzbytes_read = 0L;
-
 		pos = sscanf(BZfgets(bzline, bzfd, 19), "%f", &dem[indx].max_west);
 		if (bzerror != BZ_OK || pos == EOF) {
 			return -errno;
@@ -952,36 +961,39 @@ int Input::LoadSDF_BZ(char *name)
 		return 0;
 }
 
-char *GZfgets(char *output, gzFile gzfd, unsigned length)
+char *Input::GZfgets(char *output, gzFile gzfd, unsigned length)
 {
 	/* This function returns at most one less than 'length' number
 	   of characters from a Gzip compressed file whose file descriptor
 	   is pointed to by gzfd.   A nullptr string return indicates an
 	   error condition. */
 
-	const char *errmsg;
+	const char *errmsg = nullptr;
   
-	if (length > GZBUFFER-2)
-	        return nullptr;
+	if (length > GZBUFFER-2) {
+		return nullptr;
+	}
 
+	long gzbytes_read = 0L;
+	long gzbuf_pointer = 0L;
 
 	for (size_t i = 0; (unsigned)i < length; i++) {
 		if (gzbuf_empty) {  // Uncompress data into buffer if empty */
 
-		        gzbytes_read = (long)gzread(gzfd, buffer, (unsigned) GZBUFFER-2);
+			gzbytes_read = (long)gzread(gzfd, buffer, (unsigned) GZBUFFER-2);
 			errmsg = gzerror(gzfd, &gzerr);
 
 			buffer[gzbytes_read] = 0;
 			gzbuf_empty = 0;
 
 			if (gzerr != Z_OK && gzerr != Z_STREAM_END)
-			        return (nullptr);
+				return (nullptr);
 
 			if (gzbytes_read < GZBUFFER-2) {
-			        if (gzeof(gzfd))
-				        gzclearerr(gzfd);
+				if (gzeof(gzfd))
+					gzclearerr(gzfd);
 				else
-				        return (nullptr);
+					return (nullptr);
 			}
 		}
 	        if (!gzbuf_empty) {  // Build string from buffer if not empty
@@ -1099,9 +1111,7 @@ int Input::LoadSDF_GZ(char *name)
 		}
 
 		pos = EOF;
-		gzbuf_empty = 1;
-		gzbuf_pointer = gzbytes_read = 0L;
-
+		gzbuf_empty = true;
 		pos = sscanf(GZfgets(gzline, gzfd, 19), "%f", &dem[indx].max_west);
 		errmsg = gzerror(gzfd, &gzerr);
 		if (gzerr != Z_OK || pos == EOF) {
@@ -1764,23 +1774,19 @@ auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) 
 int Input::LoadSignalColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255];
+	std::string filename;
 	char str[80];
 	char *pointer = nullptr, *s;
 	FILE *fd = nullptr;
 
-	if (color_file != nullptr && color_file[0] != 0)
-	        for (x = 0; color_file[x] != '.' && color_file[x] != 0 && x < 250; x++)
-		        filename[x] = color_file[x];
-	else
-	        for (x = 0; xmtr.filename[x] != '.' && xmtr.filename[x] != 0 && x < 250; x++)
-		        filename[x] = xmtr.filename[x];
+	if (!color_file.empty()) {
+		filename = color_file;
+	}
+	else {
+		filename = xmtr.filename;
+	}
 
-	filename[x] = '.';
-	filename[x + 1] = 's';
-	filename[x + 2] = 'c';
-	filename[x + 3] = 'f';
-	filename[x + 4] = 0;
+	filename += ".scf";
 
 	/* Default values */
 
@@ -1852,11 +1858,11 @@ int Input::LoadSignalColors(struct site_t xmtr)
 	region.levels = 13;
 
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename, "r")) == nullptr && xmtr.filename[0] == '\0' )
+	if ( (fd = fopen(filename.data(), "r")) == nullptr && xmtr.filename[0] == '\0' )
 		return 0;
 
 	if (fd == nullptr) {
-		if( (fd = fopen(filename, "w")) == nullptr )
+		if( (fd = fopen(filename.data(), "w")) == nullptr )
 			return errno;
 
 		for (x = 0; x < region.levels; x++) {
@@ -1914,23 +1920,19 @@ int Input::LoadSignalColors(struct site_t xmtr)
 int Input::LoadLossColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255];
+	std::string filename;
 	char str[80];
 	char *pointer = nullptr, *s;
 	FILE *fd = nullptr;
 
-	if (color_file != nullptr && color_file[0] != 0)
-	        for (x = 0; color_file[x] != '.' && color_file[x] != 0 && x < 250; x++)
-		        filename[x] = color_file[x];
-	else
-	        for (x = 0; xmtr.filename[x] != '.' && xmtr.filename[x] != 0 && x < 250; x++)
-		        filename[x] = xmtr.filename[x];
+	if (!color_file.empty()) {
+		filename = color_file;
+	}
+	else {
+		filename = xmtr.filename;
+	}
 
-	filename[x] = '.';
-	filename[x + 1] = 'l';
-	filename[x + 2] = 'c';
-	filename[x + 3] = 'f';
-	filename[x + 4] = 0;
+	filename += ".lcf";
 
 	/* Default values */
 
@@ -2025,11 +2027,11 @@ int Input::LoadLossColors(struct site_t xmtr)
 	}
 */
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename, "r")) == nullptr && xmtr.filename[0] == '\0' )
+	if ( (fd = fopen(filename.data(), "r")) == nullptr && xmtr.filename[0] == '\0' )
 		return 0;
 
 	if (fd == nullptr) {
-		if( (fd = fopen(filename, "w")) == nullptr )
+		if( (fd = fopen(filename.data(), "w")) == nullptr )
 			return errno;
 
 		for (x = 0; x < region.levels; x++) {
@@ -2091,23 +2093,19 @@ int Input::LoadLossColors(struct site_t xmtr)
 int Input::LoadDBMColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
-	char filename[255];
+	std::string filename;
 	char str[80];
 	char *pointer = nullptr, *s;
 	FILE *fd = nullptr;
 
-	if (color_file != nullptr && color_file[0] != 0)
-	        for (x = 0; color_file[x] != '.' && color_file[x] != 0 && x < 250; x++)
-		        filename[x] = color_file[x];
-	else
-	        for (x = 0; xmtr.filename[x] != '.' && xmtr.filename[x] != 0 && x < 250; x++)
-		        filename[x] = xmtr.filename[x];
+	if (!color_file.empty()) {
+		filename = color_file;
+	}
+	else {
+		filename = xmtr.filename;
+	}
 
-	filename[x] = '.';
-	filename[x + 1] = 'd';
-	filename[x + 2] = 'c';
-	filename[x + 3] = 'f';
-	filename[x + 4] = 0;
+	filename += ".dcf";
 
 	/* Default values */
 
@@ -2194,11 +2192,11 @@ int Input::LoadDBMColors(struct site_t xmtr)
 	region.levels = 16;
 
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename, "r")) == nullptr && xmtr.filename[0] == '\0' )
+	if ( (fd = fopen(filename.data(), "r")) == nullptr && xmtr.filename[0] == '\0' )
 		return 0;
 
 	if (fd == nullptr) {
-		if( (fd = fopen(filename, "w")) == nullptr )
+		if( (fd = fopen(filename.data(), "w")) == nullptr )
 			return errno;
 
 		for (x = 0; x < region.levels; x++) {

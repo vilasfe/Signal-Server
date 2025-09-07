@@ -1,6 +1,7 @@
 #ifndef _INPUTS_HH_
 #define _INPUTS_HH_
 
+#include <string>
 #include <string_view>
 
 #include <bzlib.h>
@@ -24,11 +25,18 @@ public:
     static int averageHeight(int h, int w, int x, int y);
     static constexpr char AZ_FILE_SUFFIX[] = ".az";
     static constexpr char EL_FILE_SUFFIX[] = ".el";
+    static int jgets;
+    static std::string color_file;
 private:
     static int LoadSDF_SDF(char *name);
     static int LoadSDF_GZ(char *name);
     static int LoadSDF_BZ(char *name);
     static char *BZfgets(char *output, BZFILE *bzfd, unsigned length);
+    static char *GZfgets(char *output, gzFile gzfd, unsigned length);
+    static int bzerror;
+    static int gzerr;
+    static bool bzbuf_empty;
+    static bool gzbuf_empty;
 };
 
 #endif /* _INPUTS_HH_ */

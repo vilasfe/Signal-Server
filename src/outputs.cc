@@ -894,7 +894,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 	    0.0, voltage, rxp, power_density, dkm;
 
 	snprintf(report_name, 80, "%s.txt%c", name.data(), 0);
-	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
+	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS_FT;
 
 	FILE* fd2 = fopen(report_name, "w");
 
