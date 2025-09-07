@@ -33,7 +33,7 @@ extern long bzbuf_pointer, bzbytes_read, gzbuf_pointer, gzbytes_read;
 extern double antenna_rotation,antenna_downtilt,antenna_dt_direction;
 
 
-auto loadClutter(std::string_view filename, double radius, struct site_t tx) -> int
+auto Input::loadClutter(std::string_view filename, double radius, struct site_t tx) -> int
 {
 	/* This function reads a MODIS 17-class clutter file in ASCII Grid format.
 	   The nominal heights it applies to each value, eg. 5 (Mixed forest) = 15m are 
@@ -153,7 +153,7 @@ auto loadClutter(std::string_view filename, double radius, struct site_t tx) -> 
 	return 0;
 }
 
-int averageHeight(int height, int width, int x, int y){
+int Input::averageHeight(int height, int width, int x, int y){
 	int total = 0;
 	int c=0;
 	if(dem[0].data[y-1][x-1]>0){
@@ -180,7 +180,7 @@ int averageHeight(int height, int width, int x, int y){
 	}
 }
 
-auto loadLIDAR(const std::string& filenames, int resample) -> int
+auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 {
 	std::array<std::string, 900> files; // 20x20=400, 16x16=256 tiles
 	int fc = 0;
@@ -486,7 +486,7 @@ auto loadLIDAR(const std::string& filenames, int resample) -> int
 	return 0;
 }
 
-int LoadSDF_SDF(char *name)
+int Input::LoadSDF_SDF(char *name)
 {
 	/* This function reads uncompressed ss Data Files (.sdf)
 	   containing digital elevation model data into memory.
@@ -683,7 +683,7 @@ int LoadSDF_SDF(char *name)
 		return 0;
 }
 
-char *BZfgets(char *output, BZFILE *bzfd, unsigned length)
+char* Input::BZfgets(char *output, BZFILE *bzfd, unsigned length)
 {
 	/* This function returns at most one less than 'length' number
 	   of characters from a bz2 compressed file whose file descriptor
@@ -725,7 +725,7 @@ char *BZfgets(char *output, BZFILE *bzfd, unsigned length)
 	return (output);
 }
 
-int LoadSDF_BZ(char *name)
+int Input::LoadSDF_BZ(char *name)
 {
 	/* This function reads Bzip2 ncompressed ss Data Files (.sdf.bz2)
 	   containing digital elevation model data into memory.
@@ -1008,7 +1008,7 @@ char *GZfgets(char *output, gzFile gzfd, unsigned length)
 }
 
 
-int LoadSDF_GZ(char *name)
+int Input::LoadSDF_GZ(char *name)
 {
 	/* This function reads Gzip compressed ss Data Files (.sdf.gz)
 	   containing digital elevation model data into memory.
@@ -1249,7 +1249,7 @@ int LoadSDF_GZ(char *name)
 }
 
 
-int LoadSDF(char *name)
+int Input::LoadSDF(char *name)
 {
 	/* This function loads the requested SDF file from the filesystem.
 	   It first tries to invoke the LoadSDF_SDF() function to load an
@@ -1387,7 +1387,7 @@ int LoadSDF(char *name)
 	return return_value;
 }
 
-auto LoadPAT(std::string_view az_filename, std::string_view el_filename) -> int
+auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) -> int
 {
 	/* This function reads and processes antenna pattern (.az
 	   and .el) files that may correspond in name to previously
@@ -1761,7 +1761,7 @@ auto LoadPAT(std::string_view az_filename, std::string_view el_filename) -> int
 	return 0;
 }
 
-int LoadSignalColors(struct site_t xmtr)
+int Input::LoadSignalColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
 	char filename[255];
@@ -1911,7 +1911,7 @@ int LoadSignalColors(struct site_t xmtr)
 	return 0;
 }
 
-int LoadLossColors(struct site_t xmtr)
+int Input::LoadLossColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
 	char filename[255];
@@ -2088,7 +2088,7 @@ int LoadLossColors(struct site_t xmtr)
 	return 0;
 }
 
-int LoadDBMColors(struct site_t xmtr)
+int Input::LoadDBMColors(struct site_t xmtr)
 {
 	int x, y, ok, val[4];
 	char filename[255];
@@ -2262,7 +2262,7 @@ int LoadDBMColors(struct site_t xmtr)
 	return 0;
 }
 
-int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
+int Input::LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
 {
 	/* This function loads the SDF files required
 	   to cover the limits of the region specified. */
@@ -2335,7 +2335,7 @@ int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat)
 	return 0;
 }
 
-auto LoadUDT(std::string_view filename) -> int
+auto Input::LoadUDT(std::string_view filename) -> int
 {
 	/* This function reads a file containing User-Defined Terrain
 	   features for their addition to the digital elevation model

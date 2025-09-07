@@ -1138,25 +1138,25 @@ auto main(int argc, char *argv[]) -> int
 				tx_site[0].filename = argv[z];
 				/* Antenna pattern files have the same basic name as the output file
 				 * but with a different extension. If they exist, load them now */
-				az_filename.reserve(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1);
+				az_filename.reserve(strlen(argv[z]) + strlen(Input::AZ_FILE_SUFFIX) + 1);
 				if (!antenna_file.empty()) {
 				        az_filename = antenna_file;
 				}
 				else {
 				        az_filename = argv[z];
 				}
-				az_filename += AZ_FILE_SUFFIX;
+				az_filename += Input::AZ_FILE_SUFFIX;
 
-				el_filename.reserve(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1);
+				el_filename.reserve(strlen(argv[z]) + strlen(Input::EL_FILE_SUFFIX) + 1);
 				if (!antenna_file.empty()) {
 				        el_filename = antenna_file;
 				}
 				else {
 				        el_filename = argv[z];
 				}
-				el_filename += EL_FILE_SUFFIX;
+				el_filename += Input::EL_FILE_SUFFIX;
 
-				if(result = LoadPAT(az_filename,el_filename); result != 0 ){
+				if(result = Input::LoadPAT(az_filename,el_filename); result != 0 ){
 					std::println(stderr,"Permissions error reading antenna pattern file");
 					exit(result);
 				}
@@ -1636,7 +1636,7 @@ auto main(int argc, char *argv[]) -> int
 
 	/* Load the required tiles */
 	if (lidar) {
-		if(result = loadLIDAR(lidar_tiles, resample); result != 0 ){
+		if(result = Input::loadLIDAR(lidar_tiles, resample); result != 0 ){
 			std::println(stderr, "Couldn't find one or more of the "
 				"lidar files. Please ensure their paths are "
 				"correct and try again.");
@@ -1668,7 +1668,7 @@ auto main(int argc, char *argv[]) -> int
 
 		//max_lon-=3;
 
-		if(result = LoadTopoData(max_lon, min_lon, max_lat, min_lat); result != 0 ){
+		if(result = Input::LoadTopoData(max_lon, min_lon, max_lat, min_lat); result != 0 ){
 			// This only fails on errors loading SDF tiles
 			std::println(stderr, "Error loading topo data");
 			return result;
@@ -1768,7 +1768,7 @@ auto main(int argc, char *argv[]) -> int
 
 			/* Load any additional SDF files, if required */
 
-			if(result = LoadTopoData(max_lon, min_lon, max_lat, min_lat); result != 0 ){
+			if(result = Input::LoadTopoData(max_lon, min_lon, max_lat, min_lat); result != 0 ){
 				// This only fails on errors loading SDF tiles
 				std::println(stderr, "Error loading topo data");
 				return result;
@@ -1785,7 +1785,7 @@ auto main(int argc, char *argv[]) -> int
 	mpi = ippd-1; 
 
 	// User defined clutter file
-	if( udt_file != nullptr && (result = LoadUDT(udt_file)) != 0 ){
+	if( udt_file != nullptr && (result = Input::LoadUDT(udt_file)) != 0 ){
 		std::println(stderr, "Error loading clutter file");
 		return result;
 	}
@@ -1796,7 +1796,7 @@ auto main(int argc, char *argv[]) -> int
 		Clutter tiles cover 16 x 12 degs but we only need a fraction of that area.
 		Limit by max_range / miles per degree (at equator)
 		*/
-		if(result = loadClutter(clutter_file,max_range/45,tx_site[0]); result != 0 ){
+		if(result = Input::loadClutter(clutter_file,max_range/45,tx_site[0]); result != 0 ){
 			std::println(stderr, "Error, invalid or clutter file not found");
 			return result;
 		}

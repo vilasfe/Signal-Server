@@ -45,7 +45,7 @@ void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, str
 	    255.0 / std::pow(max_elevation - min_elevation,
 			INV_GAMMA);
 
-	if( success = LoadLossColors(xmtr[0]); success != 0 ){
+	if( success = Input::LoadLossColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading loss colors");
 		exit(success);  // Now a fatal error!
 	}
@@ -250,7 +250,7 @@ auto Output::DoSigStr(std::string& filename, bool kml, bool ngs, struct site_t *
 
 	const double conversion = 255.0 / std::pow(static_cast<double>(max_elevation - min_elevation), INV_GAMMA);
 
-	if(success = LoadSignalColors(xmtr[0]); success != 0 ){
+	if(success = Input::LoadSignalColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading signal colors");
 		//exit(success);
 	}
@@ -463,7 +463,7 @@ void Output::DoRxdPwr(std::string filename, bool kml, bool ngs, struct site_t *x
 	    255.0 / std::pow(max_elevation - min_elevation,
 			INV_GAMMA);
 
-	if( success = LoadDBMColors(xmtr[0]); success != 0 ){
+	if( success = Input::LoadDBMColors(xmtr[0]); success != 0 ){
 		std::println(stderr,"Error loading DBM colors");
 		exit(success);  //Now a fatal error!
 	}
