@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 4.0)
 set(CMAKE_CXX_COMPILER clang++)
 PROJECT(SignalServer23 LANGUAGES CXX)
 

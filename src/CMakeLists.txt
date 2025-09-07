@@ -1,4 +1,24 @@
-set(HEADERS
+
+add_library(libsignalserver STATIC)
+
+target_sources(libsignalserver
+    PRIVATE
+    inputs.cc
+    outputs.cc
+    image.cc
+    image-ppm.cc
+    tiles.cc
+    models/cost.cc
+    models/ecc33.cc
+    models/egli.cc
+    models/ericsson.cc
+    models/hata.cc
+    models/itwom3.0.cc
+    models/los.cc
+    models/sui.cc
+    PUBLIC
+        FILE_SET HEADERS
+    FILES
     common.h
     image.hh
     image-ppm.hh
@@ -17,27 +37,6 @@ set(HEADERS
     models/pel.hh
     models/soil.hh
     models/sui.hh
-)
-
-set(LIBSOURCES
-    inputs.cc
-    outputs.cc
-    image.cc
-    image-ppm.cc
-    tiles.cc
-    models/cost.cc
-    models/ecc33.cc
-    models/egli.cc
-    models/ericsson.cc
-    models/hata.cc
-    models/itwom3.0.cc
-    models/los.cc
-    models/sui.cc
-)
-
-add_library(libsignalserver STATIC
-    ${HEADERS}
-    ${LIBSOURCES}
 )
 
 target_link_libraries(libsignalserver PUBLIC
