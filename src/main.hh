@@ -14,7 +14,7 @@ constexpr auto ReduceAngle(double angle) -> int
 
     const double temp = std::acos(std::cos(angle * DEG2RAD));
 
-    return static_cast<int>(std::rint(temp / DEG2RAD));
+    return static_cast<int>(std::rint(temp * RAD2DEG));
 }
 
 constexpr auto LonDiff(double lon1, double lon2) -> double
@@ -38,7 +38,6 @@ constexpr auto LonDiff(double lon1, double lon2) -> double
     return diff;
 }
 
-void *dec2dms(double decimal, char *string);
 int PutMask(double lat, double lon, int value);
 int OrMask(double lat, double lon, int value);
 int GetMask(double lat, double lon);

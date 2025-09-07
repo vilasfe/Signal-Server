@@ -5,7 +5,6 @@
 #include <cstdio>
 #include <memory>
 #include <mutex>
-#include <numbers>
 #include <print>
 #include <string>
 #include <thread>

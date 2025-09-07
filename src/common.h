@@ -13,6 +13,7 @@ constexpr double TWOPI = std::numbers::pi * 2;
 constexpr double HALFPI = std::numbers::pi * 0.5;
 
 constexpr double DEG2RAD = std::numbers::pi / 180.0;
+constexpr double RAD2DEG = 180.0 * std::numbers::inv_pi;
 constexpr double EARTHRADIUS_FT = 20902230.97;
 constexpr double METERS_PER_MILE = 1609.344;
 constexpr double METERS_PER_FOOT = 0.3048;

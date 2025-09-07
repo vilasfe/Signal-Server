@@ -306,7 +306,7 @@ auto Azimuth(const struct site_t& source, const struct site_t& destination) -> d
 		azimuth = TWOPI - azimuth;
 	}
 
-	return (azimuth / DEG2RAD);
+	return (azimuth * RAD2DEG);
 }
 
 auto ElevationAngle(const struct site_t& source, const struct site_t& destination) -> double

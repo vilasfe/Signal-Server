@@ -46,7 +46,9 @@
 #include <cmath>
 #include <complex>
 #include <cstring>
+#include <memory>
 #include <numbers>
+#include <span>
 #include <string>
 
 #include "../common.h"
@@ -111,7 +113,7 @@ struct propa_type {
 	double tha;
 };
 
-auto aknfe(const double &v2) -> double
+constexpr auto aknfe(const double &v2) -> double
 {
 
 	if (v2 < 5.76) {
@@ -463,7 +465,6 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 	static thread_local double dtof = 0.0;
 	static thread_local double drof = 0.0;
 	double q = 0.0;
-	double pk = 0.0;
 	/* dfdh, */
 	/* ar, wd, sf1, ec, */
 	double vv = 0.0;
@@ -876,7 +877,7 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 
 	else {
 		double q = (1.0 - 0.8 * std::exp(-d / 50e3)) * prop.dh;
-		const double s = 0.78 * q * std::exp(-std::pow(q / 16.0, 0.25));
+		const double s = 0.78 * q * std::exp(-std::pow(q * 0.0625, 0.25)); // 1/16 = 0.0625
 		q = prop.he[0] + prop.he[1];
 		const double sps = q / std::hypot(d, q);
 		std::complex < double > r = (sps - prop_zgnd) / (sps +
@@ -1099,7 +1100,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
 		q = adiff(0.0, prop, propa);
 		/* xae=pow(prop.wn*pow(prop.gme,2.),-THIRD); -- JDM made argument 2 a double */
-		xae = std::pow(prop.wn * (prop.gme * prop.gme), -THIRD);	/* No 2nd pow() */
+		xae = 1.0 / std::cbrt(prop.wn * (prop.gme * prop.gme));
 		const double d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
 		const double d4 = d3 + 2.7574 * xae;
 		const double a3 = adiff(d3, prop, propa);
@@ -1528,38 +1529,38 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	    ysm3, csp1, csp2, ysp1, ysp2, ysp3, csd1, zd, cfm1, cfm2,
 	    cfm3, cfp1, cfp2, cfp3;
 
-	std::array<double, 7> bv1 = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
-	std::array<double, 7> bv2 = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
-	std::array<double, 7> xv1 =
+	constexpr std::array<double, 7> bv1 = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
+	constexpr std::array<double, 7> bv2 = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
+	constexpr std::array<double, 7> xv1 =
 	    { 144.9e3, 228.9e3, 262.6e3, 84.1e3, 228.9e3, 141.7e3, 2222.e3 };
-	std::array<double, 7> xv2 =
+	constexpr std::array<double, 7> xv2 =
 	    { 190.3e3, 205.2e3, 185.2e3, 101.1e3, 205.2e3, 315.9e3, 164.8e3 };
-	std::array<double, 7> xv3 =
+	constexpr std::array<double, 7> xv3 =
 	    { 133.8e3, 143.6e3, 99.8e3, 98.6e3, 143.6e3, 167.4e3, 116.3e3 };
-	std::array<double, 7> bsm1 = { 2.13, 2.66, 6.11, 1.98, 2.68, 6.86, 8.51 };
-	std::array<double, 7> bsm2 = { 159.5, 7.67, 6.65, 13.11, 7.16, 10.38, 169.8 };
-	std::array<double, 7> xsm1 =
+	constexpr std::array<double, 7> bsm1 = { 2.13, 2.66, 6.11, 1.98, 2.68, 6.86, 8.51 };
+	constexpr std::array<double, 7> bsm2 = { 159.5, 7.67, 6.65, 13.11, 7.16, 10.38, 169.8 };
+	constexpr std::array<double, 7> xsm1 =
 	    { 762.2e3, 100.4e3, 138.2e3, 139.1e3, 93.7e3, 187.8e3, 609.8e3 };
-	std::array<double, 7> xsm2 =
+	constexpr std::array<double, 7> xsm2 =
 	    { 123.6e3, 172.5e3, 242.2e3, 132.7e3, 186.8e3, 169.6e3, 119.9e3 };
-	std::array<double, 7>xsm3 =
+	constexpr std::array<double, 7>xsm3 =
 	    { 94.5e3, 136.4e3, 178.6e3, 193.5e3, 133.5e3, 108.9e3, 106.6e3 };
-	std::array<double, 7> bsp1 = { 2.11, 6.87, 10.08, 3.68, 4.75, 8.58, 8.43 };
-	std::array<double, 7> bsp2 = { 102.3, 15.53, 9.60, 159.3, 8.12, 13.97, 8.19 };
-	std::array<double, 7> xsp1 =
+	constexpr std::array<double, 7> bsp1 = { 2.11, 6.87, 10.08, 3.68, 4.75, 8.58, 8.43 };
+	constexpr std::array<double, 7> bsp2 = { 102.3, 15.53, 9.60, 159.3, 8.12, 13.97, 8.19 };
+	constexpr std::array<double, 7> xsp1 =
 	    { 636.9e3, 138.7e3, 165.3e3, 464.4e3, 93.2e3, 216.0e3, 136.2e3 };
-	std::array<double, 7> xsp2 =
+	constexpr std::array<double, 7> xsp2 =
 	    { 134.8e3, 143.7e3, 225.7e3, 93.1e3, 135.9e3, 152.0e3, 188.5e3 };
-	std::array<double, 7> xsp3 =
+	constexpr std::array<double, 7> xsp3 =
 	    { 95.6e3, 98.6e3, 129.7e3, 94.2e3, 113.4e3, 122.7e3, 122.9e3 };
-	std::array<double, 7> bsd1 = { 1.224, 0.801, 1.380, 1.000, 1.224, 1.518, 1.518 };
-	std::array<double, 7> bzd1 = { 1.282, 2.161, 1.282, 20., 1.282, 1.282, 1.282 };
-	std::array<double, 7> bfm1 = { 1.0, 1.0, 1.0, 1.0, 0.92, 1.0, 1.0 };
-	std::array<double, 7> bfm2 = { 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0 };
-	std::array<double, 7> bfm3 = { 0.0, 0.0, 0.0, 0.0, 1.77, 0.0, 0.0 };
-	std::array<double, 7> bfp1 = { 1.0, 0.93, 1.0, 0.93, 0.93, 1.0, 1.0 };
-	std::array<double, 7> bfp2 = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
-	std::array<double, 7> bfp3 = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
+	constexpr std::array<double, 7> bsd1 = { 1.224, 0.801, 1.380, 1.000, 1.224, 1.518, 1.518 };
+	constexpr std::array<double, 7> bzd1 = { 1.282, 2.161, 1.282, 20., 1.282, 1.282, 1.282 };
+	constexpr std::array<double, 7> bfm1 = { 1.0, 1.0, 1.0, 1.0, 0.92, 1.0, 1.0 };
+	constexpr std::array<double, 7> bfm2 = { 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0 };
+	constexpr std::array<double, 7> bfm3 = { 0.0, 0.0, 0.0, 0.0, 1.77, 0.0, 0.0 };
+	constexpr std::array<double, 7> bfp1 = { 1.0, 0.93, 1.0, 0.93, 0.93, 1.0, 1.0 };
+	constexpr std::array<double, 7> bfp2 = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
+	constexpr std::array<double, 7> bfp3 = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
 	static thread_local bool ws = false;
 	static thread_local bool w1 = false;
 	const double rt = 7.8;
@@ -1762,10 +1763,12 @@ void hzns(double pfl[], prop_type & prop)
 		/* Used only with ITM 1.2.2 */
 		bool wq = true;
 
-		for (int i = 1; i < np; i++) {
+		for( const auto& pfl_i : std::span(&pfl[3], np)) {
+		//for (int i = 1; i < np; i++) {
 			sa += xi;
 			sb -= xi;
-			q = pfl[i + 2] - (qc * sa + prop.the[0]) * sa - za;
+			//q = pfl[i + 2] - (qc * sa + prop.the[0]) * sa - za;
+			q = pfl_i - std::fma(qc, sa, prop.the[0]) * sa - za;
 
 			if (q > 0.0) {
 				prop.the[0] += q / sa;
@@ -1774,7 +1777,8 @@ void hzns(double pfl[], prop_type & prop)
 			}
 
 			if (!wq) {
-				q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
+				//q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
+				q = pfl_i - std::fma(qc, sb, prop.the[1]) * sb - zb;
 
 				if (q > 0.0) {
 					prop.the[1] += q / sb;
@@ -1868,8 +1872,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 	prop.rph = pfl[rp];
 }
 
-void z1sq1(double z[], const double &x1, const double &x2, double &z0,
-	   double &zn)
+void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &zn)
 {
 	/* Used only with ITM 1.2.2 */
 	const double xn = z[0];
@@ -1883,7 +1886,6 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0,
 
 	int ja = static_cast<int>(xa);
 	const int jb = static_cast<int>(xb);
-	const int n = jb - ja;
 	xa = xb - xa;
 	double x = -0.5 * xa;
 	xb += x;
@@ -1891,11 +1893,13 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0,
 	double a = 0.5 * (z[ja + 2] + z[jb + 2]);
 	double b = 0.5 * (z[ja + 2] - z[jb + 2]) * x;
 
-	for (int i = 2; i <= n; ++i) {
-		++ja;
+	// n = jb - ja
+	// for(int i = 2; i <= n ; ++i) {}
+	// ja; ja <= jb-2; ++ja
+	for (; ja <= jb-2; ++ja) {
 		x += 1.0;
 		a += z[ja + 2];
-		b += z[ja + 2] * x;
+		b = std::fma(z[ja + 2], x, b);
 	}
 
 	a /= xa;
@@ -1960,11 +1964,12 @@ auto qtile(const int &nn, double a[], const int &ir) -> double
 		}
 
 		// TODO: convert to std algos
-		// find the index into a[] of the first value >= q
+		// find the index into a[] of the first value < q in the index range [i0, n]
 		for(i = i0; i <= n && a[i] >= q; ++i) {}
 
 		i = std::min(i, n);
 
+		// find the index into a[] of the LAST value > q in the index range [j1, m]
 		for(j = j1; j >= m && a[j] <= q; --j) {}
 
 		j = std::max(j, m);
@@ -2042,7 +2047,7 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 	const int n = 10 * ka - 5;
 	const int kb = n - ka + 1;
 	const double sn = n - 1;
-	double* s = new double[n + 2];
+	auto s = std::make_unique<double[]>(n + 2);
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;
@@ -2056,20 +2061,19 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 		}
 
 		s[j + 2] = pfl[k + 2] + (pfl[k + 2] - pfl[k + 1]) * xa;
-		xa = xa + xb;
+		xa += xb;
 	}
 
-	z1sq1(s, 0.0, sn, xa, xb);
+	z1sq1(s.get(), 0.0, sn, xa, xb);
 	xb = (xb - xa) / sn;
 
 	for (int j = 0; j < n; j++) {
 		s[j + 2] -= xa;
-		xa = xa + xb;
+		xa += xb;
 	}
 
-	d1thxv = qtile(n - 1, s + 2, ka - 1) - qtile(n - 1, s + 2, kb - 1);
+	d1thxv = qtile(n - 1, s.get() + 2, ka - 1) - qtile(n - 1, s.get() + 2, kb - 1);
 	d1thxv /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
-	delete[]s;
 
 	return d1thxv;
 }
@@ -2767,13 +2771,12 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 //* Area Mode Calculations                               *
 //********************************************************
 
-void area(long ModVar, double deltaH, double tht_m, double rht_m,
+auto area(long ModVar, double deltaH, double tht_m, double rht_m,
 	  double dist_km, int TSiteCriteria, int RSiteCriteria,
 	  double eps_dielect, double sgm_conductivity, double eno_ns_surfref,
 	  double enc_ncc_clcref, double clutter_height, double clutter_density,
 	  double delta_h_diff, double frq_mhz, int radio_climate, int pol,
-	  int mode_var, double pctTime, double pctLoc, double pctConf,
-	  double &dbloss, int &errnum)
+	  double pctTime, double pctLoc, double pctConf) -> double
 {
 	// pol: 0-Horizontal, 1-Vertical
 	// TSiteCriteria, RSiteCriteria:
@@ -2787,7 +2790,7 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	//         2 - Mobile: pctTime is "Time/Locations (Reliability)", pctConf is "Confidence", pctLoc not used
 	//         3 - Broadcast: pctTime is "Time", pctLoc is "Location", pctConf is "Confidence"
 	// pctTime, pctLoc, pctConf: .01 to .99
-	// errnum: 0- No Error.
+	// throws: 0- No Error.
 	//         1- Warning: Some parameters are nearly out of range.
 	//                     Results should be used with caution.
 	//         2- Note: Default parameters have been substituted for impossible ones.
@@ -2810,7 +2813,7 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	prop.dh = deltaH;
 	prop.hg[0] = tht_m;
 	prop.hg[1] = rht_m;
-	propv.klim = static_cast<long>(radio_climate);
+	propv.klim = radio_climate;
 	prop.encc = enc_ncc_clcref;
 	prop.cch = clutter_height;
 	prop.cd = clutter_density;
@@ -2828,14 +2831,8 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 
 	lrprop2(dist_km * 1000.0, prop, propa);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
-	const double xlb = fs + avar(zt, zl, zc, prop, propv);
-	dbloss = xlb;
-	if (prop.kwx == 0) {
-		errnum = 0;
-	}
-	else {
-		errnum = prop.kwx;
-	}
+	// TODO: do we want to throw this? errnum = prop.kwx;
+	return fs + avar(zt, zl, zc, prop, propv);
 }
 
 auto ITMAreadBLoss(long ModVar, double deltaH, double tht_m, double rht_m,
@@ -2844,17 +2841,13 @@ auto ITMAreadBLoss(long ModVar, double deltaH, double tht_m, double rht_m,
 		     double eno_ns_surfref, double enc_ncc_clcref,
 		     double clutter_height, double clutter_density,
 		     double delta_h_diff, double frq_mhz, int radio_climate,
-		     int pol, int mode_var, double pctTime, double pctLoc,
+		     int pol, double pctTime, double pctLoc,
 		     double pctConf) -> double
 {
-	int errnum = 0;
-	double dbloss = NAN;
-	area(ModVar, deltaH, tht_m, rht_m, dist_km, TSiteCriteria,
+	return area(ModVar, deltaH, tht_m, rht_m, dist_km, TSiteCriteria,
 	     RSiteCriteria, eps_dielect, sgm_conductivity, eno_ns_surfref,
 	     enc_ncc_clcref, clutter_height, clutter_density, delta_h_diff,
-	     frq_mhz, radio_climate, pol, mode_var, pctTime, pctLoc, pctConf,
-	     dbloss, errnum);
-	return dbloss;
+	     frq_mhz, radio_climate, pol, pctTime, pctLoc, pctConf);
 }
 
 constexpr auto ITWOMVersion() -> double
