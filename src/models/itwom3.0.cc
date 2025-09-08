@@ -1945,62 +1945,16 @@ void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &z
 	zn = a + (b * (xn - xb));
 }
 
-auto qtile(const int &nn, double a[], const int &ir) -> double
+/**
+ * QTile
+ * return the i'th entry of the array after sorting
+ * nn is the size of the array
+ */
+auto qtile(std::span<double>a, const int &ir) -> double
 {
-	double q = 0.0;	/* q initialization -- KD2BD */
-	int i, j, j1 = 0, i0 = 0;	/* more initializations -- KD2BD */
-	bool done = false;
-	bool goto10 = true;
-
-	int m = 0;
-	int n = nn;
-	const int k = std::clamp(ir, 0, n);
-
-	while (!done) {
-		if (goto10) {
-			q = a[k];
-			i0 = m;
-			j1 = n;
-		}
-
-		// TODO: convert to std algos
-		// find the index into a[] of the first value < q in the index range [i0, n]
-		for(i = i0; i <= n && a[i] >= q; ++i) {}
-
-		i = std::min(i, n);
-
-		// find the index into a[] of the LAST value > q in the index range [j1, m]
-		for(j = j1; j >= m && a[j] <= q; --j) {}
-
-		j = std::max(j, m);
-
-		if (i < j) {
-			std::swap(a[i], a[j]);
-			i0 = i + 1;
-			j1 = j - 1;
-			goto10 = false;
-		}
-
-		else if (i < k) {
-			a[k] = a[i];
-			a[i] = q;
-			m = i + 1;
-			goto10 = true;
-		}
-
-		else if (j > k) {
-			a[k] = a[j];
-			a[j] = q;
-			n = j - 1;
-			goto10 = true;
-		}
-
-		else {
-			done = true;
-		}
-	}
-
-	return q;
+	std::ranges::sort(a, std::greater<>());
+	const int k = std::clamp(ir, 0, static_cast<int>(a.size()-1));
+	return a[k];
 }
 
 auto qerf(const double &z) -> double
@@ -2072,7 +2026,7 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 		xa += xb;
 	}
 
-	d1thxv = qtile(n - 1, s.get() + 2, ka - 1) - qtile(n - 1, s.get() + 2, kb - 1);
+	d1thxv = qtile(std::span(s.get() + 2, n-1), ka - 1) - qtile(std::span(s.get() + 2, n-1), kb - 1);
 	d1thxv /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
 
 	return d1thxv;
@@ -2119,7 +2073,7 @@ auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
 		xa = xa + xb;
 	}
 
-	d1thx2v = qtile(n - 1, s + 2, ka - 1) - qtile(n - 1, s + 2, kb - 1);
+	d1thx2v = qtile(std::span(s + 2, n-1), ka - 1) - qtile(std::span(s + 2, n-1), kb - 1);
 	d1thx2v /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
 	delete[]s;
 	return d1thx2v;
