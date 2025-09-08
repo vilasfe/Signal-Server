@@ -273,16 +273,20 @@ auto Azimuth(const struct site_t& source, const struct site_t& destination) -> d
 	const double src_lat = source.lat * DEG2RAD;
 	const double src_lon = source.lon * DEG2RAD;
 
+	const double sin_src_lat = std::sin(src_lat);
+	const double cos_src_lat = std::cos(src_lat);
+	const double sin_dest_lat = std::sin(dest_lat);
+
 	/* Calculate Surface Distance */
 
 	const double beta =
-	    std::acos(std::sin(src_lat) * std::sin(dest_lat) +
-		 std::cos(src_lat) * std::cos(dest_lat) * std::cos(src_lon - dest_lon));
+	    std::acos(sin_src_lat * sin_dest_lat +
+		 cos_src_lat * std::cos(dest_lat) * std::cos(src_lon - dest_lon));
 
 	/* Calculate Azimuth */
 
-	const double num = std::sin(dest_lat) - (std::sin(src_lat) * std::cos(beta));
-	const double den = std::cos(src_lat) * std::sin(beta);
+	const double num = sin_dest_lat - (sin_src_lat * std::cos(beta));
+	const double den = cos_src_lat * std::sin(beta);
 	/* Trap potential problems in acos() due to rounding */
 	const double fraction = std::clamp(num / den, -1.0, 1.0);
 
