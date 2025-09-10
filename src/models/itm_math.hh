@@ -15,6 +15,23 @@ namespace itm_math {
         return normalCCDF(z);
     }
 
+    // Returns the attenuation due to a single knife edge - the Fresnel integral (in decibels,
+    // Eqn 4.21 of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm" – see also
+    // Eqn 6.1) evaluated for nu equal to the square root of the input argument.
+    constexpr auto aknfe(double v2) -> double
+    {
+        // Trap for 0 value
+        if (v2 <= 0) {
+            v2 = 0.00001;
+        }
+
+        if (v2 < 5.76) {
+            return 6.02 + 9.11 * std::sqrt(v2) - 1.27 * v2;
+        }
+
+        return 12.953 + 10 * std::log10(v2);
+    }
+
     // Routine for computing the H01 "frequency gain" function described in
     // Eqn (6.13) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm"
     // and used in computing troposcatter attenuation.

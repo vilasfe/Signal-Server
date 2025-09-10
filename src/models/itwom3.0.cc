@@ -115,16 +115,6 @@ struct propa_type {
 	double tha;
 };
 
-constexpr auto aknfe(const double &v2) -> double
-{
-
-	if (v2 < 5.76) {
-		return 6.02 + 9.11 * std::sqrt(v2) - 1.27 * v2;
-	}
-
-	return 12.953 + 10 * std::log10(v2);
-}
-
 constexpr auto fht(const double &x, const double &pk) -> double
 {
 	double fhtv = 0.0;
@@ -392,8 +382,8 @@ auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 		/* q=0.0795775*prop.wn*ds*pow(th,2.0); */
 		q = 0.0795775 * prop.wn * ds * th * th;
 		adiffv =
-		    aknfe(q * prop.dl[0] / (ds + prop.dl[0])) +
-		    aknfe(q * prop.dl[1] / (ds + prop.dl[1]));
+		    itm_math::aknfe(q * prop.dl[0] / (ds + prop.dl[0])) +
+		    itm_math::aknfe(q * prop.dl[1] / (ds + prop.dl[1]));
 		const double a = ds / th;
 		const double wa = std::cbrt(a * prop.wn);
 		const double pk = qk / wa;
@@ -569,19 +559,19 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 					if (prop.hht < 3400) {	/* if below tree line, foliage top loss */
 						vv = q * std::abs(dto1 + dhh1 - dtro);
 						adiffv2 =
-						    -18.0 + sf2 * aknfe(vv);
+						    -18.0 + sf2 * itm_math::aknfe(vv);
 					} else {
 						vv = q * std::abs(dto1 + dhh1 - dtro);
-						adiffv2 = aknfe(vv);
+						adiffv2 = itm_math::aknfe(vv);
 					}
 
 					if (prop.hhr < 3400) {
 						vv = q * std::abs(dro2 + dhh2 - drto);
 						adiffv2 +=
-						    (-18.0 + sf2 * aknfe(vv));
+						    (-18.0 + sf2 * itm_math::aknfe(vv));
 					} else {
 						vv = q * std::abs(dro2 + dhh2 - drto);
-						adiffv2 += aknfe(vv);
+						adiffv2 += itm_math::aknfe(vv);
 					}
 					/* finally, add clutter loss */
 					closs = saalos(rd, prop);
@@ -594,10 +584,10 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 					if (prop.hht < 3400) {
 						vv = q * std::abs(dto1 + dhh1 - dtro);
 						adiffv2 =
-						    -18.0 + sf2 * aknfe(vv);
+						    -18.0 + sf2 * itm_math::aknfe(vv);
 					} else {
 						vv = q * std::abs(dto1 + dhh1 - dtro);
-						adiffv2 = aknfe(vv);
+						adiffv2 = itm_math::aknfe(vv);
 					}
 
 					/* weighted calc. of knife vs rounded edge 
@@ -614,7 +604,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 							vv = 0.6365 * prop.wn *
 							    std::abs(dro2 + dhh2 - drto);
 						}
-						adiffv2 += aknfe(vv);
+						adiffv2 += itm_math::aknfe(vv);
 						closs = saalos(rd, prop);
 						adiffv2 += std::min(closs, 22.0);
 					} else {	/* rcvr very close to bare cliff or skyscraper */
@@ -625,7 +615,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 			} else {	/* receive site is atop a 2nd peak */
 
 				vv = 0.6365 * prop.wn * std::abs(dto + dro - dtr);
-				adiffv2 = 5.8 + aknfe(vv);
+				adiffv2 = 5.8 + itm_math::aknfe(vv);
 			}
 		} else {	/* for single obstacle */
 
@@ -642,7 +632,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						    0.159155 * prop.wn *
 						    std::abs(dto + dro - dtr);
 						arp = std::abs(kedr - (static_cast<int>(kedr)));
-						kem = aknfe(vv);
+						kem = itm_math::aknfe(vv);
 						kem = std::pow(10, (-kem / 20));
 						/* scatter path phase with respect to direct t-r line */
 						sdr =
@@ -666,9 +656,9 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						}
 						/*csd=std::max(csd,0.0009); limits maximum loss value to 30.45 db */
 						adiffv2 =
-						    -3.71 - 10 * log10(csd);
+						    -3.71 - 10 * std::log10(csd);
 					} else {
-						adiffv2 = aknfe(vv);
+						adiffv2 = itm_math::aknfe(vv);
 					}
 					/* finally, add clutter loss */
 					closs = saalos(rd, prop);
@@ -684,7 +674,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 
 							vv = 0.6365 * prop.wn *
 							    std::abs(dto + dro - dtr);
-							adiffv2 = aknfe(vv);
+							adiffv2 = itm_math::aknfe(vv);
 						}
 						closs = saalos(rd, prop);
 						adiffv2 += std::min(22.0, closs);
