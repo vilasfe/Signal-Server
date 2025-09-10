@@ -46,6 +46,7 @@
 #include <cmath>
 #include <complex>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <numbers>
 #include <span>
@@ -123,7 +124,7 @@ constexpr auto aknfe(const double &v2) -> double
 	return 12.953 + 10 * std::log10(v2);
 }
 
-auto fht(const double &x, const double &pk) -> double
+constexpr auto fht(const double &x, const double &pk) -> double
 {
 	double fhtv = 0.0;
 
@@ -152,7 +153,7 @@ auto fht(const double &x, const double &pk) -> double
 	return fhtv;
 }
 
-auto h0f(double r, double et) -> double
+constexpr auto h0f(double r, double et) -> double
 {
 	constexpr std::array<double, 5> a = { 25.0, 80.0, 177.0, 395.0, 705.0 };
 	constexpr std::array<double, 5> b = { 24.0, 45.0, 68.0, 80.0, 105.0 };
@@ -186,7 +187,7 @@ auto h0f(double r, double et) -> double
 	return h0fv;
 }
 
-auto ahd(double td) -> double
+constexpr auto ahd(double td) -> double
 {
 	int i = 2;
 	constexpr std::array<double, 3> a = { 133.4, 104.6, 71.8 };
@@ -204,7 +205,7 @@ auto ahd(double td) -> double
 	return a[i] + b[i] * td + c[i] * std::log(td);
 }
 
-auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> double
+auto saalos(double d, prop_type & prop) -> double
 {
 	double saalosv = 0.0;
 
@@ -232,9 +233,9 @@ auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> 
 			double tic = 0.0;
 
 			for (int j = 0; j < 5; ++j) {
-				const double tde = dp / 6378137.0;
-				const double hc = (prop.cch + 6378137.0) * (1 - std::cos(tde));
-				const double dx = (prop.cch + 6378137.0) * std::sin(tde);
+				const double tde = dp / EARTHRADIUS_M;
+				const double hc = (prop.cch + EARTHRADIUS_M) * (1 - std::cos(tde));
+				const double dx = (prop.cch + EARTHRADIUS_M) * std::sin(tde);
 				const double ucrpc = std::hypot((hone - prop.cch + hc), dx);
 				const double ctip = (hone - prop.cch + hc) / ucrpc;
 				const double tip = std::acos(ctip);
@@ -249,7 +250,7 @@ auto saalos(double d, prop_type & prop, [[maybe_unused]] propa_type & propa) -> 
 				}
 
 				ssnps = HALFPI - tic;
-				d1a = (crpc * std::sin(ttc)) / (1 - 1 / 6378137.0);
+				d1a = (crpc * std::sin(ttc)) / (1 - 1 / EARTHRADIUS_M);
 				dp = pd - d1a;
 
 			}
@@ -616,7 +617,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						adiffv2 += aknfe(vv);
 					}
 					/* finally, add clutter loss */
-					closs = saalos(rd, prop, propa);
+					closs = saalos(rd, prop);
 					adiffv2 += std::min(22.0, closs);
 
 				} else {	/* rcvr site too close to 2nd obs */
@@ -647,7 +648,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 							    std::abs(dro2 + dhh2 - drto);
 						}
 						adiffv2 += aknfe(vv);
-						closs = saalos(rd, prop, propa);
+						closs = saalos(rd, prop);
 						adiffv2 += std::min(closs, 22.0);
 					} else {	/* rcvr very close to bare cliff or skyscraper */
 
@@ -703,7 +704,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 						adiffv2 = aknfe(vv);
 					}
 					/* finally, add clutter loss */
-					closs = saalos(rd, prop, propa);
+					closs = saalos(rd, prop);
 					adiffv2 += std::min(closs, 22.0);
 				} else {	/* receive grazing angle too high */
 
@@ -718,7 +719,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 							    std::abs(dto + dro - dtr);
 							adiffv2 = aknfe(vv);
 						}
-						closs = saalos(rd, prop, propa);
+						closs = saalos(rd, prop);
 						adiffv2 += std::min(22.0, closs);
 					} else {	/* receiver very close to bare cliff or skyscraper */
 
@@ -911,7 +912,6 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	double drh = 0.0;
 	/* int rp; */
-	double alosv = 0.0;
 
 	const double htg = prop.hg[0];
 	const double hrg = prop.hg[1];
@@ -934,13 +934,13 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 
 		if (dr < (0.5 * pd)) {
 			drh =
-				6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
-							6378137.0 * 6378137.0 +
+				EARTHRADIUS_M - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
+							EARTHRADIUS_M * EARTHRADIUS_M +
 							(0.5 * pd - dr) * (0.5 * pd - dr));
 		} else {
 			drh =
-				6378137.0 - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
-							6378137.0 * 6378137.0 +
+				EARTHRADIUS_M - std::sqrt(-(0.5 * pd) * (0.5 * pd) +
+							EARTHRADIUS_M * EARTHRADIUS_M +
 							(dr - 0.5 * pd) * (dr - 0.5 * pd));
 		}
 
@@ -978,24 +978,22 @@ auto alos2(double d, prop_type & prop, propa_type & propa) -> double
 	/* no longer valid complex conjugate removed
 		by removing minus sign from in front of sin function */
 	const double re = std::norm(std::complex < double >(std::cos(q), std::sin(q)) + r);
-	alosv = -10 * std::log10(re);
+	double alosv = -10 * std::log10(re);
 	prop.tgh = prop.hg[0];	/*tx above gnd hgt set to antenna height AGL */
 	prop.tsgh = prop.rch[0] - prop.hg[0];	/* tsgh set to tx site gl AMSL */
 
-	if ((prop.hg[1] < prop.cch) && (prop.thera < 0.785)
-		&& (prop.thenr < 0.785)) {
+	if ((prop.hg[1] < prop.cch) && (prop.thera < 0.785)	&& (prop.thenr < 0.785)) {
 		if (sps < 0.05) {
-			alosv += saalos(pd, prop, propa);
+			alosv += saalos(pd, prop);
 		} else {
-			alosv = saalos(pd, prop, propa);
+			alosv = saalos(pd, prop);
 		}
 	}
 
 	return std::min(22.0, alosv);
 }
 
-void qlra(const std::array<int, 2>& kst, int klimx, int mdvarx, prop_type & prop,
-	  propv_type & propv)
+void qlra(const std::array<int, 2>& kst, int klimx, int mdvarx, prop_type & prop, propv_type & propv)
 {
 	double q = 0.0;
 
@@ -1011,7 +1009,7 @@ void qlra(const std::array<int, 2>& kst, int klimx, int mdvarx, prop_type & prop
 			}
 
 			if (prop.hg[j] < 5.0) {
-				q *= std::sin(0.3141593 * prop.hg[j]);
+				q *= std::sin(0.1 * std::numbers::pi * prop.hg[j]);
 			}
 
 			prop.he[j] =
@@ -1381,8 +1379,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 							  ((d2 -
 							    d0) * std::log(d1 / d0) -
 							   (d1 - d0) * q));
-						wq = propa.aed >= 0.0
-						    || propa.ak2 > 0.0;
+						wq = propa.aed >= 0.0 || propa.ak2 > 0.0;
 
 						if (wq) {
 							propa.ak1 =
@@ -1508,7 +1505,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 	prop.aref = std::max(prop.aref, 0.0);
 }
 
-auto curve(double const &c1, double const &c2, double const &x1,
+constexpr auto curve(double const &c1, double const &c2, double const &x1,
 	     double const &x2, double const &x3, double const &de) -> double
 {
 	/* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
@@ -1789,7 +1786,7 @@ void hzns(double pfl[], prop_type & prop)
 	}
 }
 
-void hzns2(double pfl[], prop_type & prop, propa_type & propa)
+void hzns2(double pfl[], prop_type & prop)
 {
 	double dr = 0.0;
 
@@ -1872,7 +1869,7 @@ void hzns2(double pfl[], prop_type & prop, propa_type & propa)
 	prop.rph = pfl[rp];
 }
 
-void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &zn)
+constexpr void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &zn)
 {
 	/* Used only with ITM 1.2.2 */
 	const double xn = z[0];
@@ -1889,7 +1886,7 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &z
 	xa = xb - xa;
 	double x = -0.5 * xa;
 	xb += x;
-	
+
 	double a = 0.5 * (z[ja + 2] + z[jb + 2]);
 	double b = 0.5 * (z[ja + 2] - z[jb + 2]) * x;
 
@@ -1908,7 +1905,7 @@ void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &z
 	zn = a + b * (xn - xb);
 }
 
-void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
+constexpr void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
 {
 	/* corrected for use with ITWOM */
 
@@ -1945,44 +1942,13 @@ void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &z
 	zn = a + (b * (xn - xb));
 }
 
-/**
- * QTile
- * return the i'th entry of the array after sorting
- * nn is the size of the array
- */
-auto qtile(std::span<double>a, const int &ir) -> double
-{
-	std::ranges::sort(a, std::greater<>());
-	const int k = std::clamp(ir, 0, static_cast<int>(a.size()-1));
-	return a[k];
+// Function to calculate the standard normal complementary CDF
+constexpr auto normalCCDF(double value) -> double {
+	return 0.5 * std::erfc(value / std::numbers::sqrt2);
 }
 
-auto qerf(const double &z) -> double
-{
-	constexpr double b1 = 0.319381530;
-	constexpr double b2 = -0.356563782;
-	constexpr double b3 = 1.781477937;
-	constexpr double b4 = -1.821255987;
-	constexpr double b5 = 1.330274429;
-	constexpr double rp = 4.317008;
-	constexpr double rrt2pi = 0.398942280;
-	double qerfv = 0.0;
-
-	const double x = z;
-	double t = fabs(x);
-
-	if (t < 10.0) {
-		t = rp / (t + rp);
-		qerfv =
-		    std::exp(-0.5 * x * x) * rrt2pi *
-		    ((((b5 * t + b4) * t + b3) * t + b2) * t + b1) * t;
-	}
-
-	if (x < 0.0) {
-		qerfv = 1.0 - qerfv;
-	}
-
-	return qerfv;
+constexpr auto qerf(const double& z) -> double {
+	return 1 - normalCCDF(z);
 }
 
 auto d1thx(double pfl[], const double &x1, const double &x2) -> double
@@ -2026,7 +1992,10 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 		xa += xb;
 	}
 
-	d1thxv = qtile(std::span(s.get() + 2, n-1), ka - 1) - qtile(std::span(s.get() + 2, n-1), kb - 1);
+	// This was qtile, which really just returns the (clamped) i'th element of the sorted range
+	// So the sort was moved out here to reduce the number of calls to it
+	std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
+	d1thxv = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
 	d1thxv /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
 
 	return d1thxv;
@@ -2048,7 +2017,7 @@ auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
 	const int n = 10 * ka - 5;
 	const int kb = n - ka + 1;
 	const double sn = n - 1;
-	double* s = new double[n + 2];
+	auto s = std::make_unique<double[]>(n + 2);
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;
@@ -2065,7 +2034,7 @@ auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
 		xc = xc + xb;
 	}
 
-	z1sq2(s, 0.0, sn, xa, xb);
+	z1sq2(s.get(), 0.0, sn, xa, xb);
 	xb = (xb - xa) / sn;
 
 	for (int j = 0; j < n; j++) {
@@ -2073,9 +2042,10 @@ auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
 		xa = xa + xb;
 	}
 
-	d1thx2v = qtile(std::span(s + 2, n-1), ka - 1) - qtile(std::span(s + 2, n-1), kb - 1);
+
+	std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
+	d1thx2v = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
 	d1thx2v /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
-	delete[]s;
 	return d1thx2v;
 }
 
@@ -2168,7 +2138,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 
 	prop.dist = pfl[0] * pfl[1];
 	const int np = static_cast<int>(pfl[0]);
-	hzns2(pfl, prop, propa);
+	hzns2(pfl, prop);
 	const double dlb = prop.dl[0] + prop.dl[1];
 	prop.rch[0] = prop.hg[0] + pfl[2];
 	prop.rch[1] = prop.hg[1] + pfl[np + 2];

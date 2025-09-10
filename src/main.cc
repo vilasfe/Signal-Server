@@ -229,7 +229,7 @@ auto AddElevation(double lat, double lon, double height, int size) -> int
 	return 0;
 }
 
-auto dist(double lat1, double lon1, double lat2, double lon2) -> double
+constexpr auto dist(double lat1, double lon1, double lat2, double lon2) -> double
 {
 	//ENHANCED HAVERSINE FORMULA WITH RADIUS SLIDER
 	constexpr int polarRadius=6357;
@@ -245,72 +245,6 @@ auto dist(double lat1, double lon1, double lat2, double lon2) -> double
 	const double dx = std::cos(lon1) * std::cos(lat1) - std::cos(lat2);
 	const double dy = std::sin(lon1) * std::cos(lat1);
 	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * earthRadius;
-}
-
-auto Distance(const struct site_t& site1, const struct site_t& site2) -> double
-{
-	/* This function returns the great circle distance
-	   in miles between any two site locations. */
-
-	const double lat1 = site1.lat * DEG2RAD;
-	const double lon1 = site1.lon * DEG2RAD;
-	const double lat2 = site2.lat * DEG2RAD;
-	const double lon2 = site2.lon * DEG2RAD;
-
-	return
-	    3959.0 * std::acos(std::sin(lat1) * std::sin(lat2) +
-			  std::cos(lat1) * std::cos(lat2) * std::cos(lon1 - lon2));
-}
-
-auto Azimuth(const struct site_t& source, const struct site_t& destination) -> double
-{
-	/* This function returns the azimuth (in degrees) to the
-	   destination as seen from the location of the source. */
-
-	const double dest_lat = destination.lat * DEG2RAD;
-	const double dest_lon = destination.lon * DEG2RAD;
-
-	const double src_lat = source.lat * DEG2RAD;
-	const double src_lon = source.lon * DEG2RAD;
-
-	const double sin_src_lat = std::sin(src_lat);
-	const double cos_src_lat = std::cos(src_lat);
-	const double sin_dest_lat = std::sin(dest_lat);
-
-	/* Calculate Surface Distance */
-
-	const double beta =
-	    std::acos(sin_src_lat * sin_dest_lat +
-		 cos_src_lat * std::cos(dest_lat) * std::cos(src_lon - dest_lon));
-
-	/* Calculate Azimuth */
-
-	const double num = sin_dest_lat - (sin_src_lat * std::cos(beta));
-	const double den = cos_src_lat * std::sin(beta);
-	/* Trap potential problems in acos() due to rounding */
-	const double fraction = std::clamp(num / den, -1.0, 1.0);
-
-	/* Calculate azimuth */
-
-	double azimuth = std::acos(fraction);
-
-	/* Reference it to True North */
-
-	double diff = dest_lon - src_lon;
-
-	if (diff <= -std::numbers::pi) {
-		diff += TWOPI;
-	}
-
-	if (diff >= std::numbers::pi) {
-		diff -= TWOPI;
-	}
-
-	if (diff > 0.0) {
-		azimuth = TWOPI - azimuth;
-	}
-
-	return (azimuth * RAD2DEG);
 }
 
 auto ElevationAngle(const struct site_t& source, const struct site_t& destination) -> double
@@ -330,8 +264,7 @@ auto ElevationAngle(const struct site_t& source, const struct site_t& destinatio
 	/* Apply the Law of Cosines */
 
 	return ((180.0 *
-		 (acos(((b * b) + (dx * dx) - (a * a)) / (2.0 * b * dx))) /
-		 std::numbers::pi) - 90.0);
+		 (std::acos(((b * b) + (dx * dx) - (a * a)) / (2.0 * b * dx))) * std::numbers::inv_pi) - 90.0);
 }
 
 void ReadPath(const struct site_t& source, const struct site_t& destination)
@@ -580,7 +513,7 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 	double cos_tx_angle =
 	    ((h_r * h_r) + (d_tx * d_tx) - (h_t * h_t)) / (2.0 * h_r * d_tx);
 
-	if (f) {
+	if (f != 0.0) {
 		lambda = 9.8425e8 / (f * 1e6);
 	}
 
@@ -677,7 +610,7 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE 
 			     (h_t * h_t)) / (2.0 * h_r * d_tx);
 		}
 
-		if (f) {
+		if (f != 0.0) {
 			/* Now clear the first Fresnel zone... */
 
 			double cos_tx_angle_f1 =
@@ -1094,10 +1027,7 @@ auto main(int argc, char *argv[]) -> int
 			if (z <= y && argv[z][0] && argv[z][0] != '-') {
 				sscanf(argv[z], "%lf", &antenna_rotation);
 
-				if (antenna_rotation < 0.0)
-					antenna_rotation = 0.0;
-				if (antenna_rotation > 359.0)
-					antenna_rotation = 0.0;
+				antenna_rotation = std::clamp(antenna_rotation, 0.0, 359.0);
 			}
 		}
 
@@ -1106,10 +1036,8 @@ auto main(int argc, char *argv[]) -> int
 
 			if (z <= y && argv[z][0]) {	/* A minus argument is legal here */
 				sscanf(argv[z], "%lf", &antenna_downtilt);
-				if (antenna_downtilt < -10.0)
-					antenna_downtilt = -10.0;
-				if (antenna_downtilt > 90.0)
-					antenna_downtilt = 90.0;
+
+				antenna_downtilt = std::clamp(antenna_downtilt, -10.0, 90.0);
 			}
 		}
 
@@ -1119,10 +1047,7 @@ auto main(int argc, char *argv[]) -> int
 			if (z <= y && argv[z][0] && argv[z][0] != '-') {
 				sscanf(argv[z], "%lf", &antenna_dt_direction);
 
-				if (antenna_dt_direction < 0.0)
-					antenna_dt_direction = 0.0;
-				if (antenna_dt_direction > 359.0)
-					antenna_dt_direction = 0.0;
+				antenna_dt_direction = std::clamp(antenna_dt_direction, 0.0, 359.0);
 			}
 		}
 
@@ -1207,10 +1132,7 @@ auto main(int argc, char *argv[]) -> int
 		if (strcmp(argv[x], "-res") == 0) {
 			z = x + 1;
 
-			if (!lidar &&
-			    z <= y &&
-			    argv[z][0] &&
-			    argv[z][0] != '-') {
+			if (!lidar && z <= y && argv[z][0] && argv[z][0] != '-') {
 				sscanf(argv[z], "%d", &ippd);
 
 				switch (ippd) {
@@ -1612,11 +1534,9 @@ auto main(int argc, char *argv[]) -> int
 		const double rxlat = static_cast<int>(std::floor(tx_site[1].lat));
 		const double rxlon = static_cast<int>(std::floor(tx_site[1].lon));
 
-		if (rxlat < min_lat)
-			min_lat = rxlat;
+		min_lat = std::min(min_lat, rxlat);
 
-		if (rxlat > max_lat)
-			max_lat = rxlat;
+		max_lat = std::max(max_lat, rxlat);
 
 		if (LonDiff(rxlon, min_lon) < 0.0) {
 			min_lon = rxlon;
@@ -1715,11 +1635,8 @@ auto main(int argc, char *argv[]) -> int
 
 				/* Correct for squares in degrees not being square in miles */
 
-				if (deg_range > deg_limit)
-					deg_range = deg_limit;
-
-				if (deg_range_lon > deg_limit)
-					deg_range_lon = deg_limit;
+				deg_range = std::min(deg_range, deg_limit);
+				deg_range_lon = std::min(deg_range_lon, deg_limit);
 
 				double nortRxHin = static_cast<int>(std::floor(tx_site[z].lat - deg_range));
 				double nortRxHax = static_cast<int>(std::floor(tx_site[z].lat + deg_range));
@@ -1744,11 +1661,8 @@ auto main(int argc, char *argv[]) -> int
 					west_max -= 360;
 				}
 
-				if (nortRxHin < min_lat)
-					min_lat = nortRxHin;
-
-				if (nortRxHax > max_lat)
-					max_lat = nortRxHax;
+				min_lat = std::min(min_lat, nortRxHin);
+				max_lat = std::max(max_lat, nortRxHax);
 
 				if (LonDiff(west_min, min_lon) < 0.0) {
 					min_lon = west_min;
@@ -1865,7 +1779,7 @@ auto main(int argc, char *argv[]) -> int
 		}*/
 
 		if (tx_site[0].lon > 0.0) {
-		        tx_site[0].lon *= -1;
+			tx_site[0].lon *= -1;
 		}
 
 		if (tx_site[0].lon < -180.0) {
