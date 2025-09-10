@@ -154,40 +154,6 @@ constexpr auto fht(const double &x, const double &pk) -> double
 	return fhtv;
 }
 
-constexpr auto h0f(double r, double et) -> double
-{
-	constexpr std::array<double, 5> a = { 25.0, 80.0, 177.0, 395.0, 705.0 };
-	constexpr std::array<double, 5> b = { 24.0, 45.0, 68.0, 80.0, 105.0 };
-	double q = 0.0;
-	int it = static_cast<int>(et);
-
-	if (it <= 0) {
-		it = 1;
-	}
-
-	else if (it >= 5) {
-		it = 5;
-	}
-
-	else {
-		q = et - it;
-	}
-
-	/* x=pow(1.0/r,2.0); */
-
-	const double temp = 1.0 / r;
-	const double x = temp * temp;
-
-	double h0fv = 4.343 * std::log((a[it - 1] * x + b[it - 1]) * x + 1.0);
-
-	if (q != 0.0) {
-		h0fv =
-		    (1.0 - q) * h0fv + q * 4.343 * std::log((a[it] * x + b[it]) * x + 1.0);
-	}
-
-	return h0fv;
-}
-
 constexpr auto ahd(double td) -> double
 {
 	int i = 2;
@@ -782,7 +748,7 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 			const double et = (etq * std::exp(-temp) + 1.0) * z0 / 1.7556e3;
 
 			const double ett = std::max(et, 1.0);
-			h0 = (h0f(r1, ett) + h0f(r2, ett)) * 0.5;
+			h0 = (itm_math::h0f(r1, ett) + itm_math::h0f(r2, ett)) * 0.5;
 			h0 +=
 			    std::min(h0,
 				  (1.38 - std::log(ett)) * std::log(ss) * std::log(q) * 0.49);
