@@ -115,24 +115,6 @@ struct propa_type {
 	double tha;
 };
 
-constexpr auto ahd(double td) -> double
-{
-	int i = 2;
-	constexpr std::array<double, 3> a = { 133.4, 104.6, 71.8 };
-	constexpr std::array<double, 3> b = { 0.332e-3, 0.212e-3, 0.157e-3 };
-	constexpr std::array<double, 3> c = { -4.343, -1.086, 2.171 };
-
-	if (td <= 10e3) {
-		i = 0;
-	}
-
-	else if (td <= 70e3) {
-		i = 1;
-	}
-
-	return a[i] + b[i] * td + c[i] * std::log(td);
-}
-
 auto saalos(double d, prop_type & prop) -> double
 {
 	double saalosv = 0.0;
@@ -737,7 +719,7 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 		const double th = propa.tha + d * prop.gme;
 		/* ascatv=ahd(th*d)+4.343*log(47.7*prop.wn*pow(th,4.0))-0.1*(prop.ens-301.0)*exp(-th*d/40e3)+h0; */
 		ascatv =
-		    ahd(th * d) +
+		    itm_math::ahd(th * d) +
 		    4.343 * std::log(47.7 * prop.wn * (th * th * th * th)) -
 		    0.1 * (prop.ens - 301.0) * std::exp(-th * d / 40e3) + h0;
 	}

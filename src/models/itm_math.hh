@@ -65,6 +65,29 @@ namespace itm_math {
         return fhtv;
     }
 
+    // Returns the function F0(D) (Eqn 6.9 of "The ITS Irregular Terrain Model, version 1.2.2:
+    // The Algorithm") used in the computation of tropospheric scatter attenuation,
+    // with the input D in meters.
+    // The inputs and expected answer are based on an original test for Longley-Rice between
+    // for Crystal Palace (South London) to Mursley, England (See Stark, 1967).
+    constexpr auto ahd(double td) -> double
+    {
+        int i = 2;
+        constexpr std::array<double, 3> a = { 133.4, 104.6, 71.8 };
+        constexpr std::array<double, 3> b = { 0.332e-3, 0.212e-3, 0.157e-3 };
+        constexpr std::array<double, 3> c = { -4.343, -1.086, 2.171 };
+
+        if (td <= 10e3) {
+            i = 0;
+        }
+
+        else if (td <= 70e3) {
+            i = 1;
+        }
+
+        return a[i] + b[i] * td + c[i] * std::log(td);
+    }
+
     // Routine for computing the H01 "frequency gain" function described in
     // Eqn (6.13) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm"
     // and used in computing troposcatter attenuation.
