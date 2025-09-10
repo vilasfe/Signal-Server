@@ -17,6 +17,16 @@ namespace {
         EXPECT_NEAR(itm_math::aknfe(6), 20.73, 0.01);
     }
 
+    TEST(TestFHT, FHT) {
+        constexpr double x = 372.8075813962142;
+        constexpr double pk = 0.0015012964882592428;
+
+        //EXPECT_DOUBLE_EQ(itm_math::fht(x, pk), -11.915375775262177);
+        EXPECT_NEAR(itm_math::fht(x, pk), -11.915375775262177, 0.001);
+        EXPECT_NEAR(itm_math::fht(150, 20), 11.05, 0.01);
+        EXPECT_NEAR(itm_math::fht(150, 1e-6), -29.96, 0.01);
+    }
+
     TEST(TestH0F, H0F) {
         // test via area prediction mode
         constexpr double r = 0.4727387221558643;

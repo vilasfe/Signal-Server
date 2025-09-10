@@ -115,35 +115,6 @@ struct propa_type {
 	double tha;
 };
 
-constexpr auto fht(const double &x, const double &pk) -> double
-{
-	double fhtv = 0.0;
-
-	if (x < 200.0) {
-		const double w = -std::log(pk);
-
-		if (pk < 1.0e-5 || x * w * w * w > 5495.0) {
-			fhtv = -117.0;
-
-			if (x > 1.0) {
-				fhtv = 40.0 * std::log10(x) + fhtv;
-			}
-		} else {
-			fhtv = 2.5e-5 * x * x / pk - 8.686 * w - 15.0;
-		}
-	}
-
-	else {
-		fhtv = 0.05751 * x - 10.0 * std::log10(x);
-
-		if (x < 2000.0) {
-			const double w = 0.0134 * x * std::exp(-0.005 * x);
-			fhtv = (1.0 - w) * fhtv + w * (40.0 * std::log10(x) - 117.0);
-		}
-	}
-	return fhtv;
-}
-
 constexpr auto ahd(double td) -> double
 {
 	int i = 2;
@@ -370,7 +341,7 @@ auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 			const double pk = qk / wa;
 			q = (1.607 - pk) * 151.0 * wa * prop.dl[j] / a;
 			xht += q;
-			aht += fht(q, pk);
+			aht += itm_math::fht(q, pk);
 		}
 
 		adiffv = 0.0;
@@ -466,7 +437,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 		double pk = qk / wa;
 		q = (1.607 - pk) * 151.0 * wa * prop.dl[0] / a;
 		xht = q;
-		aht += fht(q, pk);
+		aht += itm_math::fht(q, pk);
 
 		if ((static_cast<int>(prop.dl[1]) == 0.0)||(prop.the[1] > 0.2)) {
 			xht += xht;
@@ -479,7 +450,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 			pk = qk / wa;
 			q = (1.607 - pk) * 151.0 * wa * prop.dl[1] / a;
 			xht += q;
-			aht += fht(q, pk);
+			aht += itm_math::fht(q, pk);
 		}
 		adiffv2 = 0.0;
 	}

@@ -32,6 +32,39 @@ namespace itm_math {
         return 12.953 + 10 * std::log10(v2);
     }
 
+    // Supporting function for the height gain in the "three radii method" used
+    // in the computation of diffractive attenuation, as described in equations (4.20) and
+    // (6.2)-(6.7) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm" with
+    // inputs corresponding to the "x" and "K" parameters of these equations.
+    constexpr auto fht(const double &x, const double &pk) -> double
+    {
+        double fhtv = 0.0;
+
+        if (x < 200.0) {
+            const double w = -std::log(pk);
+
+            if (pk < 1.0e-5 || x * w * w * w > 5495.0) {
+                fhtv = -117.0;
+
+                if (x > 1.0) {
+                    fhtv = 40.0 * std::log10(x) + fhtv;
+                }
+            } else {
+                fhtv = 2.5e-5 * x * x / pk - 8.686 * w - 15.0;
+            }
+        }
+
+        else {
+            fhtv = 0.05751 * x - 10.0 * std::log10(x);
+
+            if (x < 2000.0) {
+                const double w = 0.0134 * x * std::exp(-0.005 * x);
+                fhtv = (1.0 - w) * fhtv + w * (40.0 * std::log10(x) - 117.0);
+            }
+        }
+        return fhtv;
+    }
+
     // Routine for computing the H01 "frequency gain" function described in
     // Eqn (6.13) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm"
     // and used in computing troposcatter attenuation.
