@@ -53,6 +53,7 @@
 #include <string>
 
 #include "../common.h"
+#include "itm_math.hh"
 #include "itwom3.0.hh"
 
 static constexpr double THIRD = 1.0/3.0;
@@ -1940,15 +1941,6 @@ constexpr void z1sq2(double z[], const double &x1, const double &x2, double &z0,
 	b = b / bn;
 	z0 = a - (b * xb);
 	zn = a + (b * (xn - xb));
-}
-
-// Function to calculate the standard normal complementary CDF
-constexpr auto normalCCDF(double value) -> double {
-	return 0.5 * std::erfc(value / std::numbers::sqrt2);
-}
-
-constexpr auto qerf(const double& z) -> double {
-	return 1 - normalCCDF(z);
 }
 
 auto d1thx(double pfl[], const double &x1, const double &x2) -> double

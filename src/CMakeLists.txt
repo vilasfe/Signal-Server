@@ -79,3 +79,20 @@ endif()
 ## TODO: Create links to signalserverHD and signalserverLIDAR
 
 ## TODO: Add Tests
+add_executable(gtestmodels)
+
+target_sources(gtestmodels
+    PRIVATE
+        models/gtest_itwom.cc
+)
+
+target_link_libraries(gtestmodels PUBLIC
+    libsignalserver
+    GTest::gtest
+    GTest::gtest_main
+)
+
+add_test(NAME models_test COMMAND gtestmodels)
+
+#include(GoogleTest)
+#gtest_discover_tests(gtestmodels)
