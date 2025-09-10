@@ -33,6 +33,14 @@ namespace {
         EXPECT_NEAR(itm_math::ahd(td), 97.7575, 1e-4);
     }
 
+    TEST(TestCURVE, CURVE) {
+        EXPECT_DOUBLE_EQ(itm_math::curve(
+            -0.62, 9.19,
+            228900.0, 205200.0,
+            143600.0, 59097.60805391026
+        ), 0.24344472623622865);
+    }
+
     TEST(TestH0F, H0F) {
         // test via area prediction mode
         constexpr double r = 0.4727387221558643;

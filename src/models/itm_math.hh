@@ -88,6 +88,22 @@ namespace itm_math {
         return a[i] + b[i] * td + c[i] * std::log(td);
     }
 
+    // Tests the empirical curve fitting used in the computation of the Vmd, sigma_T-, and
+    // sigma_T+ for estimating time variability effects as a function of the climatic region,
+    // as described in equations (5.5) through (5.7) of of "The ITS Irregular Terrain Model,
+    // version 1.2.2: The Algorithm" and as captured in Figure 10.13 of NBS Technical Note 101.
+    constexpr auto curve(double const &c1, double const &c2, double const &x1,
+                         double const &x2, double const &x3, double const &de) -> double
+    {
+        /* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
+        const double temp1 = (de - x2) / x3;
+        double temp2 = de / x1;
+
+        temp2 *= temp2;
+
+        return (c1 + c2 / (1.0 + temp1 * temp1)) * temp2 / (1.0 + temp2);
+    }
+
     // Routine for computing the H01 "frequency gain" function described in
     // Eqn (6.13) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm"
     // and used in computing troposcatter attenuation.

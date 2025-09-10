@@ -1415,18 +1415,6 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 	prop.aref = std::max(prop.aref, 0.0);
 }
 
-constexpr auto curve(double const &c1, double const &c2, double const &x1,
-	     double const &x2, double const &x3, double const &de) -> double
-{
-	/* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
-	const double temp1 = (de - x2) / x3;
-	double temp2 = de / x1;
-
-	temp2 *= temp2;
-
-	return (c1 + c2 / (1.0 + temp1 * temp1)) * temp2 / (1.0 + temp2);
-}
-
 auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	    propv_type & propv) -> double
 {
@@ -1550,9 +1538,9 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 			}
 		}
 
-		vmd = curve(cv1, cv2, yv1, yv2, yv3, de);
-		sgtm = curve(csm1, csm2, ysm1, ysm2, ysm3, de) * gm;
-		sgtp = curve(csp1, csp2, ysp1, ysp2, ysp3, de) * gp;
+		vmd = itm_math::curve(cv1, cv2, yv1, yv2, yv3, de);
+		sgtm = itm_math::curve(csm1, csm2, ysm1, ysm2, ysm3, de) * gm;
+		sgtp = itm_math::curve(csp1, csp2, ysp1, ysp2, ysp3, de) * gp;
 		sgtd = sgtp * csd1;
 		tgtd = (sgtp - sgtd) * zd;
 
