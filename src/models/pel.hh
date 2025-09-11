@@ -14,8 +14,8 @@
  *  for more details.							     *
  *									     */
 
-#ifndef _PEL_HH_
-#define _PEL_HH_
+#ifndef PEL_HH_
+#define PEL_HH_
 
 #include <cmath>
 
@@ -29,4 +29,4 @@ constexpr auto PlaneEarthLoss(float d, float TxH, float RxH) -> double {
     return 40*std::log10(d) + 20*std::log10(TxH) + 20*std::log10(RxH);
 }
 
-#endif /* _PEL_HH_ */
+#endif /* PEL_HH_ */

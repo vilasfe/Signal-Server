@@ -17,8 +17,8 @@
  * Terrain permittivity: 1 - 15 (Bad to Good)
  */
 
-#ifndef _SOIL_HH_
-#define _SOIL_HH_
+#ifndef SOIL_HH_
+#define SOIL_HH_
 
 #include "../common.h"
 
@@ -28,4 +28,4 @@ constexpr auto SoilPathLoss(float f, float d, float terdic) -> double
     return(6.4 + _20log10(d) + _20log10(f)+(8.69*soil));
 }
 
-#endif /* _SOIL_HH_ */
+#endif /* SOIL_HH_ */

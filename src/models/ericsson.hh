@@ -1,6 +1,6 @@
-#ifndef _ERICSSON_HH_
-#define _ERICSSON_HH_
+#ifndef ERICSSON_HH_
+#define ERICSSON_HH_
 
-double EricssonpathLoss(float f, float TxH, float RxH, float d, int mode);
+auto EricssonpathLoss(float f, float TxH, float RxH, float d, int mode) -> double;
 
-#endif /* _ERICSSON_HH_ */
+#endif /* ERICSSON_HH_ */

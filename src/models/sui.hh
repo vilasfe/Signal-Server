@@ -1,6 +1,6 @@
-#ifndef _SUI_HH_
-#define _SUI_HH_
+#ifndef SUI_HH_
+#define SUI_HH_
 
-double SUIpathLoss(double f, double TxH, double RxH, double d, int mode);
+auto SUIpathLoss(double f, double TxH, double RxH, double d, int mode) -> double;
 
-#endif /* _SUI_HH_ */
+#endif /* SUI_HH_ */

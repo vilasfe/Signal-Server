@@ -1,5 +1,5 @@
-#ifndef _IMAGE_HH_
-#define _IMAGE_HH_
+#ifndef IMAGE_HH_
+#define IMAGE_HH_
 
 #include <cstdint>
 #include <memory>
@@ -23,24 +23,22 @@ enum _image_model{	IMAGE_RGB, \
 class Image {
 public:
   static auto set_format(_image_format format) -> int;
-  static auto create(const size_t width, const size_t height, const _image_model model, const _image_format format) -> std::shared_ptr<Image>;
+  static auto create(size_t width, size_t height, _image_model model, _image_format format) -> std::shared_ptr<Image>;
   virtual ~Image() = default;
-  virtual int add_pixel(const uint8_t r, const uint8_t g, const uint8_t b) = 0;
-  virtual int add_pixel(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) = 0;
+  virtual auto add_pixel(uint8_t r, uint8_t g, uint8_t b) -> int = 0;
+  virtual auto add_pixel(uint8_t r, uint8_t g, uint8_t b, uint8_t a) -> int = 0;
   //virtual int get_pixel(const size_t x,const size_t y, uint8_t const* r, uint8_t const* g, uint8_t const* b, uint8_t const* a) = 0;
-  auto get_filename(const std::string& in) const -> std::string;
-  virtual int write(FILE*);
+  [[nodiscard]] auto get_filename(const std::string& in) const -> std::string;
+  virtual auto write(FILE* fd) -> int;
 
-#define PIXEL_OFFSET(x,y,width,pixel_size) (((x) * (pixel_size)) + ((width) * (pixel_size) * (y)))
-
-  Image(const size_t width, const size_t height, const _image_model model, const _image_format format);
+  Image(size_t width, size_t height, _image_model model, _image_format format);
 
 protected:
 	void set_extension(const std::string& ext);
-	auto get_width() const -> size_t;
-	auto get_height() const -> size_t;
+	[[nodiscard]] auto get_width() const -> size_t;
+	[[nodiscard]] auto get_height() const -> size_t;
 	void resize_canvas(size_t size);
-	auto get_next_pixel() const -> size_t;
+	[[nodiscard]] auto get_next_pixel() const -> size_t;
 	void set_next_pixel_index(size_t index);
 	void set_canvas_item(size_t index, uint8_t value);
 

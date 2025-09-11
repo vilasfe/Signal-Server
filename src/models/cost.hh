@@ -1,6 +1,6 @@
-#ifndef _COST_HH_
-#define _COST_HH_
+#ifndef COST_HH_
+#define COST_HH_
 
-double COST231pathLoss(float f, float TxH, float RxH, float d, int mode);
+auto COST231pathLoss(float f, float TxH, float RxH, float d, int mode) -> double;
 
-#endif /* _COST_HH_ */
+#endif /* COST_HH_ */

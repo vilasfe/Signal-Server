@@ -1,6 +1,6 @@
-#ifndef _HATA_HH_
-#define _HATA_HH_
+#ifndef HATA_HH_
+#define HATA_HH_
 
-double HATApathLoss(float f, float h_B, float h_M, float d, int mode);
+auto HATApathLoss(float f, float h_B, float h_M, float d, int mode) -> double;
 
-#endif /* _HATA_HH_ */
+#endif /* HATA_HH_ */

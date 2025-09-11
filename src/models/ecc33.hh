@@ -1,6 +1,6 @@
-#ifndef _ECC33_HH_
-#define _ECC33_HH_
+#ifndef ECC33_HH_
+#define ECC33_HH_
 
-double ECC33pathLoss(float f, float TxH, float RxH, float d, int mode);
+auto ECC33pathLoss(float f, float TxH, float RxH, float d, int mode) -> double;
 
-#endif /* _ECC33_HH_ */
+#endif /* ECC33_HH_ */

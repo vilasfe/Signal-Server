@@ -1,5 +1,5 @@
-#ifndef _LOS_HH_
-#define _LOS_HH_
+#ifndef LOS_HH_
+#define LOS_HH_
 
 #include <memory>
 #include <string>
@@ -48,4 +48,4 @@ private:
 
 };
 
-#endif /* _LOS_HH_ */
+#endif /* LOS_HH_ */

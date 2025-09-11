@@ -1,5 +1,5 @@
-#ifndef _ITWOM30_HH_
-#define _ITWOM30_HH_
+#ifndef ITWOM30_HH_
+#define ITWOM30_HH_
 
 #include <string>
 
@@ -13,4 +13,4 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 		    double frq_mhz, int radio_climate, int pol, double conf,
 		    double rel, double &dbloss, std::string& strmode, int &errnum);
 
-#endif /* _ITWOM30_HH_ */
+#endif /* ITWOM30_HH_ */
