@@ -1767,79 +1767,6 @@ void hzns2(double pfl[], prop_type & prop)
 	prop.rph = pfl[rp];
 }
 
-constexpr void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &zn)
-{
-	/* Used only with ITM 1.2.2 */
-	const double xn = z[0];
-	double xa = static_cast<int>(std::fdim(x1 / z[1], 0.0));
-	double xb = xn - static_cast<int>(std::fdim(xn, x2 / z[1]));
-
-	if (xb <= xa) {
-		xa = std::fdim(xa, 1.0);
-		xb = xn - std::fdim(xn, xb + 1.0);
-	}
-
-	int ja = static_cast<int>(xa);
-	const int jb = static_cast<int>(xb);
-	xa = xb - xa;
-	double x = -0.5 * xa;
-	xb += x;
-
-	double a = 0.5 * (z[ja + 2] + z[jb + 2]);
-	double b = 0.5 * (z[ja + 2] - z[jb + 2]) * x;
-
-	// n = jb - ja
-	// for(int i = 2; i <= n ; ++i) {}
-	// ja; ja <= jb-2; ++ja
-	for (; ja <= jb-2; ++ja) {
-		x += 1.0;
-		a += z[ja + 2];
-		b = std::fma(z[ja + 2], x, b);
-	}
-
-	a /= xa;
-	b = b * 12.0 / ((xa * xa + 2.0) * xa);
-	z0 = a - b * xb;
-	zn = a + b * (xn - xb);
-}
-
-constexpr void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
-{
-	/* corrected for use with ITWOM */
-
-	const double xn = z[0];
-	double xa = static_cast<int>(std::fdim(x1 / z[1], 0.0));
-	double xb = xn - static_cast<int>(std::fdim(xn, x2 / z[1]));
-
-	if (xb <= xa) {
-		xa = std::fdim(xa, 1.0);
-		xb = xn - std::fdim(xn, xb + 1.0);
-	}
-
-	const int jb = static_cast<int>(xb);
-	xa = (2 * static_cast<int>((xb - xa) / 2))-1;
-	double x = -0.5 * (xa + 1);
-	xb += x;
-	int ja = jb - 1 - static_cast<int>(xa);
-	const int n = jb - ja;
-	double a = (z[ja + 2] + z[jb + 2]);
-	double b = (z[ja + 2] - z[jb + 2]) * x;
-	double bn = 2 * (x * x);
-
-	for (int i = 2; i <= n; ++i) {
-		++ja;
-		x += 1.0;
-		bn += (x * x);
-		a += z[ja + 2];
-		b += z[ja + 2] * x;
-	}
-
-	a /= (xa + 2);
-	b = b / bn;
-	z0 = a - (b * xb);
-	zn = a + (b * (xn - xb));
-}
-
 auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 {
 
@@ -1873,7 +1800,7 @@ auto d1thx(double pfl[], const double &x1, const double &x2) -> double
 		xa += xb;
 	}
 
-	z1sq1(s.get(), 0.0, sn, xa, xb);
+	itm_math::z1sq1(s.get(), 0.0, sn, xa, xb);
 	xb = (xb - xa) / sn;
 
 	for (int j = 0; j < n; j++) {
@@ -1923,7 +1850,7 @@ auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
 		xc = xc + xb;
 	}
 
-	z1sq2(s.get(), 0.0, sn, xa, xb);
+	itm_math::z1sq2(s.get(), 0.0, sn, xa, xb);
 	xb = (xb - xa) / sn;
 
 	for (int j = 0; j < n; j++) {
@@ -1958,7 +1885,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	prop.dh = d1thx(pfl, xl[0], xl[1]);
 
 	if (prop.dl[0] + prop.dl[1] > 1.5 * prop.dist) {
-		z1sq1(pfl, xl[0], xl[1], za, zb);
+		itm_math::z1sq1(pfl, xl[0], xl[1], za, zb);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -1995,8 +1922,8 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	else {
-		z1sq1(pfl, xl[0], 0.9 * prop.dl[0], za, q);
-		z1sq1(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+		itm_math::z1sq1(pfl, xl[0], 0.9 * prop.dl[0], za, q);
+		itm_math::z1sq1(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 	}
@@ -2042,15 +1969,15 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	if ((np < 1) || (pfl[1] > 150.0)) {
 		/* for TRANSHORIZON; diffraction over a mutual horizon, or for one or more obstructions */
 		if (dlb < 1.5 * prop.dist) {
-			z1sq2(pfl, xl[0], 0.9 * prop.dl[0], za, q);
-			z1sq2(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+			itm_math::z1sq2(pfl, xl[0], 0.9 * prop.dl[0], za, q);
+			itm_math::z1sq2(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 		}
 
 		/* for a Line-of-Sight path */
 		else {
-			z1sq2(pfl, xl[0], xl[1], za, zb);
+			itm_math::z1sq2(pfl, xl[0], xl[1], za, zb);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -2096,7 +2023,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 		double rae2 = 0.0;
 
 		if (prop.dist > 550.0) {
-			z1sq2(pfl, rad, prop.dist, rae1, rae2);
+			itm_math::z1sq2(pfl, rad, prop.dist, rae1, rae2);
 		} else {
 			rae1 = 0.0;
 			rae2 = 0.0;

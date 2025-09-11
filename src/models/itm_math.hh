@@ -141,6 +141,125 @@ namespace itm_math {
         return h0fv;
     }
 
+    /* #include <vector>
+    #include <numeric> // For std::accumulate
+
+    struct LinearFitResult {
+        double slope;
+        double intercept;
+    };
+
+    LinearFitResult linearLeastSquares(std::span<double> x, std::span<double> y) {
+        if (x.size() != y.size() || x.empty()) {
+            // Handle error: unequal sizes or empty data
+            return {0.0, 0.0};
+        }
+
+        const int n = x.size();
+        const double sum_x = std::ranges::accumulate(x, 0.0);
+        const double sum_y = std::ranges::accumulate(y, 0.0);
+        const double sum_xy = std::ranges::inner_product(x, y);
+        const double sum_x2 = std::ranges::inner_product(x, x);
+
+        const double denominator = n * sum_x2 - sum_x * sum_x;
+        if (denominator == 0) {
+            // Handle error: perfect vertical line or all x values are the same
+            return {0.0, sum_y / n}; // Return horizontal line at mean y
+        }
+
+        const double slope = (n * sum_xy - sum_x * sum_y) / denominator;
+        const double intercept = (sum_y * sum_x2 - sum_x * sum_xy) / denominator;
+
+        return {slope, intercept};
+    } */
+
+
+    // A linear least squares fit between x1 and x2, to the function described
+    // by the array z.
+    // Evaluates a least squares fit to an input function z (in the form of a terrain profile
+    // having first element the number of profile samples, second element the spacing between
+    // them, and third through end elements the profile data) between horizontal locations
+    // x1 and x2.  Returns the interpolated heights at location 0 and the end of the
+    // profile.
+    // TODO: Make this return z0 and zn as a pair or binding
+    constexpr void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &zn)
+    {
+        /* Used only with ITM 1.2.2 */
+        const double xn = z[0];
+        double xa = static_cast<int>(std::fdim(x1 / z[1], 0.0)); // index in z for x1 (int held as double)
+        double xb = xn - static_cast<int>(std::fdim(xn, x2 / z[1])); // index in z for x2 (int held as double)
+
+        // Handle case where dest is before start by adding 1 to xa and subtracting 1 from xb (with bounds handling)
+        if (xb <= xa) {
+            xa = std::fdim(xa, 1.0);
+            xb = xn - std::fdim(xn, xb + 1.0);
+        }
+
+        int ja = static_cast<int>(xa); // index in z for x1 (int)
+        const int jb = static_cast<int>(xb); // index in z for x2 (int)
+        xa = xb - xa;
+        double x = -0.5 * xa; // for some reason, x starts at either 0 or slightly lower
+        xb += x; // Shift xb by this amount
+
+        constexpr unsigned ELEV_OFFSET = 2;
+        // Now that things are setup, initialize a and b for the form y = ax + b (TODO correct?)
+        // Why are these initialized this way? Some sort of online calculations?
+        double a = 0.5 * (z[ja + ELEV_OFFSET] + z[jb + ELEV_OFFSET]);
+        double b = 0.5 * (z[ja + ELEV_OFFSET] - z[jb + ELEV_OFFSET]) * x;
+
+        // n = jb - ja
+        // for(int i = 2; i <= n ; ++i) {}
+        // ja; ja <= jb-2; ++ja
+        for (; ja <= jb-ELEV_OFFSET; ++ja) {
+            x += 1.0;
+            a += z[ja + ELEV_OFFSET];
+            b = std::fma(z[ja + ELEV_OFFSET], x, b);
+        }
+
+        a /= xa;
+        b = b * 12.0 / ((xa * xa + 2.0) * xa);
+
+        z0 = a - b * xb;
+        zn = a + b * (xn - xb);
+    }
+
+    constexpr void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
+    {
+        /* corrected for use with ITWOM */
+
+        const double xn = z[0];
+        double xa = static_cast<int>(std::fdim(x1 / z[1], 0.0));
+        double xb = xn - static_cast<int>(std::fdim(xn, x2 / z[1]));
+
+        if (xb <= xa) {
+            xa = std::fdim(xa, 1.0);
+            xb = xn - std::fdim(xn, xb + 1.0);
+        }
+
+        const int jb = static_cast<int>(xb);
+        xa = (2 * static_cast<int>((xb - xa) / 2))-1;
+        double x = -0.5 * (xa + 1);
+        xb += x;
+        int ja = jb - 1 - static_cast<int>(xa);
+        const int n = jb - ja;
+        double a = (z[ja + 2] + z[jb + 2]);
+        double b = (z[ja + 2] - z[jb + 2]) * x;
+        double bn = 2 * (x * x);
+
+        for (int i = 2; i <= n; ++i) {
+            ++ja;
+            x += 1.0;
+            bn += (x * x);
+            a += z[ja + 2];
+            b += z[ja + 2] * x;
+        }
+
+        a /= (xa + 2);
+        b = b / bn;
+        z0 = a - (b * xb);
+        zn = a + (b * (xn - xb));
+    }
+
 };
 
 #endif
