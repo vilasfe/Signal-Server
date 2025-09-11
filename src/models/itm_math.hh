@@ -168,7 +168,7 @@ namespace itm_math {
         }
 
         const double slope = (n * sum_xy - sum_x * sum_y) / denominator;
-        const double intercept = (sum_y * sum_x2 - sum_x * sum_xy) / denominator;
+        const double intercept = (sum_y - slope * sum_x) / n;
 
         return {slope, intercept};
     } */
