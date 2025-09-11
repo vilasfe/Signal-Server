@@ -15,6 +15,28 @@ namespace itm_math {
         return normalCCDF(z);
     }
 
+    // The inverse of qerf - the solution for x to q = Q(x). The rational approximation
+    // is due to Hastings, Jr. (1995) and the maximum error should be 4.5x10^-4.
+    constexpr auto qerfi(double q) -> double
+    {
+        constexpr double c0 = 2.515516698;
+        constexpr double c1 = 0.802853;
+        constexpr double c2 = 0.010328;
+        constexpr double d1 = 1.432788;
+        constexpr double d2 = 0.189269;
+        constexpr double d3 = 0.001308;
+
+        const double x = 0.5 - q;
+        const double t = std::sqrt(-2.0 * std::log(std::max(0.5 - std::abs(x), 0.000001)));
+        const double v = t - ((c2 * t + c1) * t + c0) / (((d3 * t + d2) * t + d1) * t + 1.0);
+
+        if (x < 0.0) {
+            return -v;
+        }
+
+        return v;
+    }
+
     // Returns the attenuation due to a single knife edge - the Fresnel integral (in decibels,
     // Eqn 4.21 of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm" – see also
     // Eqn 6.1) evaluated for nu equal to the square root of the input argument.

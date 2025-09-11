@@ -11,6 +11,14 @@ namespace {
         EXPECT_NEAR(itm_math::qerf(10), 0.0, 1e-4);
     }
 
+    TEST(TestQERFI, QERFI) {
+        EXPECT_NEAR(itm_math::qerfi(0.01), 2.3268, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.1), 1.2817, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.5), 0.0, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.9), -1.2817, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.99), -2.3268, 1e-4);
+    }
+
     TEST(TestAKNFE, AKNFE) {
         EXPECT_NEAR(itm_math::aknfe(-1), 6.05, 0.01);
         EXPECT_NEAR(itm_math::aknfe(2), 16.36, 0.01);

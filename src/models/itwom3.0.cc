@@ -727,27 +727,6 @@ auto ascat(double d, prop_type & prop, propa_type & propa) -> double
 	return ascatv;
 }
 
-auto qerfi(double q) -> double
-{
-	constexpr double c0 = 2.515516698;
-	constexpr double c1 = 0.802853;
-	constexpr double c2 = 0.010328;
-	constexpr double d1 = 1.432788;
-	constexpr double d2 = 0.189269;
-	constexpr double d3 = 0.001308;
-
-	const double x = 0.5 - q;
-	double t = std::max(0.5 - std::abs(x), 0.000001);
-	t = std::sqrt(-2.0 * std::log(t));
-	const double v = t - ((c2 * t + c1) * t + c0) / (((d3 * t + d2) * t + d1) * t + 1.0);
-
-	if (x < 0.0) {
-		return -v;
-	}
-
-	return v;
-}
-
 void qlrps(double fmhz, double zsys, double en0, int ipol, double eps,
 	   double sgm, prop_type & prop)
 {
@@ -2108,8 +2087,8 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	prop.kwx = 0;
 	propv.lvar = 5;
 	prop.mdp = -1;
-	const double zc = qerfi(conf);
-	const double zr = qerfi(rel);
+	const double zc = itm_math::qerfi(conf);
+	const double zr = itm_math::qerfi(rel);
 	long np = static_cast<long>(elev[0]);
 	/* dkm=(elev[1]*elev[0])/1000.0; */
 	/* xkm=elev[1]/1000.0; */
@@ -2234,8 +2213,8 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	prop.ptx = pol;
 	prop.thera = 0.0;
 	prop.thenr = 0.0;
-	const double zc = qerfi(conf);
-	const double zr = qerfi(rel);
+	const double zc = itm_math::qerfi(conf);
+	const double zr = itm_math::qerfi(rel);
 	const long np = static_cast<long>(elev[0]);
 	/* dkm=(elev[1]*elev[0])/1000.0; */
 	/* xkm=elev[1]/1000.0; */
@@ -2357,9 +2336,9 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	prop.ptx = pol;
 	prop.thera = 0.0;
 	prop.thenr = 0.0;
-	const double ztime = qerfi(timepct);
-	const double zloc = qerfi(locpct);
-	const double zconf = qerfi(confpct);
+	const double ztime = itm_math::qerfi(timepct);
+	const double zloc = itm_math::qerfi(locpct);
+	const double zconf = itm_math::qerfi(confpct);
 	const long np = static_cast<long>(elev[0]);
 	/* dkm = (elev[1] * elev[0]) / 1000.0; */
 	/* xkm = elev[1] / 1000.0; */
@@ -2456,8 +2435,8 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	prop.ptx = pol;
 	prop.thera = 0.0;
 	prop.thenr = 0.0;
-	const double zc = qerfi(conf);
-	const double zr = qerfi(rel);
+	const double zc = itm_math::qerfi(conf);
+	const double zr = itm_math::qerfi(rel);
 	const long np = static_cast<long>(elev[0]);
 	/* dkm = (elev[1] * elev[0]) / 1000.0; */
 	/* xkm = elev[1] / 1000.0; */
@@ -2544,9 +2523,9 @@ auto area(long ModVar, double deltaH, double tht_m, double rht_m,
 	propa_type propa = {};
 	const std::array<int, 2> kst = {TSiteCriteria, RSiteCriteria};
 
-	const double zt = qerfi(pctTime / 100.0);
-	const double zl = qerfi(pctLoc / 100.0);
-	const double zc = qerfi(pctConf / 100.0);
+	const double zt = itm_math::qerfi(pctTime / 100.0);
+	const double zl = itm_math::qerfi(pctLoc / 100.0);
+	const double zc = itm_math::qerfi(pctConf / 100.0);
 	const double eps = eps_dielect;
 	const double sgm = sgm_conductivity;
 	const double eno = eno_ns_surfref;
