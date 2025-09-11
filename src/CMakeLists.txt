@@ -94,5 +94,5 @@ target_link_libraries(gtestmodels PUBLIC
 
 add_test(NAME models_test COMMAND gtestmodels)
 
-#include(GoogleTest)
-#gtest_discover_tests(gtestmodels)
+include(GoogleTest)
+gtest_discover_tests(gtestmodels)

@@ -20,9 +20,7 @@ endif()
 find_package(BZip2 REQUIRED)
 find_package(ZLIB REQUIRED)
 
-# TODO: Hack until we can et gtest detection working better
-add_subdirectory(googletest)
-#find_package(GTest REQUIRED)
+find_package(GTest REQUIRED)
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy checks" ON)
 
