@@ -224,7 +224,7 @@ namespace itm_math {
         double x = -0.5 * xa; // for some reason, x starts at either 0 or slightly lower
         xb += x; // Shift xb by this amount
 
-        constexpr unsigned ELEV_OFFSET = 2;
+        constexpr int ELEV_OFFSET = 2;
         // Now that things are setup, initialize a and b for the form y = ax + b (TODO correct?)
         // Why are these initialized this way? Some sort of online calculations?
         double a = 0.5 * (z[ja + ELEV_OFFSET] + z[jb + ELEV_OFFSET]);
