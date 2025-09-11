@@ -202,7 +202,7 @@ double adiff(double d, prop_type & prop, propa_type & propa)
 		q = (1.0 - 0.8 * exp(-propa.dlsa / 50e3)) * prop.dh;
 		q *= 0.78 * exp(-pow(q / 16.0, 0.25));
 		afo =
-		    mymin(15.0,
+		    std::min(15.0,
 			  2.171 * log(1.0 +
 				      4.77e-4 * prop.hg[0] * prop.hg[1] *
 				      prop.wn * q));
@@ -1056,7 +1056,7 @@ double d1thx(double pfl[], const double &x1, const double &x2)
 	n = 10 * ka - 5;
 	kb = n - ka + 1;
 	sn = n - 1;
-	assert((s = new double[n + 2])!=0);
+	s = new double[n + 2];
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;

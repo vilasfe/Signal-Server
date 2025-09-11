@@ -25,7 +25,7 @@ enum { GZBUFFER = 32768 };
 
 static char buffer[BZBUFFER+1];
 
-std::string Input::color_file = "";
+std::string Input::color_file;
 
 int Input::bzerror = BZ_OK;
 int Input::gzerr = Z_OK;
@@ -2090,7 +2090,7 @@ int Input::LoadLossColors(struct site_t xmtr)
 	return 0;
 }
 
-int Input::LoadDBMColors(struct site_t xmtr)
+auto Input::LoadDBMColors(struct site_t xmtr) -> int
 {
 	int x, y, ok, val[4];
 	std::string filename;

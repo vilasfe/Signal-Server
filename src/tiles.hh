@@ -1,10 +1,10 @@
-#ifndef _TILES_HH_
-#define _TILES_HH_
+#ifndef TILES_HH_
+#define TILES_HH_
 
 #include <string>
 #include <string_view>
 
-typedef struct _tile_t{
+using tile_t = struct tile_t {
 	std::string filename;
 	union{
 		int	cols = 0;
@@ -42,10 +42,10 @@ typedef struct _tile_t{
 	double	height_deg = 0.0;
 	int		ppdx = 0;
 	int		ppdy = 0;
-} tile_t, *ptile_t;
+};
 
-int tile_load_lidar(tile_t*, std::string_view filename);
-int tile_rescale(tile_t *, float);
-void tile_destroy(tile_t *);
+auto tile_load_lidar(tile_t* tile, std::string_view filename) -> int;
+auto tile_rescale(tile_t *tile, float scale) -> int;
+void tile_destroy(tile_t *tile);
 
 #endif

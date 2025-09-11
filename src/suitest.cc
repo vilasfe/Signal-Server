@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <numbers>
 
-#include "../common.h"
+#include "common.h"
 
 auto SUIpathLoss(double f, double TxH, double RxH, double d, int mode) -> double
 {
@@ -39,7 +39,7 @@ auto SUIpathLoss(double f, double TxH, double RxH, double d, int mode) -> double
                 XhCF = -20;
         }
         float d0 = 100;
-        float A = _20log10f((4 * std::numbers::pi * d0) / (300.0 / f));
+        float A = _20log10((4 * std::numbers::pi * d0) / (300.0 / f));
         float y = a - (b * TxH) + (c / TxH);
         //Correction factors
         float Xf = 6.0 * log10(f / 2000.0);

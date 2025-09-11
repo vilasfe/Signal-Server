@@ -115,15 +115,15 @@ namespace {
 
         double xa = 0;
         double xb = 0;
-        itm_math::z1sq1(setup_z.data(), 0, 144, xa, xb);
+        itm_math::z1sq1(std::span<double>(setup_z.data(), setup_z[0]), 0, 144, xa, xb);
 
         // TODO: Rounded to make tests pass
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);
 
-        itm_math::z1sq2(setup_z.data(), 0, 144, xa, xb);
+        itm_math::z1sq2(std::span<double>(setup_z.data(), setup_z[0]), 0, 144, xa, xb);
 
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);
     }
-}
+} // anonymous namespace

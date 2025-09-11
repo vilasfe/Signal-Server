@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <numbers>
+#include <span>
 
 namespace itm_math {
 
@@ -204,7 +205,7 @@ namespace itm_math {
     // x1 and x2.  Returns the interpolated heights at location 0 and the end of the
     // profile.
     // TODO: Make this return z0 and zn as a pair or binding
-    constexpr void z1sq1(double z[], const double &x1, const double &x2, double &z0, double &zn)
+    constexpr void z1sq1(std::span<double> z, const double &x1, const double &x2, double &z0, double &zn)
     {
         /* Used only with ITM 1.2.2 */
         const double xn = z[0];
@@ -245,7 +246,7 @@ namespace itm_math {
         zn = a + b * (xn - xb);
     }
 
-    constexpr void z1sq2(double z[], const double &x1, const double &x2, double &z0, double &zn)
+    constexpr void z1sq2(std::span<double>z, const double &x1, const double &x2, double &z0, double &zn)
     {
         /* corrected for use with ITWOM */
 
@@ -282,6 +283,6 @@ namespace itm_math {
         zn = a + (b * (xn - xb));
     }
 
-};
+}; // namespace itm_math
 
 #endif
