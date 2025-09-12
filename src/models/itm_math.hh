@@ -8,6 +8,8 @@
 #include <ranges>
 #include <span>
 
+#include "itm_types.hh"
+
 namespace itm_math {
 
     // Function to calculate the standard normal complementary CDF
@@ -382,6 +384,137 @@ namespace itm_math {
         d1thx2v = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
         d1thx2v /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
         return d1thx2v;
+    }
+
+
+    // Subroutine to find horizon parameters as described in Section 48 by Hufford
+    constexpr void hzns(double pfl[], prop_type & prop)
+    {
+        const int np = static_cast<int>(pfl[0]);
+        const double xi = pfl[1];
+        const double za = pfl[2] + prop.hg[0];
+        const double zb = pfl[np + 2] + prop.hg[1];
+        const double qc = 0.5 * prop.gme;
+        double q = qc * prop.dist;
+        prop.the[1] = (zb - za) / prop.dist;
+        prop.the[0] = prop.the[1] - q;
+        prop.the[1] = -prop.the[1] - q;
+        prop.dl[0] = prop.dist;
+        prop.dl[1] = prop.dist;
+
+        if (np >= 2) {
+            double sa = 0.0;
+            double sb = prop.dist;
+            /* Used only with ITM 1.2.2 */
+            bool wq = true;
+
+            for( const auto& pfl_i : std::span(&pfl[3], np)) {
+                //for (int i = 1; i < np; i++) {
+                sa += xi;
+                sb -= xi;
+                //q = pfl[i + 2] - (qc * sa + prop.the[0]) * sa - za;
+                q = pfl_i - std::fma(qc, sa, prop.the[0]) * sa - za;
+
+                if (q > 0.0) {
+                    prop.the[0] += q / sa;
+                    prop.dl[0] = sa;
+                    wq = false;
+                }
+
+                if (!wq) {
+                    //q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
+                    q = pfl_i - std::fma(qc, sb, prop.the[1]) * sb - zb;
+
+                    if (q > 0.0) {
+                        prop.the[1] += q / sb;
+                        prop.dl[1] = sb;
+                    }
+                }
+            }
+        }
+    }
+
+    constexpr void hzns2(double pfl[], prop_type & prop)
+    {
+        double dr = 0.0;
+
+        const int np = static_cast<int>(pfl[0]);
+        const double xi = pfl[1];
+        const double za = pfl[2] + prop.hg[0];
+        const double zb = pfl[np + 2] + prop.hg[1];
+        prop.tiw = xi;
+        prop.ght = za;
+        prop.ghr = zb;
+        const double qc = 0.5 * prop.gme;
+        double q = qc * prop.dist;
+        prop.the[1] = atan((zb - za) / prop.dist);
+        prop.the[0] = (prop.the[1]) - q;
+        prop.the[1] = -prop.the[1] - q;
+        prop.dl[0] = prop.dist;
+        prop.dl[1] = prop.dist;
+        prop.hht = 0.0;
+        prop.hhr = 0.0;
+        prop.los = 1;
+
+        if (np >= 2) {
+            double sa = 0.0;
+            double sb = prop.dist;
+            bool wq = true;
+
+            for (int j = 1; j < np; j++) {
+                sa += xi;
+                q = pfl[j + 2] - (qc * sa + prop.the[0]) * sa - za;
+
+                if (q > 0.0) {
+                    prop.los = 0;
+                    prop.the[0] += q / sa;
+                    prop.dl[0] = sa;
+                    prop.the[0] = std::min(prop.the[0], 1.569);
+                    prop.hht = pfl[j + 2];
+                    wq = false;
+                }
+            }
+
+            if (!wq) {
+                for (int i = 1; i < np; i++) {
+                    sb -= xi;
+                    q = pfl[np + 2 - i] - (qc * (prop.dist - sb) +
+                    prop.the[1]) *
+                    (prop.dist - sb) - zb;
+                    if (q > 0.0) {
+                        prop.the[1] += q / (prop.dist - sb);
+                        prop.the[1] = std::min(prop.the[1], 1.57);
+                        prop.the[1] =
+                        std::max(prop.the[1], -1.568);
+                        prop.hhr = pfl[np + 2 - i];
+                        prop.dl[1] = std::max(0.0, prop.dist - sb);
+                    }
+                }
+                prop.the[0] =
+                atan((prop.hht - za) / prop.dl[0]) -
+                0.5 * prop.gme * prop.dl[0];
+                prop.the[1] =
+                atan((prop.hhr - zb) / prop.dl[1]) -
+                0.5 * prop.gme * prop.dl[1];
+            }
+        }
+
+        if ((prop.dl[1]) < (prop.dist)) {
+            const double dshh = prop.dist - prop.dl[0] - prop.dl[1];
+
+            if (static_cast<int>(dshh) == 0) {	/* one obstacle */
+                dr = prop.dl[1] / (1 + zb / prop.hht);
+            } else {	/* two obstacles */
+
+                dr = prop.dl[1] / (1 + zb / prop.hhr);
+            }
+        } else {		/* line of sight  */
+
+            dr = (prop.dist) / (1 + zb / za);
+        }
+        const int rp = 2 + static_cast<int>(std::floor(0.5 + dr / xi));
+        prop.rpl = rp;
+        prop.rph = pfl[rp];
     }
 
 }; // namespace itm_math

@@ -54,66 +54,10 @@
 
 #include "../common.h"
 #include "itm_math.hh"
+#include "itm_types.hh"
 #include "itwom3.0.hh"
 
 static constexpr double THIRD = 1.0/3.0;
-
-struct prop_type {
-	double aref;
-	double dist;
-	std::array<double, 2> hg;
-	std::array<double, 2> rch;
-	double wn;
-	double dh;
-	double dhd;
-	double ens;
-	double encc;
-	double cch;
-	double cd;
-	double gme;
-	double zgndreal;
-	double zgndimag;
-	std::array<double, 2> he;
-	std::array<double, 2> dl;
-	std::array<double, 2> the;
-	double tiw;
-	double ght;
-	double ghr;
-	double rph;
-	double hht;
-	double hhr;
-	double tgh;
-	double tsgh;
-	double thera;
-	double thenr;
-	int rpl;
-	int kwx;
-	int mdp;
-	int ptx;
-	int los;
-};
-
-struct propv_type {
-	double sgc;
-	int lvar;
-	int mdvar;
-	int klim;
-};
-
-struct propa_type {
-	double dlsa;
-	double dx;
-	double ael;
-	double ak1;
-	double ak2;
-	double aed;
-	double emd;
-	double aes;
-	double ems;
-	std::array<double, 2> dls;
-	double dla;
-	double tha;
-};
 
 auto saalos(double d, prop_type & prop) -> double
 {
@@ -1617,135 +1561,6 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	return avarv;
 }
 
-void hzns(double pfl[], prop_type & prop)
-{
-	const int np = static_cast<int>(pfl[0]);
-	const double xi = pfl[1];
-	const double za = pfl[2] + prop.hg[0];
-	const double zb = pfl[np + 2] + prop.hg[1];
-	const double qc = 0.5 * prop.gme;
-	double q = qc * prop.dist;
-	prop.the[1] = (zb - za) / prop.dist;
-	prop.the[0] = prop.the[1] - q;
-	prop.the[1] = -prop.the[1] - q;
-	prop.dl[0] = prop.dist;
-	prop.dl[1] = prop.dist;
-
-	if (np >= 2) {
-		double sa = 0.0;
-		double sb = prop.dist;
-		/* Used only with ITM 1.2.2 */
-		bool wq = true;
-
-		for( const auto& pfl_i : std::span(&pfl[3], np)) {
-		//for (int i = 1; i < np; i++) {
-			sa += xi;
-			sb -= xi;
-			//q = pfl[i + 2] - (qc * sa + prop.the[0]) * sa - za;
-			q = pfl_i - std::fma(qc, sa, prop.the[0]) * sa - za;
-
-			if (q > 0.0) {
-				prop.the[0] += q / sa;
-				prop.dl[0] = sa;
-				wq = false;
-			}
-
-			if (!wq) {
-				//q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
-				q = pfl_i - std::fma(qc, sb, prop.the[1]) * sb - zb;
-
-				if (q > 0.0) {
-					prop.the[1] += q / sb;
-					prop.dl[1] = sb;
-				}
-			}
-		}
-	}
-}
-
-void hzns2(double pfl[], prop_type & prop)
-{
-	double dr = 0.0;
-
-	const int np = static_cast<int>(pfl[0]);
-	const double xi = pfl[1];
-	const double za = pfl[2] + prop.hg[0];
-	const double zb = pfl[np + 2] + prop.hg[1];
-	prop.tiw = xi;
-	prop.ght = za;
-	prop.ghr = zb;
-	const double qc = 0.5 * prop.gme;
-	double q = qc * prop.dist;
-	prop.the[1] = atan((zb - za) / prop.dist);
-	prop.the[0] = (prop.the[1]) - q;
-	prop.the[1] = -prop.the[1] - q;
-	prop.dl[0] = prop.dist;
-	prop.dl[1] = prop.dist;
-	prop.hht = 0.0;
-	prop.hhr = 0.0;
-	prop.los = 1;
-
-	if (np >= 2) {
-		double sa = 0.0;
-		double sb = prop.dist;
-		bool wq = true;
-
-		for (int j = 1; j < np; j++) {
-			sa += xi;
-			q = pfl[j + 2] - (qc * sa + prop.the[0]) * sa - za;
-
-			if (q > 0.0) {
-				prop.los = 0;
-				prop.the[0] += q / sa;
-				prop.dl[0] = sa;
-				prop.the[0] = std::min(prop.the[0], 1.569);
-				prop.hht = pfl[j + 2];
-				wq = false;
-			}
-		}
-
-		if (!wq) {
-			for (int i = 1; i < np; i++) {
-				sb -= xi;
-				q = pfl[np + 2 - i] - (qc * (prop.dist - sb) +
-						       prop.the[1]) *
-				    (prop.dist - sb) - zb;
-				if (q > 0.0) {
-					prop.the[1] += q / (prop.dist - sb);
-					prop.the[1] = std::min(prop.the[1], 1.57);
-					prop.the[1] =
-					    std::max(prop.the[1], -1.568);
-					prop.hhr = pfl[np + 2 - i];
-					prop.dl[1] = std::max(0.0, prop.dist - sb);
-				}
-			}
-			prop.the[0] =
-			    atan((prop.hht - za) / prop.dl[0]) -
-			    0.5 * prop.gme * prop.dl[0];
-			prop.the[1] =
-			    atan((prop.hhr - zb) / prop.dl[1]) -
-			    0.5 * prop.gme * prop.dl[1];
-		}
-	}
-
-	if ((prop.dl[1]) < (prop.dist)) {
-		const double dshh = prop.dist - prop.dl[0] - prop.dl[1];
-
-		if (static_cast<int>(dshh) == 0) {	/* one obstacle */
-			dr = prop.dl[1] / (1 + zb / prop.hht);
-		} else {	/* two obstacles */
-
-			dr = prop.dl[1] / (1 + zb / prop.hhr);
-		}
-	} else {		/* line of sight  */
-
-		dr = (prop.dist) / (1 + zb / za);
-	}
-	const int rp = 2 + static_cast<int>(std::floor(0.5 + dr / xi));
-	prop.rpl = rp;
-	prop.rph = pfl[rp];
-}
-
 void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	    propa_type & propa, propv_type & propv)
 {
@@ -1756,7 +1571,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 
 	prop.dist = pfl[0] * pfl[1];
 	const int np = static_cast<int>(pfl[0]);
-	hzns(pfl, prop);
+	itm_math::hzns(pfl, prop);
 
 	for (int j = 0; j < 2; j++) {
 		xl[j] = std::min(15.0 * prop.hg[j], 0.1 * prop.dl[j]);
@@ -1835,7 +1650,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 
 	prop.dist = pfl[0] * pfl[1];
 	const int np = static_cast<int>(pfl[0]);
-	hzns2(pfl, prop);
+	itm_math::hzns2(pfl, prop);
 	const double dlb = prop.dl[0] + prop.dl[1];
 	prop.rch[0] = prop.hg[0] + pfl[2];
 	prop.rch[1] = prop.hg[1] + pfl[np + 2];
