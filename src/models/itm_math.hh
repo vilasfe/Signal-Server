@@ -288,7 +288,7 @@ namespace itm_math {
 
     // Use the terrain profile pfl1 to find delta h, interdecile range of elevations between
     // point x1 and point x2, as described in Section 48 by Hufford.
-    auto d1thx(double pfl[], const double &x1, const double &x2) -> double
+    constexpr auto d1thx(double pfl[], const double &x1, const double &x2) -> double
     {
         const int np = static_cast<int>(pfl[0]);
         double xa = x1 / pfl[1];
@@ -336,7 +336,7 @@ namespace itm_math {
         return d1thxv;
     }
 
-    auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
+    constexpr auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
     {
         const int np = static_cast<int>(pfl[0]);
         double xa = x1 / pfl[1];
