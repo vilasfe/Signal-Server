@@ -46,8 +46,6 @@
 #include <cmath>
 #include <complex>
 #include <cstring>
-#include <functional>
-#include <memory>
 #include <numbers>
 #include <span>
 #include <string>
@@ -1561,7 +1559,7 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	return avarv;
 }
 
-void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
+void qlrpfl(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 	    propa_type & propa, propv_type & propv)
 {
 	double xl[2];
@@ -1581,7 +1579,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	prop.dh = itm_math::d1thx(pfl, xl[0], xl[1]);
 
 	if (prop.dl[0] + prop.dl[1] > 1.5 * prop.dist) {
-		itm_math::z1sq1(std::span<double>(pfl, pfl[0]+2), xl[0], xl[1], za, zb);
+		itm_math::z1sq1(pfl, xl[0], xl[1], za, zb);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -1618,8 +1616,8 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	else {
-		itm_math::z1sq1(std::span<double>(pfl, pfl[0]+2), xl[0], 0.9 * prop.dl[0], za, q);
-		itm_math::z1sq1(std::span<double>(pfl, pfl[0]+2), prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+		itm_math::z1sq1(pfl, xl[0], 0.9 * prop.dl[0], za, q);
+		itm_math::z1sq1(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 	}
@@ -1640,7 +1638,7 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	lrprop(0.0, prop, propa);
 }
 
-void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
+void qlrpfl2(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 	     propa_type & propa, propv_type & propv)
 {
 	std::array<double, 2> xl = {0};
@@ -1665,15 +1663,15 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	if ((np < 1) || (pfl[1] > 150.0)) {
 		/* for TRANSHORIZON; diffraction over a mutual horizon, or for one or more obstructions */
 		if (dlb < 1.5 * prop.dist) {
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), xl[0], 0.9 * prop.dl[0], za, q);
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+			itm_math::z1sq2(pfl, xl[0], 0.9 * prop.dl[0], za, q);
+			itm_math::z1sq2(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 		}
 
 		/* for a Line-of-Sight path */
 		else {
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), xl[0], xl[1], za, zb);
+			itm_math::z1sq2(pfl, xl[0], xl[1], za, zb);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -1719,7 +1717,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 		double rae2 = 0.0;
 
 		if (prop.dist > 550.0) {
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), rad, prop.dist, rae1, rae2);
+			itm_math::z1sq2(pfl, rad, prop.dist, rae1, rae2);
 		} else {
 			rae1 = 0.0;
 			rae2 = 0.0;
@@ -1827,7 +1825,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl(elev, propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	q = prop.dist - propa.dla;
 
@@ -1963,7 +1961,7 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 
 	propv.mdvar = mode_var;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(elev, propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double tpd = std::hypot(prop.he[0] - prop.he[1], prop.dist);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(tpd / 1000.0);
 	q = prop.dist - propa.dla;
@@ -2081,7 +2079,7 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	}
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(elev, propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 
 	deltaH = prop.dh;
@@ -2178,7 +2176,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	}
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(elev, propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	deltaH = prop.dh;
 	q = prop.dist - propa.dla;

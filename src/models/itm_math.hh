@@ -290,7 +290,7 @@ namespace itm_math {
 
     // Use the terrain profile pfl1 to find delta h, interdecile range of elevations between
     // point x1 and point x2, as described in Section 48 by Hufford.
-    constexpr auto d1thx(double pfl[], const double &x1, const double &x2) -> double
+    constexpr auto d1thx(std::span<double> pfl, const double &x1, const double &x2) -> double
     {
         const int np = static_cast<int>(pfl[0]);
         double xa = x1 / pfl[1];
@@ -338,7 +338,7 @@ namespace itm_math {
         return d1thxv;
     }
 
-    constexpr auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
+    constexpr auto d1thx2(std::span<double> pfl, const double &x1, const double &x2) -> double
     {
         const int np = static_cast<int>(pfl[0]);
         double xa = x1 / pfl[1];
@@ -388,7 +388,7 @@ namespace itm_math {
 
 
     // Subroutine to find horizon parameters as described in Section 47 by Hufford
-    constexpr void hzns(double pfl[], prop_type & prop)
+    constexpr void hzns(std::span<double> pfl, prop_type & prop)
     {
         const int np = static_cast<int>(pfl[0]);
         const double xi = pfl[1];
@@ -434,7 +434,7 @@ namespace itm_math {
         }
     }
 
-    constexpr void hzns2(double pfl[], prop_type & prop)
+    constexpr void hzns2(std::span<double> pfl, prop_type & prop)
     {
         double dr = 0.0;
 

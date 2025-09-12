@@ -1,6 +1,8 @@
 #include <array>
+#include <span>
 
 #include "itm_math.hh"
+#include "itm_types.hh"
 
 #include "gtest/gtest.h"
 
@@ -115,13 +117,13 @@ namespace {
 
         double xa = 0;
         double xb = 0;
-        itm_math::z1sq1(std::span<double>(setup_z.data(), setup_z[0]+2), 0, 144, xa, xb);
+        itm_math::z1sq1(std::span<double>(setup_z), 0, 144, xa, xb);
 
         // TODO: Rounded to make tests pass
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);
 
-        itm_math::z1sq2(std::span<double>(setup_z.data(), setup_z[0]+2), 0, 144, xa, xb);
+        itm_math::z1sq2(std::span<double>(setup_z), 0, 144, xa, xb);
 
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);
@@ -160,11 +162,11 @@ namespace {
         137,    137,    140,    144,    147,    150,    152,    159};
 
         // TODO: Check this rounding
-        EXPECT_NEAR(itm_math::d1thx(setup_pfl1.data(), 2158.5, 77672.5), 89.2126, 5); //1e-4);
+        EXPECT_NEAR(itm_math::d1thx(std::span(setup_pfl1), 2158.5, 77672.5), 89.2126, 5); //1e-4);
     }
 
     TEST(TestHZNS, HZNS) {
-        struct prop_type prop;
+        struct prop_type prop = {};
 
         std::array<double, 160> pfl = {
             156, 498.71794871794873, 96, 84, 65, 46, 46, 46, 61,
@@ -186,7 +188,7 @@ namespace {
         prop.hg = {143.9, 8.5};
         prop.gme = 1.1480007964369815e-07;
 
-        itm_math::hzns(pfl.data(), prop);
+        itm_math::hzns(std::span(pfl), prop);
 
         // Test horizon takeoff angle
         EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
