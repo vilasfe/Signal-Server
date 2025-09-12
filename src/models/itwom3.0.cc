@@ -1746,104 +1746,6 @@ void hzns2(double pfl[], prop_type & prop)
 	prop.rph = pfl[rp];
 }
 
-auto d1thx(double pfl[], const double &x1, const double &x2) -> double
-{
-
-	const int np = static_cast<int>(pfl[0]);
-	double xa = x1 / pfl[1];
-	double xb = x2 / pfl[1];
-	double d1thxv = 0.0;
-
-	if (xb - xa < 2.0) {	// exit out
-		return d1thxv;
-	}
-
-	const int ka = std::clamp(static_cast<int>(0.1 * (xb - xa + 8.0)), 4, 25);
-	const int n = 10 * ka - 5;
-	const int kb = n - ka + 1;
-	const double sn = n - 1;
-	auto s = std::make_unique<double[]>(n + 2);
-	s[0] = sn;
-	s[1] = 1.0;
-	xb = (xb - xa) / sn;
-	int k = static_cast<int>(xa + 1.0);
-	xa -= static_cast<double>(k);
-
-	for (int j = 0; j < n; j++) {
-		while (xa > 0.0 && k < np) {
-			xa -= 1.0;
-			++k;
-		}
-
-		s[j + 2] = pfl[k + 2] + (pfl[k + 2] - pfl[k + 1]) * xa;
-		xa += xb;
-	}
-
-	itm_math::z1sq1(std::span<double>(s.get(), s[0]), 0.0, sn, xa, xb);
-	xb = (xb - xa) / sn;
-
-	for (int j = 0; j < n; j++) {
-		s[j + 2] -= xa;
-		xa += xb;
-	}
-
-	// This was qtile, which really just returns the (clamped) i'th element of the sorted range
-	// So the sort was moved out here to reduce the number of calls to it
-	std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
-	d1thxv = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
-	d1thxv /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
-
-	return d1thxv;
-}
-
-auto d1thx2(double pfl[], const double &x1, const double &x2) -> double
-{
-	const int np = static_cast<int>(pfl[0]);
-	double xa = x1 / pfl[1];
-	double xb = x2 / pfl[1];
-	double d1thx2v = 0.0;
-
-	if (xb - xa < 2.0) {	// exit out
-		return d1thx2v;
-	}
-
-	const int kmx = std::max(25, static_cast<int>(83350 / (pfl[1])));
-	const int ka = std::clamp(static_cast<int>(0.1 * (xb - xa + 8.0)), 4, kmx);
-	const int n = 10 * ka - 5;
-	const int kb = n - ka + 1;
-	const double sn = n - 1;
-	auto s = std::make_unique<double[]>(n + 2);
-	s[0] = sn;
-	s[1] = 1.0;
-	xb = (xb - xa) / sn;
-	int k = static_cast<int>(xa + 1.0);
-	double xc = xa - static_cast<double>(k);
-
-	for (int j = 0; j < n; j++) {
-		while (xc > 0.0 && k < np) {
-			xc -= 1.0;
-			++k;
-		}
-
-		s[j + 2] = pfl[k + 2] + (pfl[k + 2] - pfl[k + 1]) * xc;
-		xc = xc + xb;
-	}
-
-	itm_math::z1sq2(std::span<double>(s.get(), s[0]), 0.0, sn, xa, xb);
-	xb = (xb - xa) / sn;
-
-	for (int j = 0; j < n; j++) {
-		s[j + 2] -= xa;
-		xa = xa + xb;
-	}
-
-
-	std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
-	d1thx2v = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
-	d1thx2v /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
-	return d1thx2v;
-}
-
 void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	    propa_type & propa, propv_type & propv)
 {
@@ -1861,10 +1763,10 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	xl[1] = prop.dist - xl[1];
-	prop.dh = d1thx(pfl, xl[0], xl[1]);
+	prop.dh = itm_math::d1thx(pfl, xl[0], xl[1]);
 
 	if (prop.dl[0] + prop.dl[1] > 1.5 * prop.dist) {
-		itm_math::z1sq1(std::span<double>(pfl, pfl[0]), xl[0], xl[1], za, zb);
+		itm_math::z1sq1(std::span<double>(pfl, pfl[0]+2), xl[0], xl[1], za, zb);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -1901,8 +1803,8 @@ void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	else {
-		itm_math::z1sq1(std::span<double>(pfl, pfl[0]), xl[0], 0.9 * prop.dl[0], za, q);
-		itm_math::z1sq1(std::span<double>(pfl, pfl[0]), prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+		itm_math::z1sq1(std::span<double>(pfl, pfl[0]+2), xl[0], 0.9 * prop.dl[0], za, q);
+		itm_math::z1sq1(std::span<double>(pfl, pfl[0]+2), prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 	}
@@ -1943,20 +1845,20 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 	}
 
 	xl[1] = prop.dist - xl[1];
-	prop.dh = d1thx2(pfl, xl[0], xl[1]);
+	prop.dh = itm_math::d1thx2(pfl, xl[0], xl[1]);
 
 	if ((np < 1) || (pfl[1] > 150.0)) {
 		/* for TRANSHORIZON; diffraction over a mutual horizon, or for one or more obstructions */
 		if (dlb < 1.5 * prop.dist) {
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]), xl[0], 0.9 * prop.dl[0], za, q);
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]), prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), xl[0], 0.9 * prop.dl[0], za, q);
+			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 		}
 
 		/* for a Line-of-Sight path */
 		else {
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]), xl[0], xl[1], za, zb);
+			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), xl[0], xl[1], za, zb);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -2002,7 +1904,7 @@ void qlrpfl2(double pfl[], int klimx, int mdvarx, prop_type & prop,
 		double rae2 = 0.0;
 
 		if (prop.dist > 550.0) {
-			itm_math::z1sq2(std::span<double>(pfl, pfl[0]), rad, prop.dist, rae1, rae2);
+			itm_math::z1sq2(std::span<double>(pfl, pfl[0]+2), rad, prop.dist, rae1, rae2);
 		} else {
 			rae1 = 0.0;
 			rae2 = 0.0;
