@@ -1588,14 +1588,11 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 void Output::SeriesData(struct site_t source, struct site_t destination, const std::string& name,
 		bool fresnel_plot, bool normalised)
 {
-	int x, y, z;
-	std::string basename;
 	char term[30], ext[15];
-	double a, c, height = 0.0, cangle, maxheight =
-	    -100000.0, minheight = 100000.0, lambda = 0.0, f_zone =
+	double a, c, height = 0.0, cangle;
+	double lambda = 0.0, f_zone =
 	    0.0, fpt6_zone = 0.0, nm = 0.0, nb = 0.0, ed = 0.0, es = 0.0, r =
-	    0.0, d = 0.0, d1 = 0.0, terrain, minterrain =
-	    100000.0, minearth = 100000.0;
+	    0.0, d = 0.0, d1 = 0.0, terrain;
 	struct site_t remote;
 	FILE *fd1 = nullptr;
 	FILE *fd3 = nullptr;
@@ -1642,7 +1639,7 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 		fd4 = fopen(fresnel60name.data(), "wb");
 	}
 
-	for (x = 0; x < path.length - 1; x++) {
+	for (int x = 0; x < path.length - 1; x++) {
 		remote.lat = path.lat[x];
 		remote.lon = path.lon[x];
 		remote.alt = 0.0;
@@ -1728,30 +1725,6 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 				std::println(fd3, "{:.3f} {:.3f}", path.distance[x], f_zone);
 				std::println(fd4, "{:.3f} {:.3f}", path.distance[x], fpt6_zone);
 			}
-
-			if (f_zone < minheight) {
-				minheight = f_zone;
-			}
-		}
-
-		if ((height + clutter) > maxheight) {
-			maxheight = height + clutter;
-		}
-
-		if (height < minheight) {
-			minheight = height;
-		}
-
-		if (r > maxheight) {
-			maxheight = r;
-		}
-
-		if (terrain < minterrain) {
-			minterrain = terrain;
-		}
-
-		if ((height - terrain) < minearth) {
-			minearth = height - terrain;
 		}
 	}			// End of loop
 
@@ -1790,14 +1763,6 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 			std::print(fd4, "{:.3f} {:.3f}",
 				path.distance[path.length - 1], r);
 		}
-	}
-
-	if (r > maxheight) {
-		maxheight = r;
-	}
-
-	if (r < minheight) {
-		minheight = r;
 	}
 
 	fclose(fd);
