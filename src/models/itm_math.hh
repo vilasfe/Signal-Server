@@ -387,7 +387,7 @@ namespace itm_math {
     }
 
 
-    // Subroutine to find horizon parameters as described in Section 48 by Hufford
+    // Subroutine to find horizon parameters as described in Section 47 by Hufford
     constexpr void hzns(double pfl[], prop_type & prop)
     {
         const int np = static_cast<int>(pfl[0]);
@@ -413,7 +413,7 @@ namespace itm_math {
                 sa += xi;
                 sb -= xi;
                 //q = pfl[i + 2] - (qc * sa + prop.the[0]) * sa - za;
-                q = pfl_i - std::fma(qc, sa, prop.the[0]) * sa - za;
+                q = pfl_i - (qc * sa + prop.the[0]) * sa - za;
 
                 if (q > 0.0) {
                     prop.the[0] += q / sa;
@@ -423,7 +423,7 @@ namespace itm_math {
 
                 if (!wq) {
                     //q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
-                    q = pfl_i - std::fma(qc, sb, prop.the[1]) * sb - zb;
+                    q = pfl_i - (qc * sb + prop.the[1]) * sb - zb;
 
                     if (q > 0.0) {
                         prop.the[1] += q / sb;
