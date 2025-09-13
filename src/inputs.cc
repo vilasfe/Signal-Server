@@ -45,14 +45,15 @@ auto Input::loadClutter(std::string_view filename, double radius, struct site_t 
 	   AddElevation(lat, lon, height);
  	   If tiles are standard 2880 x 3840 then cellsize is constant at 0.004166
 	 */
-	int x, y, z, h = 0, w = 0;
+	int h = 0;
+	int w = 0;
 	double clh = 0.0;
 	double xll = 0.0;
 	double yll = 0.0;
 	double cellsize, cellsize2, xOffset, yOffset, lat, lon;
 	char line[100000];
 	char *s, *pch = nullptr;
-	FILE *fd;
+	FILE *fd = nullptr;
 
 	if ((fd = fopen(filename.data(), "rb")) == nullptr)
 		return errno;
@@ -60,13 +61,13 @@ auto Input::loadClutter(std::string_view filename, double radius, struct site_t 
 	if (fgets(line, 19, fd) != nullptr) {
 		pch = strtok(line," ");
 		pch = strtok(nullptr, " ");
-		w = atoi(pch);
+		w = std::atoi(pch);
 	}
 
 	if (fgets(line, 19, fd) != nullptr) {
 		pch = strtok(line," ");
 		pch = strtok(nullptr, " ");
-		h = atoi(pch);
+		h = std::atoi(pch);
 	}
 
 	if (w==2880 && h==3840) {
@@ -99,12 +100,12 @@ auto Input::loadClutter(std::string_view filename, double radius, struct site_t 
 	fgets(line, 25, fd); // cellsize
 
 	//loop over matrix
-	for (y = h; y > 0; y--) {
-		x = 0;
+	for (int y = h; y > 0; y--) {
+		int x = 0;
 		if (fgets(line, sizeof(line)-1, fd) != nullptr) {
 			pch = strtok(line, " ");
 			while (pch != nullptr && x < w) {
-				z = atoi(pch);
+				int z = std::atoi(pch);
 				// Apply ITU-R P.452-11
 				// Treat classes 0, 9, 10, 11, 15, 16 as water, (Water, savanna, grassland, wetland, snow, barren)
 				clh = 0.0;
@@ -159,7 +160,7 @@ auto Input::loadClutter(std::string_view filename, double radius, struct site_t 
 	return 0;
 }
 
-int Input::averageHeight(int height, int width, int x, int y){
+auto Input::averageHeight(int x, int y) -> int {
 	int total = 0;
 	int c=0;
 	if(dem[0].data[y-1][x-1]>0){
@@ -180,10 +181,10 @@ int Input::averageHeight(int height, int width, int x, int y){
 	}
 
 	if(c>0){
-		return (int)(total/c);
-	}else{
-		return 0;
+		return (total/c);
 	}
+
+	return 0;
 }
 
 auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
@@ -235,34 +236,27 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		}
 
 		// Update a bunch of globals
-		if (tiles[indx].max_el > max_elevation)
-			max_elevation = tiles[indx].max_el; 
-		if (tiles[indx].min_el < min_elevation)
-			min_elevation = tiles[indx].min_el;
+		max_elevation = std::max<int>(max_elevation, tiles[indx].max_el);
+		min_elevation = std::min<int>(min_elevation, tiles[indx].min_el);
 
-		if (max_north == -90 || tiles[indx].max_north > max_north)
-			max_north = tiles[indx].max_north;
-
-		if (min_north == 90 || tiles[indx].min_north < min_north)
-			min_north = tiles[indx].min_north;
+		max_north = (max_north == -90) ? tiles[indx].max_north : std::max(max_north, tiles[indx].max_north);
+		min_north = (min_north == 90) ? tiles[indx].min_north : std::min(min_north, tiles[indx].min_north);
 
 		//Meridian switch. max_west=0
 		if (std::abs(tiles[indx].max_west - max_west) < 180 || tiles[indx].max_west < 360) {
-		        if (tiles[indx].max_west > max_west)
-			        max_west = tiles[indx].max_west; // update highest value
+			max_west = std::max(max_west, tiles[indx].max_west); // update highest value
 		} else {
-		        if (tiles[indx].max_west < max_west)
-			        max_west = tiles[indx].max_west;
+			max_west = std::min(max_west, tiles[indx].max_west);
 		}
 		if (std::abs(tiles[indx].min_west - min_west) < 180.0 || tiles[indx].min_west <= 360) {
-			if (tiles[indx].min_west < min_west)
-				min_west = tiles[indx].min_west;
+			min_west = std::min(min_west, tiles[indx].min_west);
 		} else {
-			if (tiles[indx].min_west > min_west)
-				min_west = tiles[indx].min_west;
+			min_west = std::max(min_west, tiles[indx].min_west);
 		}
 		// Handle tile with 360 XUR
-		if(min_west>359) min_west=0.0;
+		if(min_west>359) {
+			min_west=0.0;
+		}
 	}
 
 	/* Iterate through all of the tiles to find the smallest resolution. We will
@@ -280,14 +274,14 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	float desired_resolution = resample != 0 && smallest_res < resample ? resample : smallest_res;
 
 	if(resample>1){
-		desired_resolution=smallest_res*resample;
+		desired_resolution = smallest_res*resample;
 	}
 
 	// Don't resize large 1 deg tiles in large multi-degree plots as it gets messy
 	if(tiles[0].width != 3600){
 
 	  for (size_t i = 0; i < (unsigned)fc; i++) {
-			float rescale = tiles[i].resolution / (float)desired_resolution;
+			float rescale = tiles[i].resolution / desired_resolution;
 			if(debug) {
 				std::println(stderr,"res {:.5f} desired_res {:.5f}",tiles[i].resolution, desired_resolution);
 			}
@@ -316,8 +310,8 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	if(fc >= 2 && desired_resolution < 28 && total_height > total_width*1.5){
 		tiles[fc].max_north=max_north;
 		tiles[fc].min_north=min_north;
-		westoffset=westoffset-(total_height-total_width); // WGS84 for stdout only
-		max_west=max_west+(total_height-total_width); // Positive westing
+		westoffset = westoffset-(total_height-total_width); // WGS84 for stdout only
+		max_west = max_west+(total_height-total_width); // Positive westing
 		tiles[fc].max_west=max_west; // Positive westing
 		tiles[fc].min_west=max_west;
 		tiles[fc].ppdy=tiles[fc-1].ppdy;
@@ -355,17 +349,15 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	}
 	size_t new_height = 0;
 	size_t new_width = 0;
-	for ( size_t i = 0; i < (unsigned)fc; i++ ) {
+	for ( size_t i = 0; i < static_cast<size_t>(fc); i++ ) {
 		double north_offset = max_north - tiles[i].max_north;
 		double west_offset = max_west - tiles[i].max_west >= 0 ? max_west - tiles[i].max_west : max_west + (360 - tiles[i].max_west);
 		size_t north_pixel_offset = north_offset * tiles[i].ppdy;
 		size_t west_pixel_offset = west_offset * tiles[i].ppdx;
 
-		if ( west_pixel_offset + tiles[i].width > new_width )
-			new_width = west_pixel_offset + tiles[i].width;
-		if ( north_pixel_offset + tiles[i].height > new_height ) {
-			new_height = north_pixel_offset + tiles[i].height;
-		}
+		new_width = std::max(new_width, west_pixel_offset + tiles[i].width);
+		new_height = std::max(new_height, north_pixel_offset + tiles[i].height);
+
 		if (debug) {
 			fprintf(stderr,"north_pixel_offset %zu west_pixel_offset %zu, %zu x %zu\n", north_pixel_offset, west_pixel_offset,new_height,new_width);
 		}
@@ -396,7 +388,7 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	   need to initialize the array... */
 
 	/* Fill out the array one tile at a time */
-	for (size_t i = 0; i < (unsigned)fc; i++) {
+	for (size_t i = 0; i < static_cast<size_t>(fc); i++) {
 		double north_offset = max_north - tiles[i].max_north;
 		double west_offset = max_west - tiles[i].max_west >= 0 ? max_west - tiles[i].max_west : max_west + (360 - tiles[i].max_west);
 		size_t north_pixel_offset = north_offset * tiles[i].ppdy;
@@ -405,17 +397,17 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		if (debug) {
 			fprintf(stderr,"mn: %lf mw:%lf globals: %lf %lf\n", tiles[i].max_north, tiles[i].max_west, max_north, max_west);
 			fprintf(stderr,"Offset n:%zu(%lf) w:%zu(%lf)\n", north_pixel_offset, north_offset, west_pixel_offset, west_offset);
-			fprintf(stderr,"Height: %d\n", tiles[i].height);
+			std::println(stderr,"Height: {}", tiles[i].height);
 			fflush(stderr);
 		}
 
 		/* Copy it row-by-row from the tile */
-		for (size_t h = 0; h < (unsigned)tiles[i].height; h++) {
+		for (size_t h = 0; h < static_cast<size_t>(tiles[i].height); h++) {
 			short *dest_addr = &new_tile[ (north_pixel_offset+h)*new_width + west_pixel_offset];
 			short *src_addr = &tiles[i].data[h*tiles[i].width];
 			// Check if we might overflow
 			if ( dest_addr + tiles[i].width > new_tile + new_tile_alloc || dest_addr < new_tile ){
-			        if (debug) {
+				if (debug) {
 					fprintf(stderr, "Overflow %zu\n",i);
 					fflush(stderr);
 				}
@@ -469,7 +461,7 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		for (size_t w = 0; w < new_width-2; w++, x--) {
 
 			if(dem[0].data[y][x]<=0){
-				dem[0].data[y][x] = averageHeight(new_height,new_width,x,y);
+				dem[0].data[y][x] = averageHeight(x,y);
 			}
 		}
 	}
@@ -492,7 +484,7 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	return 0;
 }
 
-int Input::LoadSDF_SDF(char *name)
+auto Input::LoadSDF_SDF(std::string_view name) -> int
 {
 	/* This function reads uncompressed ss Data Files (.sdf)
 	   containing digital elevation model data into memory.
@@ -501,54 +493,59 @@ int Input::LoadSDF_SDF(char *name)
 	   dem[] structure. 
 	   NOTE: On error, this function returns a negative errno */
 
-	int x, y, data = 0, indx, minlat, minlon, maxlat, maxlon, j;
-	char found, free_page = 0, line[20], jline[20], sdf_file[255];
+	int data = 0;
+	int indx = 0;
+	int minlat = 0;
+	int minlon = 0;
+	int maxlat = 0;
+	int maxlon = 0;
+	char line[20];
+	char jline[20];
 	std::string path_plus_name;
 
-	FILE *fd;
+	std::string sdf_file;
 
-	for (x = 0; name[x] != '.' && name[x] != 0 && x < 250; x++)
-		sdf_file[x] = name[x];
-
-	sdf_file[x] = 0;
+	if (auto dot = name.find('.'); dot != std::string::npos) {
+		sdf_file = name.substr(0, dot);
+	}
+	else {
+		sdf_file = name;
+	}
+	sdf_file += ".sdf";
 
 	/* Parse filename for minimum latitude and longitude values */
 
-	if( sscanf(sdf_file, "%d:%d:%d:%d", &minlat, &maxlat, &minlon, &maxlon) != 4 )
+	if( sscanf(sdf_file.data(), "%d:%d:%d:%d", &minlat, &maxlat, &minlon, &maxlon) != 4 )
 		return -EINVAL;
 
-	sdf_file[x] = '.';
-	sdf_file[x + 1] = 's';
-	sdf_file[x + 2] = 'd';
-	sdf_file[x + 3] = 'f';
-	sdf_file[x + 4] = 0;
-
 	/* Is it already in memory? */
-
-	for (indx = 0, found = 0; indx < MAXPAGES && found == 0; indx++) {
+	bool found = false;
+	for (indx = 0; indx < MAXPAGES && !found; indx++) {
 		if (minlat == dem[indx].min_north
 		    && minlon == dem[indx].min_west
 		    && maxlat == dem[indx].max_north
 		    && maxlon == dem[indx].max_west)
-			found = 1;
+			found = true;
 	}
 
 	/* Is room available to load it? */
-
-	if (found == 0) {
-		for (indx = 0, free_page = 0; indx < MAXPAGES && free_page == 0;
-		     indx++)
-			if (dem[indx].max_north == -90)
-				free_page = 1;
+	bool free_page = false;
+	if (!found) {
+		for (indx = 0; indx < MAXPAGES && !free_page; indx++) {
+			if (dem[indx].max_north == -90) {
+				free_page = true;
+			}
+		}
 	}
 
 	indx--;
 
-	if (free_page && found == 0 && indx >= 0 && indx < MAXPAGES) {
+	if (free_page && !found && indx >= 0 && indx < MAXPAGES) {
 		/* Search for SDF file in current working directory first */
 
 		path_plus_name = sdf_file;
 
+		FILE* fd = nullptr;
 		if( (fd = fopen(path_plus_name.data(), "rb")) == nullptr ){
 			/* Next, try loading SDF file from path specified
 			   in $HOME/.ss_path file or by -d argument */
@@ -590,10 +587,10 @@ int Input::LoadSDF_SDF(char *name)
 		   Each .sdf tile contains 1200x1200 = 1.44M 'points'
 		   Each point is sampled for 1200 resolution!
 		 */
-		for (x = 0; x < ippd; x++) {
-			for (y = 0; y < ippd; y++) {
+		for (int x = 0; x < ippd; x++) {
+			for (int y = 0; y < ippd; y++) {
 
-				for (j = 0; j < jgets; j++) {
+				for (int j = 0; j < jgets; j++) {
 					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
 				}
@@ -615,13 +612,13 @@ int Input::LoadSDF_SDF(char *name)
 			}
 
 			if (ippd == 600) {
-				for (j = 0; j < IPPD; j++) {
+				for (int j = 0; j < IPPD; j++) {
 					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
 				}
 			}
 			if (ippd == 300) {
-				for (j = 0; j < IPPD; j++) {
+				for (int j = 0; j < IPPD; j++) {
 					if( fgets(jline, sizeof(jline), fd) == nullptr )
 						return -EIO;
 					if( fgets(jline, sizeof(jline), fd) == nullptr )
@@ -634,62 +631,53 @@ int Input::LoadSDF_SDF(char *name)
 
 		fclose(fd);
 
-		if (dem[indx].min_el < min_elevation)
-			min_elevation = dem[indx].min_el;
+		min_elevation = std::min(min_elevation, dem[indx].min_el);
+		max_elevation = std::max(max_elevation, dem[indx].max_el);
 
-		if (dem[indx].max_el > max_elevation)
-			max_elevation = dem[indx].max_el;
-
-		if (max_north == -90)
+		if (max_north == -90) {
 			max_north = dem[indx].max_north;
+		}
+		else {
+			max_north = std::max<double>(max_north, dem[indx].max_north);
+		}
 
-		else if (dem[indx].max_north > max_north)
-			max_north = dem[indx].max_north;
-
-		if (min_north == 90)
+		if (min_north == 90) {
 			min_north = dem[indx].min_north;
+		}
+		else {
+			min_north = std::min<double>(min_north, dem[indx].min_north);
+		}
 
-		else if (dem[indx].min_north < min_north)
-			min_north = dem[indx].min_north;
-
-		if (max_west == -1)
+		if (max_west == -1) {
 			max_west = dem[indx].max_west;
-
+		}
 		else {
 			if (std::abs(dem[indx].max_west - max_west) < 180) {
-				if (dem[indx].max_west > max_west)
-					max_west = dem[indx].max_west;
+				max_west = std::max<double>(max_west, dem[indx].max_west);
 			}
-
 			else {
-				if (dem[indx].max_west < max_west)
-					max_west = dem[indx].max_west;
+				max_west = std::min<double>(max_west, dem[indx].max_west);
 			}
 		}
 
-		if (min_west == 360)
+		if (min_west == 360) {
 			min_west = dem[indx].min_west;
-
+		}
 		else {
 			if (std::abs(dem[indx].min_west - min_west) < 180.0) {
-				if (dem[indx].min_west < min_west)
-					min_west = dem[indx].min_west;
+				min_west = std::min<double>(min_west, dem[indx].min_west);
 			}
-
 			else {
-				if (dem[indx].min_west > min_west)
-					min_west = dem[indx].min_west;
+				min_west = std::max<double>(min_west, dem[indx].min_west);
 			}
 		}
 
 		return 1;
 	}
-
-	else
-		return 0;
+	return 0;
 }
 
-char* Input::BZfgets(char *output, BZFILE *bzfd, unsigned length)
+auto Input::BZfgets(char *output, BZFILE *bzfd, unsigned length) -> char*
 {
 	/* This function returns at most one less than 'length' number
 	   of characters from a bz2 compressed file whose file descriptor
@@ -703,10 +691,10 @@ char* Input::BZfgets(char *output, BZFILE *bzfd, unsigned length)
 		return nullptr;
 	}
 
-	for (size_t i = 0; (unsigned)i < length; i++) {
+	for (size_t i = 0; i < length; i++) {
 		if (bzbuf_empty) {  // Uncompress data into buffer if empty */
 
-			bzbytes_read = (long)BZ2_bzRead(&bzerror, bzfd, buffer, BZBUFFER);
+			bzbytes_read = BZ2_bzRead(&bzerror, bzfd, buffer, BZBUFFER);
 			buffer[bzbytes_read] = 0;
 			bzbuf_empty = 0;
 			/*
@@ -715,10 +703,10 @@ char* Input::BZfgets(char *output, BZFILE *bzfd, unsigned length)
 				        BZ2_bzReadGetUnused (&bzerror, bzfd,void** unused, int* nUnused );
 			  */
 			if (bzerror != BZ_OK && bzerror != BZ_STREAM_END)
-			        return (nullptr);
+				return (nullptr);
 		}
-	        if (!bzbuf_empty) {  // Build string from buffer if not empty
-		        output[i]=buffer[bzbuf_pointer++];
+		if (!bzbuf_empty) {  // Build string from buffer if not empty
+			output[i]=buffer[bzbuf_pointer++];
 
 			if (bzbuf_pointer >= bzbytes_read) {
 				bzbuf_pointer = 0L;
@@ -736,7 +724,7 @@ char* Input::BZfgets(char *output, BZFILE *bzfd, unsigned length)
 	return (output);
 }
 
-int Input::LoadSDF_BZ(char *name)
+int Input::LoadSDF_BZ(std::string_view name)
 {
 	/* This function reads Bzip2 ncompressed ss Data Files (.sdf.bz2)
 	   containing digital elevation model data into memory.
@@ -1020,7 +1008,7 @@ char *Input::GZfgets(char *output, gzFile gzfd, unsigned length)
 }
 
 
-int Input::LoadSDF_GZ(char *name)
+int Input::LoadSDF_GZ(std::string_view name)
 {
 	/* This function reads Gzip compressed ss Data Files (.sdf.gz)
 	   containing digital elevation model data into memory.
@@ -1259,7 +1247,7 @@ int Input::LoadSDF_GZ(char *name)
 }
 
 
-int Input::LoadSDF(char *name)
+int Input::LoadSDF(std::string_view name)
 {
 	/* This function loads the requested SDF file from the filesystem.
 	   It first tries to invoke the LoadSDF_SDF() function to load an
@@ -1272,8 +1260,11 @@ int Input::LoadSDF(char *name)
 	   exists for the region requested, and that the region
 	   requested must be entirely over water. */
 
-	int x, y, indx, minlat, minlon, maxlat, maxlon;
-	char found, free_page = 0;
+	int indx = 0;
+	int minlat = 0;
+	int minlon = 0;
+	int maxlat = 0;
+	int maxlon = 0;
 	int return_value = -1;
 
 	/* Try to load an uncompressed SDF first. */
@@ -1296,31 +1287,31 @@ int Input::LoadSDF(char *name)
 
 	if ( return_value <= 0 ) {
 
-		sscanf(name, "%d:%d:%d:%d", &minlat, &maxlat, &minlon,
+		sscanf(name.data(), "%d:%d:%d:%d", &minlat, &maxlat, &minlon,
 		       &maxlon);
 
 		/* Is it already in memory? */
 
-		for (indx = 0, found = 0; indx < MAXPAGES && found == 0; indx++) {
-			if (minlat == dem[indx].min_north
-			    && minlon == dem[indx].min_west
-			    && maxlat == dem[indx].max_north
-			    && maxlon == dem[indx].max_west)
-				found = 1;
+		bool found = false;
+		for (indx = 0; indx < MAXPAGES && !found; indx++) {
+			if (minlat == dem[indx].min_north && minlon == dem[indx].min_west && maxlat == dem[indx].max_north && maxlon == dem[indx].max_west) {
+				found = true;
+			}
 		}
 
 		/* Is room available to load it? */
-
-		if (found == 0) {
-			for (indx = 0, free_page = 0;
-			     indx < MAXPAGES && free_page == 0; indx++)
-				if (dem[indx].max_north == -90)
-					free_page = 1;
+		bool free_page = false;
+		if (!found) {
+			for (indx = 0; indx < MAXPAGES && !free_page; indx++) {
+				if (dem[indx].max_north == -90) {
+					free_page = true;
+				}
+			}
 		}
 
 		indx--;
 
-		if (free_page && found == 0 && indx >= 0 && indx < MAXPAGES) {
+		if (free_page && !found && indx >= 0 && indx < MAXPAGES) {
 			if (debug) {
 				std::println(stderr,
 					"Region  \"{}\" assumed as sea-level into page {}...",
@@ -1334,43 +1325,39 @@ int Input::LoadSDF(char *name)
 
 			/* Fill DEM with sea-level topography */
 
-			for (x = 0; x < ippd; x++)
-				for (y = 0; y < ippd; y++) {
+			for (int x = 0; x < ippd; x++) {
+				for (int y = 0; y < ippd; y++) {
 					dem[indx].data[x][y] = 0;
 					dem[indx].signal[x][y] = 0;
 					dem[indx].mask[x][y] = 0;
-
-					if (dem[indx].min_el > 0)
-						dem[indx].min_el = 0;
+					dem[indx].min_el = std::max(dem[indx].min_el, 0);
 				}
+			}
 
-			if (dem[indx].min_el < min_elevation)
-				min_elevation = dem[indx].min_el;
+			min_elevation = std::min(min_elevation, dem[indx].min_el);
+			max_elevation = std::max(max_elevation, dem[indx].max_el);
 
-			if (dem[indx].max_el > max_elevation)
-				max_elevation = dem[indx].max_el;
-
-			if (max_north == -90)
+			if (max_north == -90) {
 				max_north = dem[indx].max_north;
+			}
+			else {
+				max_north = std::max<double>(max_north, dem[indx].max_north);
+			}
 
-			else if (dem[indx].max_north > max_north)
-				max_north = dem[indx].max_north;
-
-			if (min_north == 90)
+			if (min_north == 90) {
 				min_north = dem[indx].min_north;
-
-			else if (dem[indx].min_north < min_north)
-				min_north = dem[indx].min_north;
+			}
+			else {
+				min_north = std::min<double>(min_north, dem[indx].min_north);
+			}
 
 			if (max_west == -1) {
 				max_west = dem[indx].max_west;
 			}
-
 			else {
 				if (std::abs(dem[indx].max_west - max_west) < 180) {
 					max_west = std::max<double>(dem[indx].max_west, max_west);
 				}
-
 				else {
 					max_west = std::min<double>(dem[indx].max_west, max_west);
 				}
@@ -1379,12 +1366,10 @@ int Input::LoadSDF(char *name)
 			if (min_west == 360) {
 				min_west = dem[indx].min_west;
 			}
-
 			else {
 				if (std::abs(dem[indx].min_west - min_west) < 180) {
 					min_west = std::min<double>(dem[indx].min_west, min_west);
 				}
-
 				else {
 					min_west = std::max<double>(dem[indx].min_west, min_west);
 				}
