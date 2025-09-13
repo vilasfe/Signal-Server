@@ -18,7 +18,7 @@
 #include "image-ppm.hh"
 #include "image.hh"
 
-_image_format Image::default_format = IMAGE_PPM;
+image_format Image::default_format = IMAGE_PPM;
 std::string Image::dynamic_backend;
 
 /*
@@ -26,7 +26,7 @@ std::string Image::dynamic_backend;
  * Changes the default format for the next
  * uninitialized image canvas
  */
-auto Image::set_format(_image_format format) -> int {
+auto Image::set_format(image_format format) -> int {
 	if(format <= IMAGE_DEFAULT || format >= IMAGE_FORMAT_MAX) {
 		return EINVAL;
 	}
@@ -39,7 +39,7 @@ auto Image::set_format(_image_format format) -> int {
  * Initialize an image context. Must be called
  * before attempting to write any image data
  */
-auto Image::create(const size_t width, const size_t height, [[maybe_unused]] const _image_model model, const _image_format format) -> std::shared_ptr<Image> {
+auto Image::create(const size_t width, const size_t height, [[maybe_unused]] const image_model model, const image_format format) -> std::shared_ptr<Image> {
 	if(format >= IMAGE_FORMAT_MAX || (format == IMAGE_LIBRARY && dynamic_backend.empty())) {
 		throw std::runtime_error("Invalid image format");
 	}
@@ -51,7 +51,7 @@ auto Image::create(const size_t width, const size_t height, [[maybe_unused]] con
 	return {};
 }
 
-Image::Image(const size_t width, const size_t height, const _image_model model, const _image_format format)
+Image::Image(const size_t width, const size_t height, const image_model model, const image_format format)
   : width(width), height(height), model(model), format(format)
 
 {

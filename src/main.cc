@@ -489,7 +489,7 @@ auto ReadBearing(std::string_view input) -> double
 	return bearing;
 }
 
-void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE *outfile)
+void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, std::ofstream& outfile)
 {
 	/* Perform an obstruction analysis along the
 	   path between receiver and transmitter. */

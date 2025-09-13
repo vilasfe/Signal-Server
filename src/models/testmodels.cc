@@ -22,6 +22,8 @@
 *                                                                            *
 \****************************************************************************/
 
+#include <string>
+
 #include "cost.hh"
 #include "ecc33.hh"
 #include "egli.hh"
@@ -39,7 +41,7 @@ extern void point_to_point_ITM(double tht_m, double rht_m, double eps_dielect,
 auto main([[maybe_unused]] int argc, char** argv) -> int
 {
 double a = 0;
-const double f = atof(argv[1]);
+const double f = std::stod(argv[1]);
 constexpr double r = 5.0;
 constexpr float TxH = 30.0;
 constexpr float RxH = 2.0;

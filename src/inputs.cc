@@ -36,7 +36,7 @@ extern double antenna_rotation,antenna_downtilt,antenna_dt_direction;
 
 int Input::jgets = 0;
 
-auto Input::loadClutter(std::string_view filename, double radius, struct site_t tx) -> int
+auto Input::loadClutter(std::string_view filename, double radius, const struct site_t& tx) -> int
 {
 	/* This function reads a MODIS 17-class clutter file in ASCII Grid format.
 	   The nominal heights it applies to each value, eg. 5 (Mixed forest) = 15m are 
@@ -52,11 +52,13 @@ auto Input::loadClutter(std::string_view filename, double radius, struct site_t 
 	double yll = 0.0;
 	double cellsize, cellsize2, xOffset, yOffset, lat, lon;
 	char line[100000];
-	char *s, *pch = nullptr;
+	char *s = nullptr;
+	char *pch = nullptr;
 	FILE *fd = nullptr;
 
-	if ((fd = fopen(filename.data(), "rb")) == nullptr)
+	if (fd = fopen(filename.data(), "rb"); fd == nullptr) {
 		return errno;
+	}
 
 	if (fgets(line, 19, fd) != nullptr) {
 		pch = strtok(line," ");
@@ -225,7 +227,7 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		}
 
 		if (debug) {
-			std::println(stderr, "Loading \"{}\" into page {} with width {}...", files[indx], indx, tiles[indx].width);
+			std::println(stderr, "Loading \"{}\" into page {} with width {}...", files[indx], indx, tiles[indx].cols);
 		}
 
 		// Increase the "average" cell size
@@ -278,7 +280,7 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	}
 
 	// Don't resize large 1 deg tiles in large multi-degree plots as it gets messy
-	if(tiles[0].width != 3600){
+	if(tiles[0].cols != 3600){
 
 	  for (size_t i = 0; i < static_cast<size_t>(fc); i++) {
 			const float rescale = tiles[i].resolution / desired_resolution;
@@ -316,8 +318,8 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		tiles[fc].min_west=max_west;
 		tiles[fc].ppdy=tiles[fc-1].ppdy;
 		tiles[fc].ppdy=tiles[fc-1].ppdx;
-		tiles[fc].width=(total_height-total_width);
-		tiles[fc].height=total_height;
+		tiles[fc].cols=(total_height-total_width);
+		tiles[fc].rows=total_height;
 		tiles[fc].data=tiles[fc-1].data;
 		fc++;
 
@@ -336,8 +338,8 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		tiles[fc].min_west=min_west;
 		tiles[fc].ppdy=tiles[fc-1].ppdy;
 		tiles[fc].ppdy=tiles[fc-1].ppdx;
-		tiles[fc].width=total_width; 
-		tiles[fc].height=(total_width-total_height);
+		tiles[fc].cols=total_width;
+		tiles[fc].rows=(total_width-total_height);
 		tiles[fc].data=tiles[fc-1].data;
 		fc++;
 
@@ -355,8 +357,8 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		const size_t north_pixel_offset = north_offset * tiles[i].ppdy;
 		const size_t west_pixel_offset = west_offset * tiles[i].ppdx;
 
-		new_width = std::max(new_width, west_pixel_offset + tiles[i].width);
-		new_height = std::max(new_height, north_pixel_offset + tiles[i].height);
+		new_width = std::max(new_width, west_pixel_offset + tiles[i].cols);
+		new_height = std::max(new_height, north_pixel_offset + tiles[i].rows);
 
 		if (debug) {
 			fprintf(stderr,"north_pixel_offset %zu west_pixel_offset %zu, %zu x %zu\n", north_pixel_offset, west_pixel_offset,new_height,new_width);
@@ -397,21 +399,21 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		if (debug) {
 			fprintf(stderr,"mn: %lf mw:%lf globals: %lf %lf\n", tiles[i].max_north, tiles[i].max_west, max_north, max_west);
 			fprintf(stderr,"Offset n:%zu(%lf) w:%zu(%lf)\n", north_pixel_offset, north_offset, west_pixel_offset, west_offset);
-			std::println(stderr,"Height: {}", tiles[i].height);
+			std::println(stderr,"Height: {}", tiles[i].rows);
 		}
 
 		/* Copy it row-by-row from the tile */
-		for (size_t h = 0; h < static_cast<size_t>(tiles[i].height); h++) {
+		for (size_t h = 0; h < static_cast<size_t>(tiles[i].rows); h++) {
 			short *dest_addr = &new_tile[ (north_pixel_offset+h)*new_width + west_pixel_offset];
-			short *src_addr = &tiles[i].data[h*tiles[i].width];
+			short *src_addr = &tiles[i].data[h*tiles[i].cols];
 			// Check if we might overflow
-			if ( dest_addr + tiles[i].width > new_tile + new_tile_alloc || dest_addr < new_tile ){
+			if ( dest_addr + tiles[i].cols > new_tile + new_tile_alloc || dest_addr < new_tile ){
 				if (debug) {
 					fprintf(stderr, "Overflow %zu\n",i);
 				}
 				continue;
 			}
-			memcpy( dest_addr, src_addr, tiles[i].width * sizeof(short) );
+			memcpy( dest_addr, src_addr, tiles[i].cols * sizeof(short) );
 		}
 	}
 

@@ -18,8 +18,8 @@
  * Distance: Any
  */
 
-#ifndef _FSPL_HH_
-#define _FSPL_HH_
+#ifndef FSPL_HH_
+#define FSPL_HH_
 
 #include "../common.h"
 
@@ -27,4 +27,4 @@ constexpr auto FSPLpathLoss(float f, float d) -> double {
       return(32.44 + _20log10(f) + _20log10(d));
 }
 
-#endif /* _FSPL_HH_ */
+#endif /* FSPL_HH_ */

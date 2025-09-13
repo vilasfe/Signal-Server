@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <numbers>
 #include <print>
 #include <string>
@@ -146,7 +147,7 @@ void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, str
 					blue = region.color[match][2];
 				}
 
-				if (mask & 2) {
+				if ((mask & 2) != 0U) {
 					/* Text Labels: Red or otherwise */
 
 					if (red >= 180 && green <= 75 && blue <= 75 && loss == 0) {
@@ -159,7 +160,7 @@ void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, str
 					cityorcounty = true;
 				}
 
-				else if (mask & 4) {
+				else if ((mask & 4) != 0U) {
 					/* County Boundaries: Black */
 
 					ctx->add_pixel(0, 0, 0);
@@ -349,7 +350,7 @@ auto Output::DoSigStr(std::string& filename, bool kml, bool ngs, struct site_t *
 					blue = region.color[match][2];
 				}
 
-				if (mask & 2) {
+				if ((mask & 2) != 0U) {
 					/* Text Labels: Red or otherwise */
 
 					if (red >= 180 && green <= 75 && blue <= 75) {
@@ -362,7 +363,7 @@ auto Output::DoSigStr(std::string& filename, bool kml, bool ngs, struct site_t *
 					cityorcounty = true;
 				}
 
-				else if (mask & 4) {
+				else if ((mask & 4) != 0U) {
 					/* County Boundaries: Black */
 
 					ctx->add_pixel(0, 0, 0);
@@ -560,7 +561,7 @@ void Output::DoRxdPwr(std::string filename, bool kml, bool ngs, struct site_t *x
 					blue = region.color[match][2];
 				}
 
-				if (mask & 2) {
+				if ((mask & 2) != 0U) {
 					/* Text Labels: Red or otherwise */
 
 					if (red >= 180 && green <= 75 && blue <= 75 && dBm != 0) {
@@ -573,7 +574,7 @@ void Output::DoRxdPwr(std::string filename, bool kml, bool ngs, struct site_t *x
 					cityorcounty = true;
 				}
 
-				else if (mask & 4) {
+				else if ((mask & 4) != 0U) {
 					/* County Boundaries: Black */
 					ctx->add_pixel(0, 0, 0);
 					cityorcounty = true;
@@ -739,15 +740,15 @@ void Output::DoLOS(std::string& filename, bool kml, bool ngs, struct site_t *xmt
 			if (found) {
 				const unsigned char mask = dem[indx].mask[x0][y0];
 
-				if (mask & 2)
+				if ((mask & 2) != 0U) {
 					/* Text Labels: Red */
 					ctx->add_pixel(255, 0, 0);
-
-				else if (mask & 4)
+				}
+				else if ((mask & 4) != 0U) {
 					/* County Boundaries: Light Cyan */
 					ctx->add_pixel(128, 128, 255);
-
-				else
+				}
+				else {
 					switch (mask & 57) {
 					case 1:
 						/* TX1: Green */
@@ -843,6 +844,7 @@ void Output::DoLOS(std::string& filename, bool kml, bool ngs, struct site_t *xmt
 							}
 						}
 					}
+				}
 			}
 
 			else {
@@ -865,7 +867,6 @@ void Output::DoLOS(std::string& filename, bool kml, bool ngs, struct site_t *xmt
 		fclose(fd);
 		fd = nullptr;
 	}
-
 }
 
 void Output::PathReport(struct site_t source, struct site_t destination, std::string& name,
@@ -896,7 +897,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 	snprintf(report_name, 80, "%s.txt%c", name.data(), 0);
 	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS_FT;
 
-	FILE* fd2 = fopen(report_name, "w");
+	auto fd2 = std::ofstream(report_name);
 
 	std::println(fd2, "\n\t\t--==[ Path Profile Analysis ]==--\n");
 	std::println(fd2, "Transmitter site: {}", source.name);
@@ -1148,11 +1149,12 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 			}
 
 			if (eirp >= 10.0 && eirp < 10.0e3) {
-				fprintf(fd2, "%.0lf Watts", eirp);
+				std::print(fd2, "{:.0f} Watts", eirp);
 			}
 
-			if (eirp >= 10.0e3)
-				fprintf(fd2, "%.3lf kilowatts", eirp / 1.0e3);
+			if (eirp >= 10.0e3) {
+				std::print(fd2, "{:.3f} kilowatts", eirp / 1.0e3);
+			}
 
 			dBm = 10.0 * (std::log10(eirp * 1000.0));
 			std::println(fd2, " ({:+.2f} dBm)", dBm);
@@ -1474,7 +1476,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 	}
 
 	ObstructionAnalysis(source, destination, LR.frq_mhz, fd2);
-	fclose(fd2);
+	fd2.close();
 
 	std::print(stderr,
 		"Path loss (dB), Received Power (dBm), Field strength (dBuV):\n{:.1f}\n{:.1f}\n{:.1f}",
@@ -1529,7 +1531,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 			strncpy(term, "postscript enhanced color\0", 26);
 		}
 
-		FILE* fd = fopen("ppa.gp", "w");
+		auto fd = std::ofstream("ppa.gp");
 
 		std::println(fd, "set grid");
 		std::println(fd, "set yrange [{:2.3f} to {:2.3f}]", minloss, maxloss);
@@ -1561,10 +1563,10 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 			std::print(fd, "set ylabel \"Longley-Rice Path Loss (dB)");
 		}
 
-		std::println(fd, "\"\nset output \"{}.{}\"", basename.data(), ext);
+		std::println(fd, "\"\nset output \"{}.{}\"", basename, ext);
 		std::println(fd, "plot \"profile.gp\" title \"Path Loss\" with lines");
 
-		fclose(fd);
+		fd.close();
 
 		const int x = system("gnuplot ppa.gp");
 
@@ -1594,9 +1596,6 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 	    0.0, fpt6_zone = 0.0, nm = 0.0, nb = 0.0, ed = 0.0, es = 0.0, r =
 	    0.0, d = 0.0, d1 = 0.0, terrain;
 	struct site_t remote;
-	FILE *fd1 = nullptr;
-	FILE *fd3 = nullptr;
-	FILE *fd4 = nullptr;
 
 	ReadPath(destination, source);
 	const double azimuth = Azimuth(destination, source);
@@ -1627,16 +1626,19 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 	std::string fresnelname = name + "_fresnel";
 	std::string fresnel60name = name + "_fresnel60";
 
-	FILE* fd = fopen(profilename.data(), "wb");
+	auto fd = std::ofstream(profilename, std::ios::binary);
+	std::ofstream fd1;
 	if (clutter > 0.0) {
-		fd1 = fopen(cluttername.data(), "wb");
+		fd.open(cluttername, std::ios::binary);
 	}
-	FILE* fd2 = fopen(referencename.data(), "wb");
-	FILE* fd5 = fopen(curvaturename.data(), "wb");
+	auto fd2 = std::ofstream(referencename, std::ios::binary);
+	auto fd5 = std::ofstream(curvaturename, std::ios::binary);
 
+	std::ofstream fd3;
+	std::ofstream fd4;
 	if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
-		fd3 = fopen(fresnelname.data(), "wb");
-		fd4 = fopen(fresnel60name.data(), "wb");
+		fd3.open(fresnelname, std::ios::binary);
+		fd4.open(fresnel60name, std::ios::binary);
 	}
 
 	for (int x = 0; x < path.length - 1; x++) {
@@ -1690,7 +1692,7 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 				std::println(fd, "{:.3f} {:.3f}", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * height);
 			}
 
-			if (fd1 != nullptr && x > 0 && x < path.length - 2) {
+			if (fd1.is_open() && x > 0 && x < path.length - 2) {
 				std::println(fd1, "{:.3f} {:.3f}", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * (terrain == 0.0 ? height : (height + clutter)));
 			}
 
@@ -1701,7 +1703,7 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 		else {
 			std::println(fd, "{:.3f} {:.3f}", path.distance[x], height);
 
-			if (fd1 != nullptr && x > 0 && x < path.length - 2) {
+			if (fd1.is_open() && x > 0 && x < path.length - 2) {
 				std::println(fd1, "{:.3f} {:.3f}", path.distance[x],
 					(terrain ==
 					 0.0 ? height : (height + clutter)));
@@ -1763,20 +1765,6 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 			std::print(fd4, "{:.3f} {:.3f}",
 				path.distance[path.length - 1], r);
 		}
-	}
-
-	fclose(fd);
-
-	if (fd1 != nullptr) {
-		fclose(fd1);
-	}
-
-	fclose(fd2);
-	fclose(fd5);
-
-	if ((LR.frq_mhz >= 20.0) && (LR.frq_mhz <= 100000.0) && fresnel_plot) {
-		fclose(fd3);
-		fclose(fd4);
 	}
 
 	std::println(stderr, "");

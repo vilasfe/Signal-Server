@@ -6,30 +6,12 @@
 
 using tile_t = struct tile_t {
 	std::string filename;
-	union{
-		int	cols = 0;
-		int	width;
-	};
-	union{
-		int	rows = 0;
-		int	height;
-	};
-	union{
-		double	xll = 0.0;
-		double	max_west;
-	};
-	union{
-		double	yll = 0.0;
-		double	min_north;
-	};
-	union{
-		double	xur = 0.0;
-		double	min_west;
-	};
-	union{
-		double	yur = 0.0;
-		double	max_north;
-	};
+	int	cols = 0; // width
+	int	rows = 0; // height
+	double max_west = 0.0; // xll
+	double min_north = 0.0; // yll
+	double min_west = 0.0; // xur
+	double max_north = 0.0; // yur
 	double	cellsize = 0.0;
 	long long datastart = 0LL;
 	short	nodata = 0;

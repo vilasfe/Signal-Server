@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <numbers>
 #include <print>
 #include <string>
@@ -31,10 +32,9 @@ auto haversine_formula(double th1, double ph1, double th2, double ph2) -> double
 }
 
 auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
-	FILE *fd;
+	FILE *fd = nullptr;
 	char line[MAX_LINE];
-	short nextval;
-	char *pch;
+	char *pch = nullptr;
 
 	/* Clear the tile data */
 	*tile = tile_t{};
@@ -46,7 +46,7 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 
 	/* This is where we read the header data */
 	/* The string is split for readability but is parsed as a block */
-	if( fscanf(fd,"%*s %d\n" "%*s %d\n" "%*s %lf\n" "%*s %lf\n" "%*s %lf\n" "%*s %d\n",&tile->width,&tile->height,&tile->xll,&tile->yll,&tile->cellsize,(int *)&tile->nodata) != 6 ){
+	if( fscanf(fd,"%*s %d\n" "%*s %d\n" "%*s %lf\n" "%*s %lf\n" "%*s %lf\n" "%*s %d\n",&tile->cols,&tile->rows,&tile->max_west,&tile->min_north,&tile->cellsize,(int *)&tile->nodata) != 6 ){
 		fclose(fd);
 		return -1;
 	}
@@ -54,25 +54,21 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	tile->datastart = ftell(fd);
 
 	if(debug) {
-		std::println(stderr, "w:{} h:{} s:{:f}", tile->width, tile->height, tile->cellsize);
+		std::println(stderr, "w:{} h:{} s:{:f}", tile->cols, tile->rows, tile->cellsize);
 	}
 
 	/* Set the filename */
 	tile->filename = filename;
 
 	/* Perform xur calcs */
-	tile->xur = tile->xll+(tile->cellsize*tile->width);
-	tile->yur = tile->yll+(tile->cellsize*tile->height);
+	tile->min_west = tile->max_west+(tile->cellsize*tile->cols);
+	tile->max_north = tile->min_north+(tile->cellsize*tile->rows);
 
-	if (tile->xur > eastoffset) {
-		eastoffset = tile->xur;
-	}
-	if (tile->xll < westoffset) {
-		westoffset = tile->xll;
-	}
+	eastoffset = std::max(eastoffset, tile->min_west);
+	westoffset = std::min(westoffset, tile->max_west);
 
 	 if (debug) {
-	 	std::println(stderr,"{}, {} {:.7f}, {:.7f}, {:.7f}, {:.7f}, {:.7f}",tile->width,tile->height,tile->xll,tile->yll,tile->cellsize,tile->yur,tile->xur);
+	 	std::println(stderr,"{}, {} {:.7f}, {:.7f}, {:.7f}, {:.7f}, {:.7f}",tile->cols,tile->rows,tile->max_west,tile->min_north,tile->cellsize,tile->max_north,tile->min_west);
 	 }
 
 	// Greenwich straddling hack
@@ -82,49 +78,43 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	 	delta = eastoffset; // add to Tx longitude later
 	 } else {*/
 		// Transform WGS84 longitudes into 'west' values as society finishes east of Greenwich ;)
-		if (tile->xll >= 0) {
-			tile->xll = 360-tile->xll;
+		if (tile->max_west >= 0) {
+			tile->max_west = 360-tile->max_west;
 		}
-		if(tile->xur >= 0) {
-			tile->xur = 360-tile->xur;
+		if(tile->min_west >= 0) {
+			tile->min_west = 360-tile->min_west;
 		}
-		if(tile->xll < 0) {
-			tile->xll = tile->xll * -1;
+		if(tile->max_west < 0) {
+			tile->max_west = -tile->max_west;
 		}
-		if(tile->xur < 0) {
-			tile->xur = tile->xur * -1;
+		if(tile->min_west < 0) {
+			tile->min_west = -tile->min_west;
 		}
 	// }
 
 	if (debug) {
-		std::println(stderr, "POST yll {:.7f} yur {:.7f} xur {:.7f} xll {:.7f} delta {:.6f}", tile->yll, tile->yur, tile->xur, tile->xll, delta);
+		std::println(stderr, "POST yll {:.7f} yur {:.7f} xur {:.7f} xll {:.7f} delta {:.6f}", tile->min_north, tile->max_north, tile->min_west, tile->max_west, delta);
 	}
 
 	/* Read the actual tile data */
 	/* Allocate the array for the lidar data */
-	if (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short)); tile->data == nullptr ) {
+	if (tile->data = (short*) calloc(tile->cols * tile->rows, sizeof(short)); tile->data == nullptr ) {
 		fclose(fd);
 		tile->filename.clear();
 		return ENOMEM;
 	}
 
 	size_t loaded = 0;
-	for (size_t h = 0; h < static_cast<unsigned>(tile->height); h++) {
+	for (size_t h = 0; h < static_cast<unsigned>(tile->rows); h++) {
 		if (fgets(line, MAX_LINE, fd) != nullptr) {
 			pch = strtok(line, " "); // split line into values
-			for (size_t w = 0; w < static_cast<unsigned>(tile->width) && pch != nullptr; w++) {
+			for (size_t w = 0; w < static_cast<unsigned>(tile->cols) && pch != nullptr; w++) {
 				/* If the data is less than a *magic* minimum, normalize it to zero */
-				nextval = atoi(pch);
-				if (nextval <= 0)
-					nextval = 0;
-				tile->data[h*tile->width + w] = nextval;
+				const auto nextval = static_cast<short>(std::max(0, std::atoi(pch)));
+				tile->data[h*tile->cols + w] = nextval;
 				loaded++;
-				if ( nextval > tile->max_el ) {
-					tile->max_el = nextval;
-				}
-				if ( nextval < tile->min_el ) {
-					tile->min_el = nextval;
-				}
+				tile->max_el = std::max(tile->max_el, nextval);
+				tile->min_el = std::min(tile->min_el, nextval);
 				pch = strtok(nullptr, " ");
 			}//while
 		} else {
@@ -133,20 +123,20 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	}
 
 	const double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
-	tile->precise_resolution = static_cast<float>(current_res_km/std::max(tile->width,tile->height)*1000);
+	tile->precise_resolution = static_cast<float>(current_res_km/std::max(tile->cols,tile->rows)*1000);
 
 	// Round to nearest 0.5
-	tile->resolution = tile->precise_resolution < 0.5F ? 0.5F : std::ceil((tile->precise_resolution * 2)+0.5) * 0.5;
+	tile->resolution = tile->precise_resolution < 0.5F ? 0.5F : static_cast<float>(std::ceil((tile->precise_resolution * 2)+0.5) * 0.5);
 
 	// Positive westing
 	tile->width_deg = tile->max_west - tile->min_west >= 0 ? tile->max_west - tile->min_west : tile->max_west + (360 - tile->min_west);
 	tile->height_deg = tile->max_north - tile->min_north;
 
-	tile->ppdx = tile->width / tile->width_deg;
-	tile->ppdy = tile->height / tile->height_deg;
+	tile->ppdx = static_cast<int>(tile->cols / tile->width_deg);
+	tile->ppdy = static_cast<int>(tile->rows / tile->height_deg);
 
 	if (debug) {
-		std::print(stderr,"Pixels loaded: {}/{} (PPD {}x{}, Res {:f} ({:.2f}))", loaded, tile->width*tile->height, tile->ppdx, tile->ppdy, tile->precise_resolution, tile->resolution);
+		std::print(stderr,"Pixels loaded: {}/{} (PPD {}x{}, Res {:f} ({:.2f}))", loaded, tile->cols*tile->rows, tile->ppdx, tile->ppdy, tile->precise_resolution, tile->resolution);
 	}
 
 	/* All done, close the LIDAR file */
@@ -173,8 +163,8 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 		return 0;	
 	}
 
-	const size_t new_height = tile->height * scale;
-	const size_t new_width = tile->width * scale;
+	const size_t new_height = tile->rows * scale;
+	const size_t new_width = tile->cols * scale;
 
 	/* Allocate the array for the lidar data */
 	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == nullptr ) {
@@ -186,22 +176,22 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 
 	/* Making the tile data smaller */
 	if (scale < 1) {
-		skip_count = 1 / scale;
+		skip_count = static_cast<size_t>(1 / scale);
 	} else {
 		copy_count = static_cast<size_t>(scale);
 	}
 
 	if (debug) {
-		std::println(stderr,"Resampling tile {} [{:.1f}]:\n\tOld {}x{}. New {}x{}\n\tScale {:f} Skip {} Copy {}", tile->filename, tile->resolution, tile->width, tile->height, new_width, new_height, scale, skip_count, copy_count);
+		std::println(stderr,"Resampling tile {} [{:.1f}]:\n\tOld {}x{}. New {}x{}\n\tScale {:f} Skip {} Copy {}", tile->filename, tile->resolution, tile->cols, tile->rows, new_width, new_height, scale, skip_count, copy_count);
 	}
 	/* Nearest neighbour normalization. For each subsample of the original, simply
 	 * assign the value in the top left to the new pixel 
 	 * SOURCE: X / Y
 	 * DEST:   I / J */
 
-	for (size_t y = 0, j = 0; y < static_cast<unsigned>(tile->height) && j < new_height; y += skip_count, j += copy_count) {
+	for (size_t y = 0, j = 0; y < static_cast<unsigned>(tile->rows) && j < new_height; y += skip_count, j += copy_count) {
 
-		for (size_t x = 0, i = 0; x < static_cast<unsigned>(tile->width) && i < new_width; x += skip_count, i += copy_count) {
+		for (size_t x = 0, i = 0; x < static_cast<unsigned>(tile->cols) && i < new_width; x += skip_count, i += copy_count) {
 		
 			/* These are for scaling up the data */
 			for (size_t copy_y = 0; copy_y < copy_count; copy_y++) {
@@ -209,16 +199,12 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 					const size_t new_j = j + copy_y;
 					const size_t new_i = i + copy_x;
 					/* Do the copy */
-					new_data[ new_j * new_width + new_i ] = tile->data[y * tile->width + x];
+					new_data[ new_j * new_width + new_i ] = tile->data[y * tile->cols + x];
 				}
 			}
 			/* Update local min / max values */
-			if (tile->data[y * tile->width + x] > tile->max_el) {
-				tile->max_el = tile->data[y * tile->width + x];
-			}
-			if (tile->data[y * tile->width + x] < tile->min_el) {
-				tile->min_el = tile->data[y * tile->width + x];
-			}
+			tile->max_el = std::max(tile->max_el, tile->data[y * tile->cols + x]);
+			tile->min_el = std::min(tile->min_el, tile->data[y * tile->cols + x]);
 		}
 	}
 
@@ -227,11 +213,11 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 	tile->data = new_data;
 
 	/* Update the height and width values */
-	tile->height = new_height;
-	tile->width = new_width;
+	tile->rows = new_height;
+	tile->cols = new_width;
 	tile->resolution *= 1/scale;	// A scale of 2 is HALF the resolution
-	tile->ppdx = tile->width / tile->width_deg;
-	tile->ppdy = tile->height / tile->height_deg;
+	tile->ppdx = tile->cols / tile->width_deg;
+	tile->ppdy = tile->rows / tile->height_deg;
 	// tile->width_deg *= scale;
 	// tile->height_deg *= scale;
 	if (debug) {

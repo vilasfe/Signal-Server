@@ -19,7 +19,7 @@ public:
     static auto LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat) -> int;
     static auto LoadUDT(std::string_view filename) -> int;
     static auto loadLIDAR(const std::string& filenames, int resample) -> int;
-    static auto loadClutter(std::string_view filename, double radius, struct site_t tx) -> int;
+    static auto loadClutter(std::string_view filename, double radius, const struct site_t& tx) -> int;
     static auto averageHeight(int x, int y) -> int;
     static constexpr char AZ_FILE_SUFFIX[] = ".az";
     static constexpr char EL_FILE_SUFFIX[] = ".el";

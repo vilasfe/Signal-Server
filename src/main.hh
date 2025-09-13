@@ -1,8 +1,9 @@
-#ifndef _MAIN_HH_
-#define _MAIN_HH_
+#ifndef MAIN_HH_
+#define MAIN_HH_
 
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <string_view>
 
 #include "common.h"
@@ -38,13 +39,13 @@ constexpr auto LonDiff(double lon1, double lon2) -> double
     return diff;
 }
 
-int PutMask(double lat, double lon, int value);
-int OrMask(double lat, double lon, int value);
-int GetMask(double lat, double lon);
+auto PutMask(double lat, double lon, int value) -> int;
+auto OrMask(double lat, double lon, int value) -> int;
+auto GetMask(double lat, double lon) -> int;
 void PutSignal(double lat, double lon, unsigned char signal);
-unsigned char GetSignal(double lat, double lon);
-double GetElevation(const struct site_t& location);
-int AddElevation(double lat, double lon, double height, int size);
+auto GetSignal(double lat, double lon) -> unsigned char;
+auto GetElevation(const struct site_t& location) -> double;
+auto AddElevation(double lat, double lon, double height, int size) -> int;
 
 constexpr auto Distance(const struct site_t& site1, const struct site_t& site2) -> double
 {
@@ -111,11 +112,11 @@ constexpr auto Azimuth(const struct site_t& source, const struct site_t& destina
     return (azimuth * RAD2DEG);
 }
 
-double ElevationAngle(const struct site_t& source, const struct site_t& destination);
+auto ElevationAngle(const struct site_t& source, const struct site_t& destination) -> double;
 void ReadPath(const struct site_t& source, const struct site_t& destination);
-double ElevationAngle2(const struct site_t& source, const struct site_t& destination, double er);
-double ReadBearing(std::string_view input);
-void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, FILE *outfile);
+auto ElevationAngle2(const struct site_t& source, const struct site_t& destination, double er) -> double;
+auto ReadBearing(std::string_view input) -> double;
+void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, std::ofstream& outfile);
 
 void free_elev();
 void free_path();
@@ -125,4 +126,4 @@ void alloc_path();
 void alloc_dem();
 void do_allocs();
 
-#endif /* _MAIN_HH_ */
+#endif /* MAIN_HH_ */
