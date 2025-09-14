@@ -128,4 +128,35 @@ constexpr auto _20log10(auto&& x)
 	return(8.685889F*std::log(x));
 }
 
+/* Computes the distance between two long/lat points */
+constexpr auto haversine_formula(double th1, double ph1, double th2, double ph2) -> double
+{
+	constexpr double TO_RAD = std::numbers::pi_v<double> / 180.0;
+	constexpr int R = 6371;
+	ph1 -= ph2;
+	ph1 *= TO_RAD, th1 *= TO_RAD, th2 *= TO_RAD;
+	const double dz = std::sin(th1) - std::sin(th2);
+	const double dx = std::cos(ph1) * std::cos(th1) - std::cos(th2);
+	const double dy = std::sin(ph1) * std::cos(th1);
+	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * R;
+}
+
+constexpr auto dist(double lat1, double lon1, double lat2, double lon2) -> double
+{
+	//ENHANCED HAVERSINE FORMULA WITH RADIUS SLIDER
+	constexpr int polarRadius=6357;
+	constexpr int equatorRadius=6378;
+	constexpr int delta = equatorRadius-polarRadius; // 21km
+	const auto earthRadius = equatorRadius - ((lat1 * 0.01) * delta);
+	lon1 -= lon2;
+	lon1 *= DEG2RAD;
+	lat1 *= DEG2RAD;
+	lat2 *= DEG2RAD;
+
+	const double dz = std::sin(lat1) - std::sin(lat2);
+	const double dx = std::cos(lon1) * std::cos(lat1) - std::cos(lat2);
+	const double dy = std::sin(lon1) * std::cos(lat1);
+	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * earthRadius;
+}
+
 #endif /* _COMMON_H_ */

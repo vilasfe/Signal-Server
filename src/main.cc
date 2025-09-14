@@ -229,24 +229,6 @@ auto AddElevation(double lat, double lon, double height, int size) -> int
 	return 0;
 }
 
-constexpr auto dist(double lat1, double lon1, double lat2, double lon2) -> double
-{
-	//ENHANCED HAVERSINE FORMULA WITH RADIUS SLIDER
-	constexpr int polarRadius=6357;
-	constexpr int equatorRadius=6378;
-	constexpr int delta = equatorRadius-polarRadius; // 21km
-	const auto earthRadius = equatorRadius - ((lat1 * 0.01) * delta);
-	lon1 -= lon2;
-	lon1 *= DEG2RAD;
-	lat1 *= DEG2RAD;
-	lat2 *= DEG2RAD;
- 
-	const double dz = std::sin(lat1) - std::sin(lat2);
-	const double dx = std::cos(lon1) * std::cos(lat1) - std::cos(lat2);
-	const double dy = std::sin(lon1) * std::cos(lat1);
-	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * earthRadius;
-}
-
 auto ElevationAngle(const struct site_t& source, const struct site_t& destination) -> double
 {
 	/* This function returns the angle of elevation (in degrees)

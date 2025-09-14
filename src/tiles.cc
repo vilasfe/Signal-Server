@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <numbers>
 #include <print>
 #include <string>
 #include <string_view>
@@ -16,20 +15,6 @@
 #include "common.h"
 
 enum : std::uint16_t { MAX_LINE = 50000 };
-
-// TODO: This is elsewhere in the code too
-/* Computes the distance between two long/lat points */
-auto haversine_formula(double th1, double ph1, double th2, double ph2) -> double
-{
-	constexpr double TO_RAD = std::numbers::pi_v<double> / 180.0;
-	constexpr int R = 6371;
-	ph1 -= ph2;
-	ph1 *= TO_RAD, th1 *= TO_RAD, th2 *= TO_RAD;
-	const double dz = std::sin(th1) - std::sin(th2);
-	const double dx = std::cos(ph1) * std::cos(th1) - std::cos(th2);
-	const double dy = std::sin(ph1) * std::cos(th1);
-	return std::asin(std::hypot(dx, dy, dz) * 0.5) * 2 * R;
-}
 
 auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
 	FILE *fd = nullptr;
@@ -155,7 +140,7 @@ auto tile_load_lidar(tile_t *tile, std::string_view filename) -> int {
  * (ie 2m LIDAR can be 4/6/8/... and 20m can be 40/60)
  */
 auto tile_rescale(tile_t *tile, float scale) -> int {
-	short *new_data;
+	short *new_data = nullptr;
 	size_t skip_count = 1;
 	size_t copy_count = 1;
 
@@ -167,7 +152,7 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 	const size_t new_width = tile->cols * scale;
 
 	/* Allocate the array for the lidar data */
-	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == nullptr ) {
+	if ( new_data = new short[new_height * new_width]; new_data == nullptr ) {
 		return ENOMEM;
 	}
 
@@ -209,7 +194,7 @@ auto tile_rescale(tile_t *tile, float scale) -> int {
 	}
 
 	/* Update the date in the tile */
-	free(tile->data);
+	delete [] tile->data;
 	tile->data = new_data;
 
 	/* Update the height and width values */
@@ -247,9 +232,7 @@ auto tile_resize(tile_t* tile, int resolution) -> int {
  * tile_destroy
  * This function simply destroys any data associated with a tile
  */
-void tile_destroy(tile_t* tile){
-	if (tile->data != nullptr) {
-		free(tile->data);
-	}
+void tile_destroy(tile_t* tile) {
+	delete [] tile->data;
 }
 
