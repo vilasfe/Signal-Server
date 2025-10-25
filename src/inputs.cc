@@ -9,6 +9,7 @@
 #include <memory>
 #include <print>
 #include <string>
+#include <string_view>
 
 #include <unistd.h>
 
@@ -50,7 +51,10 @@ auto Input::loadClutter(std::string_view filename, double radius, const struct s
 	double clh = 0.0;
 	double xll = 0.0;
 	double yll = 0.0;
-	double cellsize, cellsize2, xOffset, yOffset, lat, lon;
+	double cellsize = 0.004167;
+	double cellsize2 = cellsize * 3;
+	double lat = 0;
+	double lon = 0;
 	char line[100000];
 	char *s = nullptr;
 	char *pch = nullptr;
@@ -130,8 +134,8 @@ auto Input::loadClutter(std::string_view filename, double radius, const struct s
 				}
 
 				if(clh>1){
-					xOffset=x*cellsize; // 12 deg wide
-					yOffset=y*cellsize; // 16 deg high
+					const double xOffset=x*cellsize; // 12 deg wide
+					const double yOffset=y*cellsize; // 16 deg high
 
 					// make all longitudes positive 
 					if(xll+xOffset>0){
@@ -361,28 +365,28 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		new_height = std::max(new_height, north_pixel_offset + tiles[i].rows);
 
 		if (debug) {
-			fprintf(stderr,"north_pixel_offset %zu west_pixel_offset %zu, %zu x %zu\n", north_pixel_offset, west_pixel_offset,new_height,new_width);
+			std::println(stderr,"north_pixel_offset {} west_pixel_offset {}, {} x {}", north_pixel_offset, west_pixel_offset,new_height,new_width);
 		}
 
 		//sanity check!
 		if (new_width > 39e3 || new_height > 39e3) {
-			fprintf(stdout,"Not processing a tile with these dimensions: %zu x %zu\n",new_width,new_height);
+			std::println(stdout,"Not processing a tile with these dimensions: {} x {}",new_width,new_height);
 			exit(1);
 		}
 	}
 
-	size_t new_tile_alloc = new_width * new_height;
-	short * new_tile = (short*) calloc( new_tile_alloc, sizeof(short) );
+	const size_t new_tile_alloc = new_width * new_height;
+	auto* new_tile = static_cast<short*>(calloc( new_tile_alloc, sizeof(short) ));
 
 	if ( new_tile == nullptr ) {
 		if (debug) {
-			fprintf(stderr,"Could not allocate %zu bytes\n", new_tile_alloc);
+			std::println(stderr,"Could not allocate {} bytes", new_tile_alloc);
 			fflush(stderr);
 		}
 		return ENOMEM;
 	}
 	if (debug) {
-		fprintf(stderr,"Lidar tile dimensions w:%lf(%zu) h:%lf(%zu)\n", total_width, new_width, total_height, new_height);
+		std::println(stderr,"Lidar tile dimensions w:{:f}({}) h:{:f}({})", total_width, new_width, total_height, new_height);
 		fflush(stderr);
 	}
 
@@ -397,8 +401,8 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 		const size_t west_pixel_offset = west_offset * tiles[i].ppdx;
 
 		if (debug) {
-			fprintf(stderr,"mn: %lf mw:%lf globals: %lf %lf\n", tiles[i].max_north, tiles[i].max_west, max_north, max_west);
-			fprintf(stderr,"Offset n:%zu(%lf) w:%zu(%lf)\n", north_pixel_offset, north_offset, west_pixel_offset, west_offset);
+			std::println(stderr,"mn: {:f} mw:{:f} globals: {:f} {:f}", tiles[i].max_north, tiles[i].max_west, max_north, max_west);
+			std::println(stderr,"Offset n:{}({:f}) w:{}({:f})", north_pixel_offset, north_offset, west_pixel_offset, west_offset);
 			std::println(stderr,"Height: {}", tiles[i].rows);
 		}
 
@@ -409,7 +413,7 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 			// Check if we might overflow
 			if ( dest_addr + tiles[i].cols > new_tile + new_tile_alloc || dest_addr < new_tile ){
 				if (debug) {
-					fprintf(stderr, "Overflow %zu\n",i);
+					std::println(stderr, "Overflow {}",i);
 				}
 				continue;
 			}
@@ -1781,7 +1785,8 @@ auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) 
 
 auto Input::LoadSignalColors(struct site_t xmtr) -> int
 {
-	int ok, val[4];
+	int ok;
+	int val[4];
 	std::string filename;
 	char str[80];
 	char *pointer = nullptr;
@@ -1888,9 +1893,6 @@ auto Input::LoadSignalColors(struct site_t xmtr) -> int
 		int x = 0;
 		s = fgets(str, 80, fd);
 
-		if (s)
-		  ;
-
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(str, ';');
 
@@ -1904,8 +1906,8 @@ auto Input::LoadSignalColors(struct site_t xmtr) -> int
 					std::println(stderr, "\nLoadSignalColors() {}: {}, {}, {}", val[0],val[1],val[2],val[3]);
 				}
 
-				for (int y = 0; y < 4; y++) {
-					val[y] = std::clamp(val[y], 0, 255);
+				for (int& y : val) {
+					y = std::clamp(y, 0, 255);
 				}
 
 				region.level[x] = val[0];
@@ -1926,11 +1928,11 @@ auto Input::LoadSignalColors(struct site_t xmtr) -> int
 
 auto Input::LoadLossColors(struct site_t xmtr) -> int
 {
-	int ok, val[4];
+	int ok;
+	int val[4];
 	std::string filename;
 	char str[80];
 	char *pointer = nullptr;
-	char *s = nullptr;
 	FILE *fd = nullptr;
 
 	if (!color_file.empty()) {
@@ -2035,8 +2037,9 @@ auto Input::LoadLossColors(struct site_t xmtr) -> int
 	}
 */
 	/* Don't save if we don't have an output file */
-	if ( (fd = fopen(filename.data(), "r")) == nullptr && xmtr.filename[0] == '\0' )
+	if ( fd = fopen(filename.data(), "r"); fd == nullptr && xmtr.filename[0] == '\0' ) {
 		return 0;
+	}
 
 	if (fd == nullptr) {
 		if( (fd = fopen(filename.data(), "w")) == nullptr ) {
@@ -2057,10 +2060,8 @@ auto Input::LoadLossColors(struct site_t xmtr) -> int
 	}
 	else {
 		int x = 0;
-		s = fgets(str, 80, fd);
+		auto* s = fgets(str, 80, fd);
 
-		if (s)
-		  ;
 
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(str, ';');
@@ -2075,8 +2076,8 @@ auto Input::LoadLossColors(struct site_t xmtr) -> int
 					std::println(stderr, "\nLoadLossColors() {}: {}, {}, {}", val[0],val[1],val[2],val[3]);
 				}
 
-				for (int y = 0; y < 4; y++) {
-					val[y] = std::clamp(val[y], 0, 255);
+				for (int& y : val) {
+					y = std::clamp(y, 0, 255);
 				}
 
 				region.level[x] = val[0];
@@ -2086,7 +2087,7 @@ auto Input::LoadLossColors(struct site_t xmtr) -> int
 				x++;
 			}
 
-			s = fgets(str, 80, fd);
+			auto* s = fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -2203,8 +2204,9 @@ auto Input::LoadDBMColors(struct site_t xmtr) -> int
 	}
 
 	if (fd == nullptr) {
-		if( (fd = fopen(filename.data(), "w")) == nullptr )
+		if( fd = fopen(filename.data(), "w"); fd == nullptr ) {
 			return errno;
+		}
 
 		for (int x = 0; x < region.levels; x++) {
 			std::println(fd, "{:+4}: {:3}, {:3}, {:3}", region.level[x],
@@ -2218,9 +2220,6 @@ auto Input::LoadDBMColors(struct site_t xmtr) -> int
 	else {
 		int x = 0;
 		s = fgets(str, 80, fd);
-
-		if (s)
-		  ;
 
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(str, ';');
@@ -2273,7 +2272,7 @@ auto Input::LoadTopoData(double max_lon, double min_lon, double max_lat, double 
 
 	if ((max_lon - min_lon) <= 180.0) {
 		for (int y = 0; y <= width; y++)
-		        for (int x = min_lat; x <= (int)max_lat; x++) {
+		        for (int x = min_lat; x <= static_cast<int>(max_lat); x++) {
 				ymin = static_cast<int>(min_lon + static_cast<double>(y));
 
 				while (ymin < 0) {
@@ -2301,12 +2300,13 @@ auto Input::LoadTopoData(double max_lon, double min_lon, double max_lat, double 
 				if (ippd == 3600)
 				        strcat(str, "-hd");
 
-				if( (success = LoadSDF(str)) < 0 )
+				if( (success = LoadSDF(str)) < 0 ) {
 					return -success;
+				}
 			}
 	} else {
 		for (int y = 0; y <= width; y++)
-			for (int x = (int)min_lat; x <= (int)max_lat; x++) {
+			for (int x = static_cast<int>(min_lat); x <= static_cast<int>(max_lat); x++) {
 				ymin = static_cast<int>(max_lon + static_cast<double>(y));
 
 				while (ymin < 0) {
@@ -2360,11 +2360,13 @@ auto Input::LoadUDT(std::string_view filename) -> int
 
 	strcpy(tempname, "/tmp/XXXXXX");
 
-	if( (fd1 = fopen(filename.data(), "r")) == nullptr )
+	if( (fd1 = fopen(filename.data(), "r")) == nullptr ) {
 		return errno;
+	}
 
-	if( (fd = mkstemp(tempname)) == -1 )
+	if( (fd = mkstemp(tempname)) == -1 ) {
 		return errno;
+	}
 
 	if( (fd2 = fdopen(fd,"w")) == nullptr ){
 		fclose(fd1);
@@ -2373,9 +2375,6 @@ auto Input::LoadUDT(std::string_view filename) -> int
 	}
 
 	s = fgets(input, 78, fd1);
-
-	if (s)
-	  ;
 
 	pointer = strchr(input, ';');
 
@@ -2464,9 +2463,6 @@ auto Input::LoadUDT(std::string_view filename) -> int
 
 	n = fscanf(fd1, "%d, %d, %lf", &xpix, &ypix, &height);
 
-	if (n)
-	  ;
-
 	do {
 		int x = 0;
 		int z = 0;
@@ -2479,8 +2475,9 @@ auto Input::LoadUDT(std::string_view filename) -> int
 			    && ypix == tempypix) {
 			        z = 1;	// Dupe Found!
 
-				if (tempheight > height)
+				if (tempheight > height) {
 					height = tempheight;
+				}
 			}
 
 			else {
