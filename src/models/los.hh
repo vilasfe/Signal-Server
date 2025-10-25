@@ -12,7 +12,7 @@ public:
     static void PlotPropagation(struct site_t source, double altitude, const std::string& plo_filename, int propmodel, int knifeedge, int haf, int pmenv, bool use_threads);
     static void PlotPath(const struct site_t& source, const struct site_t& destination, char mask_value);
 private:
-    static void PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, FILE *fd);
+    static void PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value);
     static void PlotPropPath(struct site_t source, struct site_t destination, unsigned char mask_value, FILE * fd, int propmodel, int knifeedge, int pmenv);
 
     struct propagationRange {

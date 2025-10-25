@@ -170,7 +170,7 @@ auto LOS::rangePropagation(std::shared_ptr<propagationRange> v) -> void*
 		edge.alt = v->altitude;
 
 		if(v->los) {
-			PlotLOSPath(v->source, edge, v->mask_value, v->fd);
+			PlotLOSPath(v->source, edge, v->mask_value);
 		}
 		else {
 			PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
@@ -194,7 +194,7 @@ auto LOS::rangePropagation(std::shared_ptr<propagationRange> v) -> void*
 	return nullptr;
 }
 
-void LOS::PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, [[maybe_unused]] FILE *fd)
+void LOS::PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value)
 {
 	/* This function analyzes the path between the source and
 	   destination locations.  It determines which points along
@@ -381,10 +381,10 @@ void LOS::PlotPropPath(struct site_t source, struct site_t destination,
 				}
 
 				if (block != 0) {
-					elevation =  ((std::acos(cos_test_angle)) / DEG2RAD) - 90.0;
+					elevation =  ((std::acos(cos_test_angle)) * RAD2DEG) - 90.0;
 				}
 				else {
-					elevation = ((std::acos(cos_rcvr_angle)) / DEG2RAD) - 90.0;
+					elevation = ((std::acos(cos_rcvr_angle)) * RAD2DEG) - 90.0;
 				}
 			}
 
@@ -403,7 +403,7 @@ void LOS::PlotPropPath(struct site_t source, struct site_t destination,
 
 			path.elevation[y] = std::max(path.elevation[y], 1.0);
 
-			dkm = (elev[1] * elev[0]) / 1000;	// km
+			dkm = (elev[1] * elev[0]) * 0.001;	// km
 
 			switch (propmodel) {
 			case 1:
