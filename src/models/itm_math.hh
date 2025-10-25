@@ -387,8 +387,58 @@ namespace itm_math {
     }
 
 
-    // Subroutine to find horizon parameters as described in Section 47 by Hufford
     constexpr void hzns(std::span<double> pfl, prop_type & prop)
+    {
+        const int np = static_cast<int>(pfl[0]);
+        const double xi = pfl[1];
+        const double za = pfl[2] + prop.hg[0];
+        const double zb = pfl[np + 2] + prop.hg[1];
+        const double qc = 0.5 * prop.gme;
+        double q = qc * prop.dist;
+        prop.the[1] = (zb - za) / prop.dist;
+        prop.the[0] = prop.the[1] - q;
+        prop.the[1] = -prop.the[1] - q;
+        prop.dl[0] = prop.dist;
+        prop.dl[1] = prop.dist;
+
+        if (np >= 2) {
+            double sa = 0.0;
+            //double sb = prop.dist;
+            /* Used only with ITM 1.2.2 */
+            //bool wq = true;
+
+            for( const auto& pfl_i : std::span(&pfl[3], np)) {
+                //for (int i = 1; i < np; i++) {
+                sa += xi;
+                //sb -= xi;
+                //q = pfl[i + 2] - (qc * sa + prop.the[0]) * sa - za;
+                q = pfl_i - (qc * sa + prop.the[0]) * sa - za;
+
+                if (q > 0.0) {
+                    prop.the[0] += q / sa;
+                    prop.dl[0] = sa;
+                    // wq = false;
+                }
+            }
+
+            double sb = prop.dist;
+            for( const auto& pfl_i : std::span(&pfl[3], np)) {
+                sb -= xi;
+                //if (!wq) {
+                    //q = pfl[i + 2] - (qc * sb + prop.the[1]) * sb - zb;
+                    q = pfl_i - (qc * sb + prop.the[1]) * sb - zb;
+
+                    if (q > 0.0) {
+                        prop.the[1] += q / sb;
+                        prop.dl[1] = sb;
+                    }
+                //}
+            }
+        }
+    }
+
+    // Subroutine to find horizon parameters as described in Section 47 by Hufford
+    constexpr void hzns_unopt(std::span<double> pfl, prop_type & prop)
     {
         const int np = static_cast<int>(pfl[0]);
         const double xi = pfl[1];
@@ -491,10 +541,10 @@ namespace itm_math {
                     }
                 }
                 prop.the[0] =
-                atan((prop.hht - za) / prop.dl[0]) -
+                std::atan((prop.hht - za) / prop.dl[0]) -
                 0.5 * prop.gme * prop.dl[0];
                 prop.the[1] =
-                atan((prop.hhr - zb) / prop.dl[1]) -
+                std::atan((prop.hhr - zb) / prop.dl[1]) -
                 0.5 * prop.gme * prop.dl[1];
             }
         }

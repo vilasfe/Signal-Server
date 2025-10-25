@@ -188,6 +188,26 @@ namespace {
         prop.hg = {143.9, 8.5};
         prop.gme = 1.1480007964369815e-07;
 
+        itm_math::hzns_unopt(std::span(pfl), prop);
+
+        // Test horizon takeoff angle
+        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
+        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
+
+        // Test horizon distances
+        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
+        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
+
+        itm_math::hzns2(std::span(pfl), prop);
+
+        // Test horizon takeoff angle
+        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
+        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
+
+        // Test horizon distances
+        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
+        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
+
         itm_math::hzns(std::span(pfl), prop);
 
         // Test horizon takeoff angle
