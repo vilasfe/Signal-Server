@@ -329,7 +329,7 @@ namespace itm_math {
             xa += xb;
         }
 
-        // This was qtile, which really just returns the (clamped) i'th element of the sorted range
+        // This was the difference in 2 calls to qtile, which really just returns the (clamped) i'th element of the sorted range
         // So the sort was moved out here to reduce the number of calls to it
         std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
         double d1thxv = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];

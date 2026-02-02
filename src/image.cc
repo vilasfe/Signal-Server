@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring> // still using memset for some reason
+#include <format>
 #include <memory>
 #include <print>
 #include <stdexcept>
@@ -57,7 +58,7 @@ Image::Image(const size_t width, const size_t height, const image_model model, c
 {
 	/* Perform some sanity checking on provided arguments */
 	if(width == 0 || height == 0) {
-		throw std::runtime_error("Invalid width or height for image");
+		throw std::runtime_error(std::format("Invalid width {} or height {} for image", width, height));
 	}
 	if(model < 0 || model > IMAGE_MODEL_MAX) {
 		throw std::runtime_error("Invalid model parameter for image");

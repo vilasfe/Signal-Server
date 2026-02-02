@@ -380,8 +380,6 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 	}
 
 	else {
-		const double th = propa.tha + d * prop.gme;
-
 		const double dsl = std::max(d - propa.dla, 0.0);
 		const double ds = d - propa.dla;
 
@@ -738,7 +736,7 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 	return alosv;
 }
 
-auto alos2(double d, prop_type & prop, propa_type & propa) -> double
+auto alos2(double d, prop_type & prop) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	double drh = 0.0;
@@ -1177,7 +1175,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		if (iw <= 0.0) {	/* if interval width is zero or less, used for area mode */
 
 			if (!wlos) {
-				q = alos2(0.0, prop, propa);
+				q = alos2(0.0, prop);
 				const double d2 = propa.dlsa;
 				double a2 = propa.aed + d2 * propa.emd;
 				double d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
@@ -1192,14 +1190,13 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 						d1 = d0 + 0.25 * (propa.dla -
 								  d0);
 					}
-					const double a1 = alos2(d1, prop, propa);
+					const double a1 = alos2(d1, prop);
 					bool wq = false;
 
 					if (d0 < d1) {
-						const double a0 = alos2(d0, prop, propa);
+						const double a0 = alos2(d0, prop);
 						a2 = std::min(a2,
-							   alos2(d2, prop,
-								 propa));
+							   alos2(d2, prop));
 						q = std::log(d2 / d0);
 						propa.ak2 =
 						    std::max(0.0,
@@ -1252,16 +1249,16 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		} else {	/* for ITWOM point-to-point mode */
 
 			if (!wlos) {
-				q = alos2(0.0, prop, propa);	/* coefficient setup */
+				q = alos2(0.0, prop);	/* coefficient setup */
 				wlos = true;
 			}
 
 			if (prop.los == 1) {	/* if line of sight */
-				prop.aref = alos2(pd1, prop, propa);
+				prop.aref = alos2(pd1, prop);
 			} else {
 				if (static_cast<int>(prop.dist - prop.dl[0]) == 0) {	/* if at 1st horiz */
 					prop.aref =
-					    5.8 + alos2(pd1, prop, propa);
+					    5.8 + alos2(pd1, prop);
 				} else if (static_cast<int>(prop.dist - prop.dl[0]) > 0.0) {	/* if past 1st horiz */
 					q = adiff2(0.0, prop, propa);
 					prop.aref = adiff2(pd1, prop, propa);
@@ -1757,8 +1754,8 @@ void qlrpfl2(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 void point_to_point_ITM(double tht_m, double rht_m, double eps_dielect,
 			double sgm_conductivity, double eno_ns_surfref,
 			double frq_mhz, int radio_climate, int pol,
-			double conf, double rel, double &dbloss, std::string& strmode,
-			int &errnum)
+			double conf, double rel, std::span<double> elev,
+			double &dbloss, std::string& strmode, int &errnum)
 
 /******************************************************************************
 
@@ -1825,7 +1822,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl(elev.subspan(0, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	q = prop.dist - propa.dla;
 
@@ -1856,7 +1853,8 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 void point_to_point(double tht_m, double rht_m, double eps_dielect,
 		    double sgm_conductivity, double eno_ns_surfref,
 		    double frq_mhz, int radio_climate, int pol, double conf,
-		    double rel, double &dbloss, std::string& strmode, int &errnum)
+		    double rel, std::span<double> elev,
+			double &dbloss, std::string& strmode, int &errnum)
 
 /******************************************************************************
 
@@ -1961,7 +1959,7 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 
 	propv.mdvar = mode_var;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(elev.subspan(0, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double tpd = std::hypot(prop.he[0] - prop.he[1], prop.dist);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(tpd / 1000.0);
 	q = prop.dist - propa.dla;
@@ -2003,8 +2001,8 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 			   double clutter_density, double delta_h_diff,
 			   double frq_mhz, int radio_climate, int pol,
 			   int mode_var, double timepct, double locpct,
-			   double confpct, double &dbloss, int &propmode,
-			   double &deltaH, int &errnum)
+			   double confpct, std::span<double> elev,
+			   double &dbloss, int &propmode, double &deltaH, int &errnum)
 
 /*************************************************************************************************
 	 pol: 0-Horizontal, 1-Vertical
@@ -2079,7 +2077,7 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	}
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(elev.subspan(0, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 
 	deltaH = prop.dh;
@@ -2110,8 +2108,8 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 		      double enc_ncc_clcref, double clutter_height,
 		      double clutter_density, double delta_h_diff,
 		      double frq_mhz, int radio_climate, int pol, double conf,
-		      double rel, double loc, double &dbloss, double &deltaH,
-		      int &errnum)
+		      double rel, std::span<double> elev,
+			  double &dbloss, double &deltaH, int &errnum)
 /*************************************************************************************************
 	 pol: 0-Horizontal, 1-Vertical
 	 radio_climate: 1-Equatorial, 2-Continental Subtropical, 3-Maritime Tropical,
@@ -2176,7 +2174,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	}
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(std::span<double>(elev, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(elev.subspan(0, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	deltaH = prop.dh;
 	q = prop.dist - propa.dla;

@@ -16,6 +16,7 @@
 #include "common.h"
 #include "inputs.hh"
 #include "main.hh"
+#include "outputs.hh"
 #include "tiles.hh"
 
 #include <bzlib.h>
@@ -56,7 +57,6 @@ auto Input::loadClutter(std::string_view filename, double radius, const struct s
 	double lat = 0;
 	double lon = 0;
 	char line[100000];
-	char *s = nullptr;
 	char *pch = nullptr;
 	FILE *fd = nullptr;
 
@@ -94,7 +94,7 @@ auto Input::loadClutter(std::string_view filename, double radius, const struct s
 		sscanf(pch, "%lf", &xll);
 	}
 
-	s = fgets(line, 25, fd);
+	fgets(line, 25, fd);
 	if (fgets(line, 25, fd) != nullptr) {
 		sscanf(pch, "%lf", &yll);
 	}
@@ -381,13 +381,11 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	if ( new_tile == nullptr ) {
 		if (debug) {
 			std::println(stderr,"Could not allocate {} bytes", new_tile_alloc);
-			fflush(stderr);
 		}
 		return ENOMEM;
 	}
 	if (debug) {
 		std::println(stderr,"Lidar tile dimensions w:{:f}({}) h:{:f}({})", total_width, new_width, total_height, new_height);
-		fflush(stderr);
 	}
 
 	/* ...If we wanted a value other than sea level here, we would
@@ -429,11 +427,11 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 	ARRAYSIZE = (MAXPAGES * IPPD) + 10;
 	do_allocs();
 
-	height = new_height;
-	width = new_width;
+	Output::height = new_height;
+	Output::width = new_width;
 
 	if (debug) {
-		std::println(stderr,"Setting IPPD to {} height {} width {}",IPPD,height,width);
+		std::println(stderr,"Setting IPPD to {} height {} width {}",IPPD,Output::height,Output::width);
 	}
 
 	/* Load the data into the global dem array */
@@ -469,14 +467,14 @@ auto Input::loadLIDAR(const std::string& filenames, int resample) -> int
 			}
 		}
 	}
-	if (width > 3600 * 8) {
-		std::println(stdout,"DEM fault. Contact system administrator: {}",width);
+	if (Output::width > 3600 * 8) {
+		std::println(stdout,"DEM fault. Contact system administrator: {}",Output::width);
 		exit(1);
 	}
 
 	if (debug) {
-		std::println(stderr, "LIDAR LOADED {} x {}", width, height);
-		std::println(stderr, "fc {} WIDTH {} HEIGHT {} ippd {} minN {:.5f} maxN {:.5f} minW {:.5f} maxW {:.5f} avgCellsize {:.5f}", fc, width, height, ippd,min_north,max_north,min_west,max_west,avgCellsize);
+		std::println(stderr, "LIDAR LOADED {} x {}", Output::width, Output::height);
+		std::println(stderr, "fc {} WIDTH {} HEIGHT {} ippd {} minN {:.5f} maxN {:.5f} minW {:.5f} maxW {:.5f} avgCellsize {:.5f}", fc, Output::width, Output::height, ippd,min_north,max_north,min_west,max_west,avgCellsize);
 	}
 
 	if ( tiles ) {
@@ -1382,15 +1380,16 @@ auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) 
 	   and .el) files that may correspond in name to previously
 	   loaded ss .lrp files or may be user-supplied by cmdline.  */
 
-	int a, b, w, z, last_index, next_index, span;
+	int a, b, w, last_index, next_index, span;
 	char str[255];
 	char *pointer = nullptr;
 	float az, xx, elevation, amplitude, rotation, valid1, valid2,
-	    delta, azimuth[361], azimuth_pattern[361], el_pattern[10001],
+	    delta, azimuth[361], azimuth_pattern[361],
 	    elevation_pattern[361][1001], slant_angle[361], tilt,
 	    mechanical_tilt = 0.0, tilt_azimuth, tilt_increment, sum;
 	FILE *fd = nullptr;
-	unsigned char read_count[10001];
+	std::array<unsigned char, 10001> read_count;
+	std::array<float, 10001> el_pattern;
 
 	rotation = 0.0;
 
@@ -1409,9 +1408,9 @@ auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) 
 		}
 
 		/* Clear azimuth pattern array */
+		std::ranges::fill(read_count, 0);
 		for (int x = 0; x <= 360; x++) {
 			azimuth[x] = 0.0;
-			read_count[x] = 0;
 		}
 
 		/* Read azimuth pattern rotation
@@ -1565,12 +1564,8 @@ auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) 
 		}
 
 		/* Clear azimuth pattern array */
-
-		// TODO: use std::fill or similar
-		for (int x = 0; x <= 10000; x++) {
-			el_pattern[x] = 0.0;
-			read_count[x] = 0;
-		}
+		std::ranges::fill(el_pattern, 0.0);
+		std::ranges::fill(read_count, 0);
 
 		/* Read mechanical tilt (degrees) and
 		   tilt azimuth in degrees measured
@@ -1785,12 +1780,10 @@ auto Input::LoadPAT(std::string_view az_filename, std::string_view el_filename) 
 
 auto Input::LoadSignalColors(struct site_t xmtr) -> int
 {
-	int ok;
 	int val[4];
 	std::string filename;
 	char str[80];
 	char *pointer = nullptr;
-	char *s = nullptr;
 	FILE *fd = nullptr;
 
 	if (!color_file.empty()) {
@@ -1891,7 +1884,7 @@ auto Input::LoadSignalColors(struct site_t xmtr) -> int
 	}
 	else {
 		int x = 0;
-		s = fgets(str, 80, fd);
+		fgets(str, 80, fd);
 
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(str, ';');
@@ -1917,7 +1910,7 @@ auto Input::LoadSignalColors(struct site_t xmtr) -> int
 				x++;
 			}
 
-			s = fgets(str, 80, fd);
+			fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -2060,7 +2053,7 @@ auto Input::LoadLossColors(struct site_t xmtr) -> int
 	}
 	else {
 		int x = 0;
-		auto* s = fgets(str, 80, fd);
+		fgets(str, 80, fd);
 
 
 		while (x < 128 && feof(fd) == 0) {
@@ -2087,7 +2080,7 @@ auto Input::LoadLossColors(struct site_t xmtr) -> int
 				x++;
 			}
 
-			auto* s = fgets(str, 80, fd);
+			fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -2102,7 +2095,6 @@ auto Input::LoadDBMColors(struct site_t xmtr) -> int
 	std::string filename;
 	char str[80];
 	char *pointer = nullptr;
-	char *s = nullptr;
 	FILE *fd = nullptr;
 
 	if (!color_file.empty()) {
@@ -2219,7 +2211,7 @@ auto Input::LoadDBMColors(struct site_t xmtr) -> int
 
 	else {
 		int x = 0;
-		s = fgets(str, 80, fd);
+		fgets(str, 80, fd);
 
 		while (x < 128 && feof(fd) == 0) {
 			pointer = strchr(str, ';');
@@ -2249,7 +2241,7 @@ auto Input::LoadDBMColors(struct site_t xmtr) -> int
 				x++;
 			}
 
-			s = fgets(str, 80, fd);
+			fgets(str, 80, fd);
 		}
 
 		fclose(fd);
@@ -2352,8 +2344,8 @@ auto Input::LoadUDT(std::string_view filename) -> int
 	   are added to the ground elevations described by the digital
 	   elevation data already loaded into memory. */
 
-	int i, ypix, xpix, tempxpix, tempypix, fd = 0, n = 0;
-	char input[80], str[3][80], tempname[15], *pointer = nullptr, *s = nullptr;
+	int i, ypix, xpix, tempxpix, tempypix, fd = 0;
+	char input[80], str[3][80], tempname[15], *pointer = nullptr;
 	double latitude, longitude, height, tempheight, old_longitude = 0.0,
 	  old_latitude = 0.0;
 	FILE *fd1 = nullptr, *fd2 = nullptr;
@@ -2374,7 +2366,7 @@ auto Input::LoadUDT(std::string_view filename) -> int
 		return errno;
 	}
 
-	s = fgets(input, 78, fd1);
+	fgets(input, 78, fd1);
 
 	pointer = strchr(input, ';');
 
@@ -2439,7 +2431,7 @@ auto Input::LoadUDT(std::string_view filename) -> int
 				static_cast<int>(std::rint(longitude / dpp)), height);
 		}
 
-		s = fgets(input, 78, fd1);
+		fgets(input, 78, fd1);
 
 		pointer = strchr(input, ';');
 
@@ -2461,13 +2453,13 @@ auto Input::LoadUDT(std::string_view filename) -> int
 
 	int y = 0;
 
-	n = fscanf(fd1, "%d, %d, %lf", &xpix, &ypix, &height);
+	fscanf(fd1, "%d, %d, %lf", &xpix, &ypix, &height);
 
 	do {
 		int x = 0;
 		int z = 0;
 
-		n = fscanf(fd2, "%d, %d, %lf", &tempxpix, &tempypix,
+		fscanf(fd2, "%d, %d, %lf", &tempxpix, &tempypix,
 			   &tempheight);
 
 		do {
@@ -2481,7 +2473,7 @@ auto Input::LoadUDT(std::string_view filename) -> int
 			}
 
 			else {
-				n = fscanf(fd2, "%d, %d, %lf",
+				fscanf(fd2, "%d, %d, %lf",
 					   &tempxpix, &tempypix,
 					   &tempheight);
 				x++;
@@ -2499,7 +2491,7 @@ auto Input::LoadUDT(std::string_view filename) -> int
 
 		fflush(stderr);
 
-		n = fscanf(fd1, "%d, %d, %lf", &xpix, &ypix, &height);
+		fscanf(fd1, "%d, %d, %lf", &xpix, &ypix, &height);
 		y++;
 
 		rewind(fd2);

@@ -39,6 +39,7 @@ const double version = 3.21;
 #include "inputs.hh"
 #include "main.hh"
 #include "outputs.hh"
+
 #include "models/los.hh"
 
 int MAXPAGES = 10*10;
@@ -56,7 +57,7 @@ double earthradius, max_range = 0.0, dpp, ppd, yppd,
 
 int ippd, mpi, max_elevation = -32768, min_elevation = 32768,
     contour_threshold, pred, pblue, pgreen, ter, multiplier = 256,
-    jgets = 0, MAXRAD, hottest = 0, height = 0, width = 0;
+    jgets = 0, MAXRAD, hottest = 0;
 int resample = 0;
 
 unsigned char got_elevation_pattern, got_azimuth_pattern;
@@ -64,8 +65,8 @@ bool debug = false;
 bool metric = false;
 bool dbm = false;
 
-thread_local double *elev;
-thread_local struct path_t path;
+//thread_local double *elev;
+//thread_local struct path_t path;
 struct site_t tx_site[2];
 struct dem_t *dem;
 
@@ -249,7 +250,7 @@ auto ElevationAngle(const struct site_t& source, const struct site_t& destinatio
 		 (std::acos(((b * b) + (dx * dx) - (a * a)) / (2.0 * b * dx))) * std::numbers::inv_pi) - 90.0);
 }
 
-void ReadPath(const struct site_t& source, const struct site_t& destination)
+auto ReadPath(const struct site_t& source, const struct site_t& destination) -> struct path_t
 {
 	/* This function generates a sequence of latitude and
 	   longitude positions between source and destination
@@ -270,6 +271,12 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 	const double azimuth = Azimuth(source, destination) * DEG2RAD;
 
 	double total_distance = Distance(source, destination);
+
+	struct path_t path;
+	path.lat.resize(ARRAYSIZE);
+	path.lon.resize(ARRAYSIZE);
+	path.elevation.resize(ARRAYSIZE);
+	path.distance.resize(ARRAYSIZE);
 
 	if (total_distance > (30.0 / ppd)) {
 		const double dx = samples_per_radian * std::acos(std::cos(lon1 - lon2));
@@ -359,6 +366,7 @@ void ReadPath(const struct site_t& source, const struct site_t& destination)
 	else {
 		path.length = ARRAYSIZE - 1;
 	}
+	return path;
 }
 
 auto ElevationAngle2(const struct site_t& source, const struct site_t& destination, double er) -> double
@@ -369,7 +377,7 @@ auto ElevationAngle2(const struct site_t& source, const struct site_t& destinati
 	   elevation angle to the first obstruction is returned instead.
 	   "er" represents the earth radius. */
 
-	ReadPath(source, destination);
+	auto path = ReadPath(source, destination);
 
 	double distance = FEET_PER_MILE * Distance(source, destination);
 	const double source_alt = er + source.alt + GetElevation(source);
@@ -485,7 +493,7 @@ void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, std::
 	std::string string_f1;
 	std::string outstr;
 
-	ReadPath(xmtr, rcvr);
+	auto path = ReadPath(xmtr, rcvr);
 	double h_r = GetElevation(rcvr) + rcvr.alt + earthradius;
 	double h_r_f1 = h_r;
 	double h_r_fpt6 = h_r;
@@ -728,22 +736,22 @@ void free_dem()
 	delete [] dem;
 }
 
-void free_elev() {
-  delete [] elev;
-}
+//void free_elev() {
+//  delete [] elev;
+//}
 
-void free_path(void)
-{
-	delete [] path.lat;
-	delete [] path.lon;
-	delete [] path.elevation;
-	delete [] path.distance;
-}
+//void free_path(void)
+//{
+//	delete [] path.lat;
+//	delete [] path.lon;
+//	delete [] path.elevation;
+//	delete [] path.distance;
+//}
 
-void alloc_elev()
-{
-  elev  = new double[ARRAYSIZE + 10];
-}
+//void alloc_elev()
+//{
+//  elev  = new double[ARRAYSIZE + 10];
+//}
 
 void alloc_dem()
 {
@@ -760,20 +768,20 @@ void alloc_dem()
 	}
 }
 
-void alloc_path()
-{
-	path.lat = new double[ARRAYSIZE];
-	path.lon = new double[ARRAYSIZE];
-	path.elevation = new double[ARRAYSIZE];
-	path.distance = new double[ARRAYSIZE];
-}
+//void alloc_path()
+//{
+//	path.lat = new double[ARRAYSIZE];
+//	path.lon = new double[ARRAYSIZE];
+//	path.elevation = new double[ARRAYSIZE];
+//	path.distance = new double[ARRAYSIZE];
+//}
 
 void do_allocs()
 {
 
-	alloc_elev();
+	//alloc_elev();
 	alloc_dem();
-	alloc_path();
+	//alloc_path();
 
 	for (int i = 0; i < MAXPAGES; i++) {
 		dem[i].min_el = 32768;
@@ -807,7 +815,7 @@ auto main(int argc, char *argv[]) -> int
 	bool geo = false;
 	bool kml = false;
 	unsigned char area_mode = 0;
-	unsigned char max_txsites;
+	unsigned char max_txsites = 0;
 	bool ngs = false;
 
 	// TODO: convert string filenames to std::filesystem
@@ -923,7 +931,6 @@ auto main(int argc, char *argv[]) -> int
 	clutter = 0.0;
 	sdf_path[0] = 0;
 	udt_file = nullptr;
-	path.length = 0;
 	max_txsites = 30;
 	fzone_clearance = 0.6;
 	contour_threshold = 0;
@@ -981,8 +988,7 @@ auto main(int argc, char *argv[]) -> int
 			if (z <= y && argv[z][0] && argv[z][0] != '-') {
 				sscanf(argv[z], "%lf", &clutter);
 
-				if (clutter < 0.0)
-					clutter = 0.0;
+				clutter = std::max(0.0, clutter);
 			}
 		}
 
@@ -1198,7 +1204,7 @@ auto main(int argc, char *argv[]) -> int
 				sscanf(argv[z], "%f", &tx_site[0].alt);
 
 			}
-			txsites = 1;
+			txsites = true;
 		}
 
 		if (strcmp(argv[x], "-rxh") == 0) {
@@ -1539,11 +1545,11 @@ auto main(int argc, char *argv[]) -> int
 			exit(result);
 		}
 
-		ppd=(static_cast<double>(height) / (max_north-min_north));
+		ppd=(static_cast<double>(Output::height) / (max_north-min_north));
 		yppd=ppd;
 		
 		if (debug) {
-			std::println(stderr,"ppd {:f}, yppd {:f}, {:.4f},{:.4f},{:.4f},{:.4f},{} x {}",ppd,yppd,max_north,min_west,min_north,max_west,width,height);
+			std::println(stderr,"ppd {:f}, yppd {:f}, {:.4f},{:.4f},{:.4f},{:.4f},{} x {}",ppd,yppd,max_north,min_west,min_north,max_west,Output::width,Output::height);
 		}
 
 		if (yppd < ppd/4) {
@@ -1557,7 +1563,7 @@ auto main(int argc, char *argv[]) -> int
 
 	} else {
 		// DEM first
-		if(debug != 0){
+		if(debug) {
 			std::println(stderr,"{:.4f},{:.4f},{:.4f},{:.4f},{:.4f},{:.4f}",max_north,min_west,min_north,max_west,max_lon,min_lon);
 		}
 
@@ -1607,9 +1613,8 @@ auto main(int argc, char *argv[]) -> int
 				// No more than 8 degs
 				deg_limit = 3.5;
 
-				if (fabs(tx_site[z].lat) < 70.0) {
-					deg_range_lon =
-						deg_range / std::cos(DEG2RAD * tx_site[z].lat);
+				if (std::fabs(tx_site[z].lat) < 70.0) {
+					deg_range_lon = deg_range / std::cos(DEG2RAD * tx_site[z].lat);
 				}
 				else {
 					deg_range_lon = deg_range / std::cos(DEG2RAD * 70.0);
@@ -1620,8 +1625,8 @@ auto main(int argc, char *argv[]) -> int
 				deg_range = std::min(deg_range, deg_limit);
 				deg_range_lon = std::min(deg_range_lon, deg_limit);
 
-				double nortRxHin = static_cast<int>(std::floor(tx_site[z].lat - deg_range));
-				double nortRxHax = static_cast<int>(std::floor(tx_site[z].lat + deg_range));
+				const double nortRxHin = static_cast<int>(std::floor(tx_site[z].lat - deg_range));
+				const double nortRxHax = static_cast<int>(std::floor(tx_site[z].lat + deg_range));
 
 				double west_min = static_cast<int>(std::floor(tx_site[z].lon - deg_range_lon));
 
@@ -1666,8 +1671,8 @@ auto main(int argc, char *argv[]) -> int
 		ppd=static_cast<double>(ippd);
 		yppd=ppd; 
 
-		width = static_cast<unsigned>(ippd * ReduceAngle(max_west - min_west));
-		height = static_cast<unsigned>(ippd * ReduceAngle(max_north - min_north));
+		Output::width = static_cast<unsigned>(ippd * ReduceAngle(max_west - min_west));
+		Output::height = static_cast<unsigned>(ippd * ReduceAngle(max_north - min_north));
 	}
 
 	dpp = 1 / ppd;
@@ -1730,13 +1735,13 @@ auto main(int argc, char *argv[]) -> int
 				if (debug) {
 					std::println(stderr,"Cropping 1: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.4f} longitude: {:.5f} dpp {:.7f}",max_west,cropLat,cropLon,tx_site[0].lon,dpp);
 				}
-				width=static_cast<int>((cropLon*ppd)*2);
-				height=static_cast<int>((cropLat*ppd)*2);
+				Output::width=static_cast<int>((cropLon*ppd)*2);
+				Output::height=static_cast<int>((cropLat*ppd)*2);
 
 				if (debug) {
-					std::println(stderr,"Cropping 2: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f} width {}",max_west,cropLat,cropLon,tx_site[0].lon,width);
+					std::println(stderr,"Cropping 2: max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f} width {}",max_west,cropLat,cropLon,tx_site[0].lon,Output::width);
 				}
-				if (width > 3600 * 10 || cropLon < 0) {
+				if (Output::width > 3600 * 10 || cropLon < 0) {
 				  std::println(stderr,"FATAL BOUNDS! max_west: {:.4f} cropLat: {:.4f} cropLon: {:.7f} longitude: {:.5f}",max_west,cropLat,cropLon,tx_site[0].lon);
 				  return 0;
 				}
@@ -1785,7 +1790,7 @@ auto main(int argc, char *argv[]) -> int
 		strncpy(tx_site[0].name, "Tx", 3);
 		strncpy(tx_site[1].name, "Rx", 3);
 		LOS::PlotPath(tx_site[0], tx_site[1], 1);
-		Output::PathReport(tx_site[0], tx_site[1], tx_site[0].filename, 0, propmodel, pmenv, rxGain);
+		auto e = Output::PathReport(tx_site[0], tx_site[1], tx_site[0].filename, 0, propmodel, pmenv, rxGain);
 		// Order flipped for benefit of graph. Makes no difference to data.
 		Output::SeriesData(tx_site[1], tx_site[0], tx_site[0].filename, true, normalise);
 	}

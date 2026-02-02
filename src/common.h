@@ -2,8 +2,10 @@
 #define _COMMON_H_
 
 #include <cmath>
+#include <memory>
 #include <numbers>
 #include <string>
+#include <vector>
 
 constexpr double GAMMA = 2.5;
 constexpr double INV_GAMMA = 1 / GAMMA;
@@ -19,7 +21,7 @@ constexpr double EARTHRADIUS_M = 6378137.0;
 constexpr double METERS_PER_MILE = 1609.344;
 constexpr double METERS_PER_FOOT = 0.3048;
 constexpr double KM_PER_MILE = 1.609344;
-constexpr double FEET_PER_MILE =5280.0;
+constexpr double FEET_PER_MILE = 5280.0;
 
 constexpr double FOUR_THIRDS = 4.0/3.0;
 
@@ -44,10 +46,10 @@ struct site_t {
 };
 
 struct path_t {
-	double *lat;
-	double *lon;
-	double *elevation;
-	double *distance;
+	std::vector<double> lat;
+	std::vector<double> lon;
+	std::vector<double> elevation;
+	std::vector<double> distance;
 	int length;
 };
 
@@ -83,8 +85,6 @@ extern int mpi;
 extern int max_elevation;
 extern int min_elevation;
 extern int contour_threshold;
-extern int width;
-extern int height;
 
 extern double earthradius;
 extern double east;
@@ -95,7 +95,7 @@ extern double ppd;
 extern double yppd;
 extern double fzone_clearance;
 extern double clutter;
-extern thread_local double *elev;
+//extern thread_local double *elev;
 extern double westoffset;
 extern double eastoffset;
 extern double delta;
@@ -110,11 +110,14 @@ extern bool metric;
 extern bool dbm;
 
 extern struct dem_t *dem;
-extern thread_local struct path_t path;
+//extern thread_local struct path_t path;
 extern struct LR_t LR;
 extern struct region_t region;
 
 extern bool debug;
+
+// Define the type using a stateless lambda (C++20 onwards can use as template param)
+using unique_file_ptr = std::unique_ptr<FILE, decltype([](FILE* p) { if (p) std::fclose(p); })>;
 
 constexpr auto _10log10(auto&& x)
 {
@@ -126,6 +129,15 @@ constexpr auto _10log10(auto&& x)
 constexpr auto _20log10(auto&& x)
 {
 	return(8.685889F*std::log(x));
+}
+
+/*
+ * Acute Angle from Rx point to an obstacle of height (opp) and
+ * distance (adj)
+ */
+constexpr auto incidenceAngle(double opp, double adj) -> double
+{
+	return std::atan2(opp, adj) * DEG2RAD;
 }
 
 /* Computes the distance between two long/lat points */

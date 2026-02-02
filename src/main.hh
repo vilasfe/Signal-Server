@@ -113,16 +113,16 @@ constexpr auto Azimuth(const struct site_t& source, const struct site_t& destina
 }
 
 auto ElevationAngle(const struct site_t& source, const struct site_t& destination) -> double;
-void ReadPath(const struct site_t& source, const struct site_t& destination);
+[[nodiscard]] auto ReadPath(const struct site_t& source, const struct site_t& destination) -> struct path_t;
 auto ElevationAngle2(const struct site_t& source, const struct site_t& destination, double er) -> double;
 auto ReadBearing(std::string_view input) -> double;
 void ObstructionAnalysis(struct site_t xmtr, struct site_t rcvr, double f, std::ofstream& outfile);
 
-void free_elev();
-void free_path();
+//void free_elev();
+//void free_path();
 void free_dem();
-void alloc_elev();
-void alloc_path();
+//void alloc_elev();
+//void alloc_path();
 void alloc_dem();
 void do_allocs();
 

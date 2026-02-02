@@ -37,6 +37,7 @@ target_sources(libsignalserver
     models/pel.hh
     models/soil.hh
     models/sui.hh
+    models/thread_pool.hh
 )
 
 target_link_libraries(libsignalserver PUBLIC

@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iosfwd>
 #include <numbers>
 #include <print>
 #include <string>
@@ -29,6 +30,9 @@ double Output::loss = 0.0;
 double Output::field_strength = 0.0;
 bool Output::gpsav = false;
 
+int Output::height = 0;
+int Output::width = 0;
+
 void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, struct site_t *xmtr)
 {
 	/* This function generates a topographic map in Portable Pix Map
@@ -38,7 +42,9 @@ void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, str
 	   points up and east points right in the image generated. */
 
 	std::string mapfile;
-	FILE *fd = nullptr;
+	// Construction doesn't require passing the deleter again in C++20
+	unique_file_ptr fd;
+
 	auto ctx = Image::create(width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT);
 	int success = 0;
 
@@ -60,12 +66,11 @@ void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, str
 
 		mapfile = ctx->get_filename(std::string(filename));
 
-		fd = fopen(mapfile.data(),"wb");
+		fd = unique_file_ptr(std::fopen(mapfile.data(), "wb"));
 
 	} else {
 
 		std::println(stderr,"Writing to stdout");
-		fd = stdout;
 	}
 
 	double minwest = min_west + dpp;
@@ -224,14 +229,9 @@ void Output::DoPathLoss(std::string& filename, bool geo, bool kml, bool ngs, str
 		lat = north - (dpp * (y+1));
 	}
 
-	if(success = ctx->write(fd); success != 0){
+	if(success = ctx->write(!filename.empty() ? fd.get() : stdout); success != 0){
 		std::println(stderr,"Error writing image");
 		exit(success);
-	}
-
-	if( !filename.empty() ) {
-		fclose(fd);
-		fd = nullptr;
 	}
 
 }
@@ -869,8 +869,8 @@ void Output::DoLOS(std::string& filename, bool kml, bool ngs, struct site_t *xmt
 	}
 }
 
-void Output::PathReport(struct site_t source, struct site_t destination, std::string& name,
-		char graph_it, int propmodel, int pmenv, double rxGain)
+auto Output::PathReport(struct site_t source, struct site_t destination, std::string& name,
+		char graph_it, int propmodel, int pmenv, double rxGain) -> std::vector<double>
 {
 	/* This function writes a PPA Path Report (name.txt) to
 	   the filesystem.  If (graph_it == 1), then gnuplot is invoked
@@ -881,7 +881,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 	   terminal setting and output file type.  If no extension is
 	   found, .png is assumed. */
 
-	int errnum;
+	int errnum = 0;
 	std::string basename;
 	char term[30], ext[15],
 	    report_name[80], block = 0;
@@ -896,6 +896,8 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 
 	snprintf(report_name, 80, "%s.txt%c", name.data(), 0);
 	const double four_thirds_earth = FOUR_THIRDS * EARTHRADIUS_FT;
+
+	std::vector<double> elev(ARRAYSIZE + 10);
 
 	auto fd2 = std::ofstream(report_name);
 
@@ -1170,7 +1172,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 				source.name, destination.name, pattern, patterndB);
 		}
 
-		ReadPath(source, destination);	/* source=TX, destination=RX */
+		auto path = ReadPath(source, destination);	/* source=TX, destination=RX */
 
 		/* Copy elevations plus clutter along
 		   path into the elev[] array. */
@@ -1281,7 +1283,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 						   LR.sgm_conductivity,
 						   LR.eno_ns_surfref,
 						   LR.frq_mhz, LR.radio_climate,
-						   LR.pol, LR.conf, LR.rel,
+						   LR.pol, LR.conf, LR.rel, elev,
 						   loss, strmode, errnum);
 				break;
 			case 3:
@@ -1323,8 +1325,8 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 					       LR.sgm_conductivity,
 					       LR.eno_ns_surfref, LR.frq_mhz,
 					       LR.radio_climate, LR.pol,
-					       LR.conf, LR.rel, loss, strmode,
-					       errnum);
+					       LR.conf, LR.rel, elev,
+					       loss, strmode, errnum);
 				break;
 			case 9:
 				// Ericsson
@@ -1344,7 +1346,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 						   LR.sgm_conductivity,
 						   LR.eno_ns_surfref,
 						   LR.frq_mhz, LR.radio_climate,
-						   LR.pol, LR.conf, LR.rel,
+						   LR.pol, LR.conf, LR.rel, elev,
 						   loss, strmode, errnum);
 
 			}
@@ -1398,7 +1400,7 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 		if((loss*1.5) < free_space_loss) {
 			std::println(fd2,"Model error! Computed loss of {:.1f}dB is greater than free space loss of {:.1f}dB. Check your inuts for model {}",loss,free_space_loss,propmodel);
 			std::println(stderr,"Model error! Computed loss of {:.1f}dB is greater than free space loss of {:.1f}dB. Check your inuts for model {}",loss,free_space_loss,propmodel);
-			return;
+			return elev;
 		}
 
 		if (free_space_loss != 0.0) {
@@ -1584,20 +1586,19 @@ void Output::PathReport(struct site_t source, struct site_t destination, std::st
 				"\n*** ERROR: Error occurred invoking gnuplot!");
 		}
 	}
-
+	return elev;
 }
 
-void Output::SeriesData(struct site_t source, struct site_t destination, const std::string& name,
+void Output::SeriesData(const struct site_t& source, const struct site_t& destination, const std::string& name,
 		bool fresnel_plot, bool normalised)
 {
-	char term[30], ext[15];
 	double a, c, height = 0.0, cangle;
 	double lambda = 0.0, f_zone =
 	    0.0, fpt6_zone = 0.0, nm = 0.0, nb = 0.0, ed = 0.0, es = 0.0, r =
 	    0.0, d = 0.0, d1 = 0.0, terrain;
 	struct site_t remote;
 
-	ReadPath(destination, source);
+	auto path = ReadPath(destination, source);
 	const double azimuth = Azimuth(destination, source);
 	const double distance = Distance(destination, source);
 	const double refangle = ElevationAngle(destination, source);
@@ -1619,12 +1620,12 @@ void Output::SeriesData(struct site_t source, struct site_t destination, const s
 		nm = (-source.alt - es - nb) / (path.distance[path.length - 1]);
 	}
 
-	std::string profilename = name + "_profile";
-	std::string referencename = name + "_reference";
-	std::string cluttername = name + "_clutter";
-	std::string curvaturename = name + "_curvature";
-	std::string fresnelname = name + "_fresnel";
-	std::string fresnel60name = name + "_fresnel60";
+	const std::string profilename = name + "_profile";
+	const std::string referencename = name + "_reference";
+	const std::string cluttername = name + "_clutter";
+	const std::string curvaturename = name + "_curvature";
+	const std::string fresnelname = name + "_fresnel";
+	const std::string fresnel60name = name + "_fresnel60";
 
 	auto fd = std::ofstream(profilename, std::ios::binary);
 	std::ofstream fd1;

@@ -2,7 +2,9 @@
 #define LOS_HH_
 
 #include <memory>
+#include <span>
 #include <string>
+#include <vector>
 
 #include "../common.h"
 
@@ -11,9 +13,51 @@ public:
     static void PlotLOSMap(const struct site_t& source, double altitude, const std::string& plo_filename, bool use_threads);
     static void PlotPropagation(struct site_t source, double altitude, const std::string& plo_filename, int propmodel, int knifeedge, int haf, int pmenv, bool use_threads);
     static void PlotPath(const struct site_t& source, const struct site_t& destination, char mask_value);
+
+    /*
+     * Knife edge diffraction:
+     * This is based upon a recognised formula like Huygens, but trades
+     * thoroughness for increased speed which adds a proportional diffraction
+     * effect to obstacles.
+     */
+    static constexpr auto ked(double freq, double rxh, double dkm, const std::span<double> elev) -> double
+    {
+        double rxobaoi = 0;
+        double obh = 0;		// Obstacle height
+        double obd = 0;		// Obstacle distance
+
+        dkm = dkm * 1000;	// KM to metres
+
+        // walk along path
+        for (int n = 2; n < (dkm / elev[1]); n++) {
+
+            const double d = (n - 2) * elev[1];	// no of points * delta = km
+
+            //Find dip(s)
+            if (elev[n] < obh) {
+                // Angle from Rx point to obstacle
+                rxobaoi = incidenceAngle((obh - (elev[n] + rxh)), d - obd);
+            } else {
+                // Line of sight or higher
+                rxobaoi = 0;
+            }
+
+            //note the highest point
+            if (elev[n] > obh) {
+                obh = elev[n];
+                obd = d;
+            }
+        }
+
+        if (rxobaoi >= 0) {
+            return (rxobaoi / (300 / freq))+3;	// Diffraction angle divided by wavelength (m)
+        }
+        return 1;
+    }
+
 private:
     static void PlotLOSPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value);
-    static void PlotPropPath(struct site_t source, struct site_t destination, unsigned char mask_value, FILE * fd, int propmodel, int knifeedge, int pmenv);
+    [[nodiscard]] static auto PlotPropPath(const struct site_t& source, const struct site_t& destination, unsigned char mask_value, FILE * fd, int propmodel, int knifeedge, int pmenv) -> std::vector<double>;
 
     struct propagationRange {
         double min_west = 0.0;
@@ -32,19 +76,7 @@ private:
         int pmenv = 0;
     };
 
-    static auto rangePropagation(std::shared_ptr<propagationRange> v) -> void*;
-    static void beginThread(std::shared_ptr<propagationRange> arg);
-
-    static auto ked(double freq, double rxh, double dkm) -> double;
-
-    /*
-     * Acute Angle from Rx point to an obstacle of height (opp) and
-     * distance (adj)
-     */
-    static constexpr auto incidenceAngle(double opp, double adj) -> double
-    {
-        return std::atan2(opp, adj) * 180 * std::numbers::inv_pi;
-    }
+    static void rangePropagation(std::shared_ptr<propagationRange> v);
 
 };
 
