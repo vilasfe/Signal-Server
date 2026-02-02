@@ -41,8 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char *d2e(string)
-char *string;
+char *d2e(char* string)
 {
 	/* This function is used to replace 'D's with 'E's for proper
 	   exponential notation of numeric strings read from delimited
@@ -56,9 +55,7 @@ char *string;
 	return (string);
 }
 
-int main(argc,argv)
-int argc;
-char *argv[];
+int main(int argc, char* argv[])
 {
 	unsigned char minimum[30], maximum[30], swlong[30], swlat[30],
 		 nwlong[30], nwlat[30], nelong[30], nelat[30], selong[30],
@@ -77,7 +74,7 @@ char *argv[];
 
 	fd=fopen(argv[1],"rb");
 
-	if (fd!=nullptr)
+	if (fd!=NULL)
 	{
 		fprintf(stdout,"Reading \"%s\"...",argv[1]);
 		fflush(stdout);
@@ -302,7 +299,7 @@ char *argv[];
 		fflush(stdout);
 	}
 
-	if (fd==nullptr)
+	if (fd==NULL)
 	{
 		fprintf(stderr,"*** %c%s%c: File Not Found!\n",34,argv[1],34);
 		exit(-1);

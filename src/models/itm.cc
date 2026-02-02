@@ -865,7 +865,7 @@ double avar(double zzt, double zzl, double zzc, prop_type & prop,
 	return avarv;
 }
 
-void hzns(double pfl[], prop_type & prop)
+void hzns(std::span<double> pfl, prop_type & prop)
 {
 	bool wq;
 	int np;
@@ -912,7 +912,7 @@ void hzns(double pfl[], prop_type & prop)
 	}
 }
 
-void z1sq1(double z[], const double &x1, const double &x2, double &z0,
+void z1sq1(std::span<double> z, const double &x1, const double &x2, double &z0,
 	   double &zn)
 {
 	double xn, xa, xb, x, a, b;
@@ -1037,11 +1037,10 @@ double qerf(const double &z)
 	return qerfv;
 }
 
-double d1thx(double pfl[], const double &x1, const double &x2)
+double d1thx(std::span<double> pfl, const double &x1, const double &x2)
 {
 	int np, ka, kb, n, k, j;
 	double d1thxv, sn, xa, xb;
-	double *s;
 
 	np = (int)pfl[0];
 	xa = x1 / pfl[1];
@@ -1056,7 +1055,7 @@ double d1thx(double pfl[], const double &x1, const double &x2)
 	n = 10 * ka - 5;
 	kb = n - ka + 1;
 	sn = n - 1;
-	s = new double[n + 2];
+	std::vector<double> s (n + 2);
 	s[0] = sn;
 	s[1] = 1.0;
 	xb = (xb - xa) / sn;
@@ -1081,14 +1080,13 @@ double d1thx(double pfl[], const double &x1, const double &x2)
 		xa = xa + xb;
 	}
 
-	d1thxv = qtile(n - 1, s + 2, ka - 1) - qtile(n - 1, s + 2, kb - 1);
-	d1thxv /= 1.0 - 0.8 * exp(-(x2 - x1) / 50.0e3);
-	delete[]s;
+	d1thxv = qtile(n - 1, &s[2], ka - 1) - qtile(n - 1, &s[2], kb - 1);
+	d1thxv /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
 
 	return d1thxv;
 }
 
-void qlrpfl(double pfl[], int klimx, int mdvarx, prop_type & prop,
+void qlrpfl(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 	    propa_type & propa, propv_type & propv)
 {
 	int np, j;
@@ -1177,7 +1175,7 @@ double deg2rad(double d)
 void point_to_point(double tht_m, double rht_m, double eps_dielect,
 		    double sgm_conductivity, double eno_ns_surfref,
 		    double frq_mhz, int radio_climate, int pol, double conf,
-		    double rel, double &dbloss, char *strmode, int &errnum)
+		    double rel, std::span<double> elev, double &dbloss, char *strmode, int &errnum)
 {
 	// pol: 0-Horizontal, 1-Vertical
 	// radio_climate: 1-Equatorial, 2-Continental Subtropical, 3-Maritime Tropical,
@@ -1263,7 +1261,7 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 void point_to_pointMDH(double tht_m, double rht_m, double eps_dielect,
 		       double sgm_conductivity, double eno_ns_surfref,
 		       double frq_mhz, int radio_climate, int pol,
-		       double timepct, double locpct, double confpct,
+		       double timepct, double locpct, double confpct, std::span<double> elev,
 		       double &dbloss, int &propmode, double &deltaH,
 		       int &errnum)
 {
@@ -1359,7 +1357,7 @@ void point_to_pointMDH(double tht_m, double rht_m, double eps_dielect,
 void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 		      double sgm_conductivity, double eno_ns_surfref,
 		      double frq_mhz, int radio_climate, int pol, double conf,
-		      double rel, double &dbloss, double &deltaH, int &errnum)
+		      double rel, std::span<double> elev, double &dbloss, double &deltaH, int &errnum)
 {
 	// pol: 0-Horizontal, 1-Vertical
 	// radio_climate: 1-Equatorial, 2-Continental Subtropical, 3-Maritime Tropical,
@@ -1450,8 +1448,7 @@ void area(long ModVar, double deltaH, double tht_m, double rht_m,
 	  double dist_km, int TSiteCriteria, int RSiteCriteria,
 	  double eps_dielect, double sgm_conductivity, double eno_ns_surfref,
 	  double frq_mhz, int radio_climate, int pol, double pctTime,
-	  double pctLoc, double pctConf, double &dbloss, char *strmode,
-	  int &errnum)
+	  double pctLoc, double pctConf, double &dbloss, int &errnum)
 {
 	// pol: 0-Horizontal, 1-Vertical
 	// TSiteCriteria, RSiteCriteria:
@@ -1524,14 +1521,13 @@ double ITMAreadBLoss(long ModVar, double deltaH, double tht_m, double rht_m,
 		     double eno_ns_surfref, double frq_mhz, int radio_climate,
 		     int pol, double pctTime, double pctLoc, double pctConf)
 {
-	char strmode[200];
 	int errnum;
 	double dbloss;
 
 	area(ModVar, deltaH, tht_m, rht_m, dist_km, TSiteCriteria,
 	     RSiteCriteria, eps_dielect, sgm_conductivity, eno_ns_surfref,
 	     frq_mhz, radio_climate, pol, pctTime, pctLoc, pctConf, dbloss,
-	     strmode, errnum);
+	     errnum);
 
 	return dbloss;
 }

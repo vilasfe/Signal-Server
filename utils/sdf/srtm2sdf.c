@@ -29,39 +29,39 @@ int ReadSRTM(char *filename)
 {
 	int x, y, infile, byte=0, bytes_read;
 	unsigned char error, buffer[2];
-	char north[3], west[4], *base=nullptr, blw_filename[255];
-	double cell_size, deg_north, deg_west;
-	FILE *fd=nullptr;
+	char north[3], west[4], *base=NULL, blw_filename[255];
+	double cell_size, deg_north = 0.0, deg_west = 0.0;
+	FILE *fd=NULL;
 
-	if (strstr(filename, ".zip")!=nullptr)
+	if (strstr(filename, ".zip")!=NULL)
 	{
 		fprintf(stderr, "*** Error: \"%s\" must be uncompressed\n",filename);
 		return -1;
 
 	}
 
-	if (strstr(filename, ".tgz")!=nullptr)
+	if (strstr(filename, ".tgz")!=NULL)
 	{
 		fprintf(stderr, "*** Error: \"%s\" must be uncompressed\n",filename);
 		return -1;
 
 	}
 
-	if ((strstr(filename, ".hgt")==nullptr) && (strstr(filename, ".bil")==nullptr))
+	if ((strstr(filename, ".hgt")==NULL) && (strstr(filename, ".bil")==NULL))
 	{
 		fprintf(stderr, "*** Error: \"%s\" does not have the correct extension (.hgt or .bil)\n",filename);
 		return -1;
 	}
 
-	if (strstr(filename, ".hgt")!=nullptr)
+	if (strstr(filename, ".hgt")!=NULL)
 		hgt=1;
 
-	if (strstr(filename, ".bil")!=nullptr)
+	if (strstr(filename, ".bil")!=NULL)
 		bil=1;
 
 	base=strrchr(filename, '/');
 
-	if (base==nullptr)
+	if (base==NULL)
 		base=filename;
 	else
 		base+=1;
@@ -119,7 +119,7 @@ int ReadSRTM(char *filename)
 
 			fd=fopen(blw_filename,"rb");
 
-			if (fd!=nullptr)
+			if (fd!=NULL)
 			{
 				n=fscanf(fd,"%lf",&cell_size);
 
@@ -247,7 +247,7 @@ int LoadSDF_SDF(char *name)
 	/* This function reads uncompressed
 	   SPLAT Data Files (.sdf) into memory. */
 
-	int x, y, n, dummy;
+	int x, y, dummy;
 	char sdf_file[255], path_plus_name[512];
 	FILE *infile;
 
@@ -265,7 +265,7 @@ int LoadSDF_SDF(char *name)
 
 	infile=fopen(path_plus_name,"rb");
 
-	if (infile==nullptr)
+	if (infile==NULL)
 		return 0;
 
 	n=fscanf(infile,"%d", &dummy);
@@ -371,9 +371,9 @@ int LoadSDF_BZ(char *name)
 	strncat(path_plus_name,sdf_file,254);
 
 	fd=fopen(path_plus_name,"rb");
-	bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,nullptr,0);
+	bzfd=BZ2_bzReadOpen(&bzerror,fd,0,0,NULL,0);
 
-	if (fd!=nullptr && bzerror==BZ_OK)
+	if (fd!=NULL && bzerror==BZ_OK)
 	{
 		printf("\nReading %s... ",path_plus_name);
 		fflush(stdout);
@@ -433,8 +433,7 @@ int ReadUSGS()
 	return (LoadSDF(usgs_filename));
 }
 
-void average_terrain(y,x,z)
-int x, y, z;
+void average_terrain(int y, int x)
 {
 	long accum;
 	int temp=0, count, bad_value;
@@ -558,7 +557,7 @@ void WriteSDF(char *filename)
 	 * is it present in SDF files.
 	 */
 
-	int x, y, byte, last_good_byte=0;
+	int x, y, byte;
 	FILE *outfile;
 
 	printf("\nWriting %s... ", filename);
@@ -573,9 +572,6 @@ void WriteSDF(char *filename)
 		{
 			byte=srtm[y][x];
 
-			if (byte>min_elevation)
-				last_good_byte=byte;
-
 			if (byte<min_elevation)
 			{
 				if (merge)
@@ -588,7 +584,7 @@ void WriteSDF(char *filename)
 
 				else
 				{
-					average_terrain(y,x,last_good_byte);
+					average_terrain(y,x);
 					fprintf(outfile,"%d\n",srtm[y][x]);
 				}
 			}
@@ -604,10 +600,10 @@ void WriteSDF(char *filename)
 int main(int argc, char **argv)
 {
 	int x, y, z=0;
-	char *env=nullptr, string[255], *s=nullptr;
+	char *env=NULL, string[255];
 	FILE *fd;
 
-	if (strstr(argv[0], "srtm2sdf-hd")!=nullptr)
+	if (strstr(argv[0], "srtm2sdf-hd")!=NULL)
 	{
 		ippd=3600;	/* High Definition (1 arc-sec) Mode */
 		strncpy(string,"srtm2sdf-hd\0",12);
@@ -670,7 +666,7 @@ int main(int argc, char **argv)
 
 	/* If no SDF path was specified on the command line (-d), check
 	   for a path specified in the $HOME/.splat_path file.  If the
-	   file is not found, then sdf_path[] remains nullptr, and a data
+	   file is not found, then sdf_path[] remains NULL, and a data
 	   merge will not be attempted if voids are found in the SRTM file. */
 
 	if (sdf_path[0]==0)
@@ -681,9 +677,9 @@ int main(int argc, char **argv)
 
 		fd=fopen(string,"r");
 
-		if (fd!=nullptr)
+		if (fd!=NULL)
 		{
-			s=fgets(string,253,fd);
+			fgets(string,253,fd);
 
 			/* Remove <CR> and/or <LF> from string */
 
