@@ -45,6 +45,7 @@
 #include <cassert>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <cstring>
 #include <numbers>
 #include <span>
@@ -882,9 +883,8 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 	double q = 0.0;
 
 	if (prop.mdp != 0) {
-		for (int j = 0; j < 2; j++) {
-			propa.dls[j] = std::sqrt(2.0 * prop.he[j] / prop.gme);
-		}
+		propa.dls[0] = std::sqrt(2.0 * prop.he[0] / prop.gme);
+		propa.dls[1] = std::sqrt(2.0 * prop.he[1] / prop.gme);
 
 		propa.dlsa = propa.dls[0] + propa.dls[1];
 		propa.dla = prop.dl[0] + prop.dl[1];
@@ -897,18 +897,14 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 			prop.kwx = std::max(prop.kwx, 1);
 		}
 
-		for (int j = 0; j < 2; j++) {
-			if (prop.hg[j] < 1.0 || prop.hg[j] > 1000.0) {
-				prop.kwx = std::max(prop.kwx, 1);
-			}
+		if (prop.hg[0] < 1.0 || prop.hg[0] > 1000.0
+			|| prop.hg[1] < 1.0 || prop.hg[1] > 1000.0) {
+			prop.kwx = std::max(prop.kwx, 1);
 		}
 
-		for (int j = 0; j < 2; j++) {
-			if (std::abs(prop.the[j]) > 200e-3
-			    || prop.dl[j] < 0.1 * propa.dls[j]
-			    || prop.dl[j] > 3.0 * propa.dls[j]) {
-				prop.kwx = std::max(prop.kwx, 3);
-			}
+		if (std::abs(prop.the[0]) > 200e-3 || prop.dl[0] < 0.1 * propa.dls[0] || prop.dl[0] > 3.0 * propa.dls[0]
+			|| std::abs(prop.the[1]) > 200e-3 || prop.dl[1] < 0.1 * propa.dls[1] || prop.dl[1] > 3.0 * propa.dls[1] ) {
+			prop.kwx = std::max(prop.kwx, 3);
 		}
 
 		if (prop.ens < 250.0 || prop.ens > 400.0 || prop.gme < 75e-9
@@ -918,14 +914,13 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 			prop.kwx = 4;
 		}
 
-		for (int j = 0; j < 2; j++) {
-			if (prop.hg[j] < 0.5 || prop.hg[j] > 3000.0) {
-				prop.kwx = 4;
-			}
+		if (prop.hg[0] < 0.5 || prop.hg[0] > 3000.0
+			|| prop.hg[1] < 0.5 || prop.hg[1] > 3000.0) {
+			prop.kwx = 4;
 		}
 
 		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
-		q = adiff(0.0, prop, propa);
+		adiff(0.0, prop, propa);
 		/* xae=pow(prop.wn*pow(prop.gme,2.),-THIRD); -- JDM made argument 2 a double */
 		xae = 1.0 / std::cbrt(prop.wn * (prop.gme * prop.gme));
 		const double d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
@@ -957,7 +952,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 
 	if (prop.dist < propa.dlsa) {
 		if (!wlos) {
-			q = alos(0.0, prop, propa);
+			alos(0.0, prop, propa);
 			const double d2 = propa.dlsa;
 			const double a2 = propa.aed + d2 * propa.emd;
 			double d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
@@ -1034,7 +1029,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 
 	if (prop.dist <= 0.0 || prop.dist >= propa.dlsa) {
 		if (!wscat) {
-			q = ascat(0.0, prop, propa);
+			ascat(0.0, prop, propa);
 			const double d5 = propa.dla + 200e3;
 			const double d6 = d5 + 200e3;
 			const double a6 = ascat(d6, prop, propa);
@@ -1090,9 +1085,8 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 	propa.dx = 2000000.0;
 
 	if (prop.mdp != 0) {	/* if oper. mode is not 0, i.e. not area mode ongoing */
-		for (int j = 0; j < 2; j++) {
-			propa.dls[j] = std::sqrt(2.0 * prop.he[j] / prop.gme);
-		}
+		propa.dls[0] = std::sqrt(2.0 * prop.he[0] / prop.gme);
+		propa.dls[1] = std::sqrt(2.0 * prop.he[1] / prop.gme);
 
 		propa.dlsa = propa.dls[0] + propa.dls[1];
 		propa.dlsa = std::min(propa.dlsa, 1000000.0);
@@ -1108,10 +1102,9 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 			prop.kwx = std::max(prop.kwx, 1);
 		}
 
-		for (int j = 0; j < 2; j++) {
-			if (prop.hg[j] < 1.0 || prop.hg[j] > 1000.0) {
-				prop.kwx = std::max(prop.kwx, 1);
-			}
+		if (prop.hg[0] < 1.0 || prop.hg[0] > 1000.0
+			|| prop.hg[1] < 1.0 || prop.hg[1] > 1000.0) {
+			prop.kwx = std::max(prop.kwx, 1);
 		}
 
 		if (std::abs(prop.the[0]) > 200e-3) {
@@ -1141,7 +1134,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		}
 
 		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
-		q = adiff2(0.0, prop, propa);
+		adiff2(0.0, prop, propa);
 		xae = std::pow(prop.wn * (prop.gme * prop.gme), -THIRD);
 		const double d3 = std::max(propa.dlsa, 1.3787 * xae + propa.dla);
 		const double d4 = d3 + 2.7574 * xae;
@@ -1175,7 +1168,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		if (iw <= 0.0) {	/* if interval width is zero or less, used for area mode */
 
 			if (!wlos) {
-				q = alos2(0.0, prop);
+				alos2(0.0, prop);
 				const double d2 = propa.dlsa;
 				double a2 = propa.aed + d2 * propa.emd;
 				double d0 = 1.908 * prop.wn * prop.he[0] * prop.he[1];
@@ -1249,7 +1242,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		} else {	/* for ITWOM point-to-point mode */
 
 			if (!wlos) {
-				q = alos2(0.0, prop);	/* coefficient setup */
+				alos2(0.0, prop);	/* coefficient setup */
 				wlos = true;
 			}
 
@@ -1260,7 +1253,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 					prop.aref =
 					    5.8 + alos2(pd1, prop);
 				} else if (static_cast<int>(prop.dist - prop.dl[0]) > 0.0) {	/* if past 1st horiz */
-					q = adiff2(0.0, prop, propa);
+					adiff2(0.0, prop, propa);
 					prop.aref = adiff2(pd1, prop, propa);
 				} else {
 					prop.aref = 1.0;
@@ -1274,7 +1267,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 	if (prop.dist <= 0.0 || prop.dist >= propa.dlsa) {
 		if (iw == 0.0) {	/* area mode */
 			if (!wscat) {
-				q = ascat(0.0, prop, propa);
+				ascat(0.0, prop, propa);
 				const double d5 = propa.dla + 200e3;
 				const double d6 = d5 + 200e3;
 				const double a6 = ascat(d6, prop, propa);
@@ -1314,9 +1307,9 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		} else {	/* ITWOM mode  q used to preset coefficients with zero input */
 
 			if (!wscat) {
-				q = ascat(0.0, prop, propa);
+				ascat(0.0, prop, propa);
 				const double a6 = ascat(pd1, prop, propa);
-				q = adiff2(0.0, prop, propa);
+				adiff2(0.0, prop, propa);
 				const double a5 = adiff2(pd1, prop, propa);
 
 				if (a5 <= a6) {
@@ -2267,7 +2260,7 @@ auto area(long ModVar, double deltaH, double tht_m, double rht_m,
 	return fs + avar(zt, zl, zc, prop, propv);
 }
 
-auto ITMAreadBLoss(long ModVar, double deltaH, double tht_m, double rht_m,
+auto ITMAreadBLoss(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 		     double dist_km, int TSiteCriteria, int RSiteCriteria,
 		     double eps_dielect, double sgm_conductivity,
 		     double eno_ns_surfref, double enc_ncc_clcref,

@@ -7,6 +7,7 @@
 #include <numbers>
 #include <ranges>
 #include <span>
+#include <vector>
 
 #include "itm_types.hh"
 
@@ -100,28 +101,21 @@ namespace itm_math {
     // for Crystal Palace (South London) to Mursley, England (See Stark, 1967).
     constexpr auto ahd(double td) -> double
     {
-        int i = 2;
-        constexpr std::array<double, 3> a = { 133.4, 104.6, 71.8 };
-        constexpr std::array<double, 3> b = { 0.332e-3, 0.212e-3, 0.157e-3 };
-        constexpr std::array<double, 3> c = { -4.343, -1.086, 2.171 };
-
         if (td <= 10e3) {
-            i = 0;
+            return 133.4 + 0.332e-3 * td + -4.343 * std::log(td);
         }
-
-        else if (td <= 70e3) {
-            i = 1;
+        if (td <= 70e3) {
+            return 104.6 + 0.212e-3 * td + -1.086 * std::log(td);
         }
-
-        return a[i] + b[i] * td + c[i] * std::log(td);
+        return 71.8 + 0.157e-3 * td + 2.171 * std::log(td);
     }
 
     // Tests the empirical curve fitting used in the computation of the Vmd, sigma_T-, and
     // sigma_T+ for estimating time variability effects as a function of the climatic region,
     // as described in equations (5.5) through (5.7) of of "The ITS Irregular Terrain Model,
     // version 1.2.2: The Algorithm" and as captured in Figure 10.13 of NBS Technical Note 101.
-    constexpr auto curve(double const &c1, double const &c2, double const &x1,
-                         double const &x2, double const &x3, double const &de) -> double
+    constexpr auto curve(double c1, double c2, double x1,
+                         double x2, double x3, double de) -> double
     {
         /* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
         const double temp1 = (de - x2) / x3;
@@ -301,7 +295,7 @@ namespace itm_math {
         const int n = 10 * ka - 5;
         const int kb = n - ka + 1;
         const double sn = n - 1;
-        auto s = std::make_unique<double[]>(n + 2);
+        std::vector<double> s (n + 2);
         s[0] = sn;
         s[1] = 1.0;
         xb = (xb - xa) / sn;
@@ -318,7 +312,7 @@ namespace itm_math {
             xa += xb;
         }
 
-        std::tie(xa, xb) = itm_math::z1sq1(std::span<double>(s.get(), s[0]+2), 0.0, sn);
+        std::tie(xa, xb) = itm_math::z1sq1(std::span{s.data(), static_cast<size_t>(s[0]+2)}, 0.0, sn);
         xb = (xb - xa) / sn;
 
         for (int j = 0; j < n; j++) {
@@ -328,7 +322,7 @@ namespace itm_math {
 
         // This was the difference in 2 calls to qtile, which really just returns the (clamped) i'th element of the sorted range
         // So the sort was moved out here to reduce the number of calls to it
-        std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
+        std::ranges::sort(std::span{s.data() + 2, static_cast<size_t>(n-1)}, std::greater<>());
         double d1thxv = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
         d1thxv /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
 
@@ -351,7 +345,7 @@ namespace itm_math {
         const int n = 10 * ka - 5;
         const int kb = n - ka + 1;
         const double sn = n - 1;
-        auto s = std::make_unique<double[]>(n + 2);
+        std::vector<double> s (n + 2);
         s[0] = sn;
         s[1] = 1.0;
         xb = (xb - xa) / sn;
@@ -368,7 +362,7 @@ namespace itm_math {
             xc = xc + xb;
         }
 
-        std::tie(xa, xb) = itm_math::z1sq2(std::span<double>(s.get(), s[0]+2), 0.0, sn);
+        std::tie(xa, xb) = itm_math::z1sq2(std::span{s.data(), static_cast<size_t>(s[0]+2)}, 0.0, sn);
         xb = (xb - xa) / sn;
 
         for (int j = 0; j < n; j++) {
@@ -377,7 +371,7 @@ namespace itm_math {
         }
 
 
-        std::ranges::sort(std::span(s.get() + 2, n-1), std::greater<>());
+        std::ranges::sort(std::span{s.data() + 2, static_cast<size_t>(n-1)}, std::greater<>());
         d1thx2v = s[2 + std::clamp(ka - 1, 0, static_cast<int>(n-2))] - s[2 + std::clamp(kb - 1, 0, static_cast<int>(n-2))];
         d1thx2v /= 1.0 - 0.8 * std::exp(-(x2 - x1) / 50.0e3);
         return d1thx2v;
