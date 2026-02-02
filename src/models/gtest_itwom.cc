@@ -7,18 +7,12 @@
 #include "gtest/gtest.h"
 
 namespace {
-    TEST(TestQERF, QERF) {
-        EXPECT_NEAR(itm_math::qerf(-1), 0.8413, 1e-4);
-        EXPECT_NEAR(itm_math::qerf(1), 0.1587, 1e-4);
-        EXPECT_NEAR(itm_math::qerf(10), 0.0, 1e-4);
-    }
+    // TestADIFF
 
-    TEST(TestQERFI, QERFI) {
-        EXPECT_NEAR(itm_math::qerfi(0.01), 2.3268, 1e-4);
-        EXPECT_NEAR(itm_math::qerfi(0.1), 1.2817, 1e-4);
-        EXPECT_NEAR(itm_math::qerfi(0.5), 0.0, 1e-4);
-        EXPECT_NEAR(itm_math::qerfi(0.9), -1.2817, 1e-4);
-        EXPECT_NEAR(itm_math::qerfi(0.99), -2.3268, 1e-4);
+    TEST(TestAHD, AHD) {
+        constexpr double td = 5643.8; // meters
+
+        EXPECT_NEAR(itm_math::ahd(td), 97.7575, 1e-4);
     }
 
     TEST(TestAKNFE, AKNFE) {
@@ -27,6 +21,52 @@ namespace {
         EXPECT_NEAR(itm_math::aknfe(3), 17.99, 0.01);
         EXPECT_NEAR(itm_math::aknfe(5), 20.04, 0.01);
         EXPECT_NEAR(itm_math::aknfe(6), 20.73, 0.01);
+    }
+
+    // test_alos, test_area, test_ascat, test_avar
+
+    TEST(TestCURVE, CURVE) {
+        EXPECT_DOUBLE_EQ(itm_math::curve(
+            -0.62, 9.19,
+            228900.0, 205200.0,
+            143600.0, 59097.60805391026
+        ), 0.24344472623622865);
+    }
+
+    TEST(TestD1THZ, D1THZ) {
+        //Tests the delta h value, which is the interdecile range of elevations between point x1
+        //and point x2, generated from the terrain profile pfl1, as described in Section 48 by
+        //Hufford (see references/itm.pdf).
+        //
+        //The terrain profile (pfl1) is imported from tests/conftest.py via the fixture
+        //setup_pfl1.
+        //
+        //The test is derived from the original test for Longley-Rice between for Crystal
+        //Palace (South London) to Mursley, England (See Stark, 1967).
+        std::array<double, 159> setup_pfl1 = {
+            156, 498.717948717949,  96,     84,     65,     46,     46,
+            46,     61,     41,     33,     27,     23,     19,     15,
+            15,     15,     15,     15,     15,     15,     15,     15,
+            15,     15,     15,     17,     19,     21,     23,     25,
+            27,     29,     35,     46,     41,     35,     30,     33,
+            35,     37,     40,     35,     30,     51,     62,     76,
+            46,     46,     46,     46,     46,     46,     50,     56,
+            67,     106,    83,     95,     112,    137,    137,    76,
+            103,    122,    122,    83,     71,     61,     64,     67,
+            71,     74,     77,     79,     86,     91,     83,     76,
+            68,     63,     76,     107,    107,    107,    119,    127,
+            133,    135,    137,    142,    148,    152,    152,    107,
+            137,    104,    91,     99,     120,    152,    152,    137,
+            168,    168,    122,    137,    137,    170,    183,    183,
+            187,    194,    201,    192,    152,    152,    166,    177,
+            198,    156,    127,    116,    107,    104,    101,    98,
+            95,     103,    91,     97,     102,    107,    107,    107,
+            103,    98,     94,     91,     105,    122,    122,    122,
+            122,    122,    137,    137,    137,    137,    137,    137,
+            137,    137,    140,    144,    147,    150,    152,    159};
+
+            // TODO: Check this rounding
+            EXPECT_NEAR(itm_math::d1thx(std::span(setup_pfl1), 2158.5, 77672.5), 89.2126, 5); //1e-4);
     }
 
     TEST(TestFHT, FHT) {
@@ -39,20 +79,6 @@ namespace {
         EXPECT_NEAR(itm_math::fht(150, 1e-6), -29.96, 0.01);
     }
 
-    TEST(TestAHD, AHD) {
-        constexpr double td = 5643.8; // meters
-
-        EXPECT_NEAR(itm_math::ahd(td), 97.7575, 1e-4);
-    }
-
-    TEST(TestCURVE, CURVE) {
-        EXPECT_DOUBLE_EQ(itm_math::curve(
-            -0.62, 9.19,
-            228900.0, 205200.0,
-            143600.0, 59097.60805391026
-        ), 0.24344472623622865);
-    }
-
     TEST(TestH0F, H0F) {
         // test via area prediction mode
         constexpr double r = 0.4727387221558643;
@@ -62,6 +88,78 @@ namespace {
         EXPECT_NEAR(itm_math::h0f(2, -1), 9.33, 0.01);
         EXPECT_NEAR(itm_math::h0f(2, 6), 18.53, 0.01);
     }
+
+    TEST(TestHZNS, HZNS) {
+        struct prop_type prop = {};
+
+        std::array<double, 160> pfl = {
+            156, 498.71794871794873, 96, 84, 65, 46, 46, 46, 61,
+            41, 33, 27, 23, 19, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+            15, 15, 15, 17, 19, 21, 23, 25, 27, 29, 35, 46, 41, 35,
+            30, 33, 35, 37, 40, 35, 30, 51, 62, 76, 46, 46, 46, 46,
+            46, 46, 50, 56, 67, 106, 83, 95, 112, 137, 137, 76, 103,
+            122, 122, 83, 71, 61, 64, 67, 71, 74, 77, 79, 86, 91,
+            83, 76, 68, 63, 76, 107, 107, 107, 119, 127, 133, 135,
+            137, 142, 148, 152, 152, 107, 137, 104, 91, 99, 120, 152,
+            152, 137, 168, 168, 122, 137, 137, 170, 183, 183, 187,
+            194, 201, 192, 152, 152, 166, 177, 198, 156, 127, 116,
+            107, 104, 101, 98, 95, 103, 91, 97, 102, 107, 107, 107,
+            103, 98, 94, 91, 105, 122, 122, 122, 122, 122, 137, 137,
+            137, 137, 137, 137, 137, 137, 140, 144, 147, 150, 152, 159
+        };
+
+        prop.dist = 77800; // distance in meters
+        prop.hg = {143.9, 8.5};
+        prop.gme = 1.1480007964369815e-07;
+
+        itm_math::hzns_unopt(std::span(pfl), prop);
+
+        // Test horizon takeoff angle
+        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
+        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
+
+        // Test horizon distances
+        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
+        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
+
+        itm_math::hzns2(std::span(pfl), prop);
+
+        // Test horizon takeoff angle
+        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
+        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
+
+        // Test horizon distances
+        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
+        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
+
+        itm_math::hzns(std::span(pfl), prop);
+
+        // Test horizon takeoff angle
+        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
+        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
+
+        // Test horizon distances
+        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
+        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
+    }
+
+    // test_lrprop, test_p2p
+
+    TEST(TestQERFI, QERFI) {
+        EXPECT_NEAR(itm_math::qerfi(0.01), 2.3268, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.1), 1.2817, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.5), 0.0, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.9), -1.2817, 1e-4);
+        EXPECT_NEAR(itm_math::qerfi(0.99), -2.3268, 1e-4);
+    }
+
+    TEST(TestQERF, QERF) {
+        EXPECT_NEAR(itm_math::qerf(-1), 0.8413, 1e-4);
+        EXPECT_NEAR(itm_math::qerf(1), 0.1587, 1e-4);
+        EXPECT_NEAR(itm_math::qerf(10), 0.0, 1e-4);
+    }
+
+    // test_qlra, test_qlrpfl, test_qlrps, test_qtile
 
     TEST(TestZ1SQ, Z1SQ) {
         std::array<double, 148> setup_z = {
@@ -127,96 +225,6 @@ namespace {
 
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);
-    }
-
-    TEST(TestD1THZ, D1THZ) {
-        //Tests the delta h value, which is the interdecile range of elevations between point x1
-        //and point x2, generated from the terrain profile pfl1, as described in Section 48 by
-        //Hufford (see references/itm.pdf).
-        //
-        //The terrain profile (pfl1) is imported from tests/conftest.py via the fixture
-        //setup_pfl1.
-        //
-        //The test is derived from the original test for Longley-Rice between for Crystal
-        //Palace (South London) to Mursley, England (See Stark, 1967).
-        std::array<double, 159> setup_pfl1 = {
-        156, 498.717948717949,  96,     84,     65,     46,     46,
-        46,     61,     41,     33,     27,     23,     19,     15,
-        15,     15,     15,     15,     15,     15,     15,     15,
-        15,     15,     15,     17,     19,     21,     23,     25,
-        27,     29,     35,     46,     41,     35,     30,     33,
-        35,     37,     40,     35,     30,     51,     62,     76,
-        46,     46,     46,     46,     46,     46,     50,     56,
-        67,     106,    83,     95,     112,    137,    137,    76,
-        103,    122,    122,    83,     71,     61,     64,     67,
-        71,     74,     77,     79,     86,     91,     83,     76,
-        68,     63,     76,     107,    107,    107,    119,    127,
-        133,    135,    137,    142,    148,    152,    152,    107,
-        137,    104,    91,     99,     120,    152,    152,    137,
-        168,    168,    122,    137,    137,    170,    183,    183,
-        187,    194,    201,    192,    152,    152,    166,    177,
-        198,    156,    127,    116,    107,    104,    101,    98,
-        95,     103,    91,     97,     102,    107,    107,    107,
-        103,    98,     94,     91,     105,    122,    122,    122,
-        122,    122,    137,    137,    137,    137,    137,    137,
-        137,    137,    140,    144,    147,    150,    152,    159};
-
-        // TODO: Check this rounding
-        EXPECT_NEAR(itm_math::d1thx(std::span(setup_pfl1), 2158.5, 77672.5), 89.2126, 5); //1e-4);
-    }
-
-    TEST(TestHZNS, HZNS) {
-        struct prop_type prop = {};
-
-        std::array<double, 160> pfl = {
-            156, 498.71794871794873, 96, 84, 65, 46, 46, 46, 61,
-            41, 33, 27, 23, 19, 15, 15, 15, 15, 15, 15, 15, 15, 15,
-            15, 15, 15, 17, 19, 21, 23, 25, 27, 29, 35, 46, 41, 35,
-            30, 33, 35, 37, 40, 35, 30, 51, 62, 76, 46, 46, 46, 46,
-            46, 46, 50, 56, 67, 106, 83, 95, 112, 137, 137, 76, 103,
-            122, 122, 83, 71, 61, 64, 67, 71, 74, 77, 79, 86, 91,
-            83, 76, 68, 63, 76, 107, 107, 107, 119, 127, 133, 135,
-            137, 142, 148, 152, 152, 107, 137, 104, 91, 99, 120, 152,
-            152, 137, 168, 168, 122, 137, 137, 170, 183, 183, 187,
-            194, 201, 192, 152, 152, 166, 177, 198, 156, 127, 116,
-            107, 104, 101, 98, 95, 103, 91, 97, 102, 107, 107, 107,
-            103, 98, 94, 91, 105, 122, 122, 122, 122, 122, 137, 137,
-            137, 137, 137, 137, 137, 137, 140, 144, 147, 150, 152, 159
-        };
-
-        prop.dist = 77800; // distance in meters
-        prop.hg = {143.9, 8.5};
-        prop.gme = 1.1480007964369815e-07;
-
-        itm_math::hzns_unopt(std::span(pfl), prop);
-
-        // Test horizon takeoff angle
-        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
-        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
-
-        // Test horizon distances
-        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
-        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
-
-        itm_math::hzns2(std::span(pfl), prop);
-
-        // Test horizon takeoff angle
-        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
-        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
-
-        // Test horizon distances
-        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
-        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
-
-        itm_math::hzns(std::span(pfl), prop);
-
-        // Test horizon takeoff angle
-        EXPECT_NEAR(prop.the[0], -0.0039, 1e-4);
-        EXPECT_NEAR(prop.the[1], 0.0005, 1e-4);
-
-        // Test horizon distances
-        EXPECT_NEAR(prop.dl[0], 55357.6923, 1e-4);
-        EXPECT_NEAR(prop.dl[1], 19450.0000, 1e-4);
     }
 
 } // anonymous namespace
