@@ -14,17 +14,17 @@
 namespace itm_math {
 
     // Function to calculate the standard normal complementary CDF
-    constexpr auto normalCCDF(double value) -> double {
+    [[nodiscard]] constexpr auto normalCCDF(double value) noexcept -> double {
         return 0.5 * std::erfc(value / std::numbers::sqrt2);
     }
 
-    constexpr auto qerf(const double& z) -> double {
+    [[nodiscard]] constexpr auto qerf(const double& z) noexcept -> double {
         return normalCCDF(z);
     }
 
     // The inverse of qerf - the solution for x to q = Q(x). The rational approximation
     // is due to Hastings, Jr. (1995) and the maximum error should be 4.5x10^-4.
-    constexpr auto qerfi(double q) -> double
+    [[nodiscard]] constexpr auto qerfi(double q) noexcept -> double
     {
         constexpr double c0 = 2.515516698;
         constexpr double c1 = 0.802853;
@@ -47,7 +47,7 @@ namespace itm_math {
     // Returns the attenuation due to a single knife edge - the Fresnel integral (in decibels,
     // Eqn 4.21 of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm" – see also
     // Eqn 6.1) evaluated for nu equal to the square root of the input argument.
-    constexpr auto aknfe(double v2) -> double
+    [[nodiscard]] constexpr auto aknfe(double v2) noexcept -> double
     {
         // Trap for 0 value
         if (v2 <= 0) {
@@ -65,7 +65,8 @@ namespace itm_math {
     // in the computation of diffractive attenuation, as described in equations (4.20) and
     // (6.2)-(6.7) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm" with
     // inputs corresponding to the "x" and "K" parameters of these equations.
-    constexpr auto fht(const double &x, const double &pk) -> double
+    // TODO: clean this up for RVO
+    [[nodiscard]] constexpr auto fht(double x, double pk) noexcept -> double
     {
         double fhtv = 0.0;
 
@@ -99,7 +100,7 @@ namespace itm_math {
     // with the input D in meters.
     // The inputs and expected answer are based on an original test for Longley-Rice between
     // for Crystal Palace (South London) to Mursley, England (See Stark, 1967).
-    constexpr auto ahd(double td) -> double
+    [[nodiscard]] constexpr auto ahd(double td) noexcept -> double
     {
         if (td <= 10e3) {
             return 133.4 + 0.332e-3 * td + -4.343 * std::log(td);
@@ -114,8 +115,8 @@ namespace itm_math {
     // sigma_T+ for estimating time variability effects as a function of the climatic region,
     // as described in equations (5.5) through (5.7) of of "The ITS Irregular Terrain Model,
     // version 1.2.2: The Algorithm" and as captured in Figure 10.13 of NBS Technical Note 101.
-    constexpr auto curve(double c1, double c2, double x1,
-                         double x2, double x3, double de) -> double
+    [[nodiscard]] constexpr auto curve(double c1, double c2, double x1,
+                         double x2, double x3, double de) noexcept -> double
     {
         /* return (c1+c2/(1.0+pow((de-x2)/x3,2.0)))*pow(de/x1,2.0)/(1.0+pow(de/x1,2.0)); */
         const double temp1 = (de - x2) / x3;
@@ -129,7 +130,7 @@ namespace itm_math {
     // Routine for computing the H01 "frequency gain" function described in
     // Eqn (6.13) of "The ITS Irregular Terrain Model, version 1.2.2: The Algorithm"
     // and used in computing troposcatter attenuation.
-    constexpr auto h0f(double r, double et) -> double
+    [[nodiscard]] constexpr auto h0f(double r, double et) noexcept -> double
     {
         constexpr std::array<double, 5> a = { 25.0, 80.0, 177.0, 395.0, 705.0 };
         constexpr std::array<double, 5> b = { 24.0, 45.0, 68.0, 80.0, 105.0 };
@@ -203,7 +204,7 @@ namespace itm_math {
     // them, and third through end elements the profile data) between horizontal locations
     // x1 and x2.  Returns the interpolated heights at location 0 and the end of the
     // profile.
-    constexpr auto z1sq1(std::span<double> z, const double &x1, const double &x2) -> std::pair<double, double>
+    [[nodiscard]] constexpr auto z1sq1(std::span<double> z, const double &x1, const double &x2) noexcept -> std::pair<double, double>
     {
         /* Used only with ITM 1.2.2 */
         const double xn = z[0];
@@ -243,7 +244,7 @@ namespace itm_math {
         return {a - b * xb, a + b * (xn - xb)};
     }
 
-    constexpr auto z1sq2(std::span<double>z, const double &x1, const double &x2) -> std::pair<double, double>
+    [[nodiscard]] constexpr auto z1sq2(std::span<double>z, const double &x1, const double &x2) noexcept -> std::pair<double, double>
     {
         /* corrected for use with ITWOM */
 
@@ -281,7 +282,7 @@ namespace itm_math {
 
     // Use the terrain profile pfl1 to find delta h, interdecile range of elevations between
     // point x1 and point x2, as described in Section 48 by Hufford.
-    constexpr auto d1thx(std::span<double> pfl, const double &x1, const double &x2) -> double
+    [[nodiscard]] constexpr auto d1thx(std::span<double> pfl, const double &x1, const double &x2) noexcept -> double
     {
         const int np = static_cast<int>(pfl[0]);
         double xa = x1 / pfl[1];
@@ -329,7 +330,7 @@ namespace itm_math {
         return d1thxv;
     }
 
-    constexpr auto d1thx2(std::span<double> pfl, const double &x1, const double &x2) -> double
+    [[nodiscard]] constexpr auto d1thx2(std::span<double> pfl, const double &x1, const double &x2) noexcept -> double
     {
         const int np = static_cast<int>(pfl[0]);
         double xa = x1 / pfl[1];
@@ -378,7 +379,7 @@ namespace itm_math {
     }
 
 
-    constexpr void hzns(std::span<double> pfl, prop_type & prop)
+    constexpr void hzns(std::span<double> pfl, prop_type & prop) noexcept
     {
         const int np = static_cast<int>(pfl[0]);
         const double xi = pfl[1];
@@ -429,7 +430,7 @@ namespace itm_math {
     }
 
     // Subroutine to find horizon parameters as described in Section 47 by Hufford
-    constexpr void hzns_unopt(std::span<double> pfl, prop_type & prop)
+    constexpr void hzns_unopt(std::span<double> pfl, prop_type & prop) noexcept
     {
         const int np = static_cast<int>(pfl[0]);
         const double xi = pfl[1];
@@ -475,7 +476,7 @@ namespace itm_math {
         }
     }
 
-    constexpr void hzns2(std::span<double> pfl, prop_type & prop)
+    constexpr void hzns2(std::span<double> pfl, prop_type & prop) noexcept
     {
         double dr = 0.0;
 
