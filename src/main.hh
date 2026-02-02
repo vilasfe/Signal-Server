@@ -8,7 +8,7 @@
 
 #include "common.h"
 
-constexpr auto ReduceAngle(double angle) -> int
+[[nodiscard]] constexpr auto ReduceAngle(double angle) noexcept -> int
 {
     /* This function normalizes the argument to
      *   an integer angle between 0 and 180 degrees */
@@ -18,7 +18,7 @@ constexpr auto ReduceAngle(double angle) -> int
     return static_cast<int>(std::rint(temp * RAD2DEG));
 }
 
-constexpr auto LonDiff(double lon1, double lon2) -> double
+[[nodiscard]] constexpr auto LonDiff(double lon1, double lon2) noexcept -> double
 {
     /* This function returns the short path longitudinal
      *   difference between longitude1 and longitude2
@@ -47,7 +47,7 @@ auto GetSignal(double lat, double lon) -> unsigned char;
 auto GetElevation(const struct site_t& location) -> double;
 auto AddElevation(double lat, double lon, double height, int size) -> int;
 
-constexpr auto Distance(const struct site_t& site1, const struct site_t& site2) -> double
+[[nodiscard]] constexpr auto Distance(const struct site_t& site1, const struct site_t& site2) noexcept -> double
 {
     /* This function returns the great circle distance
      *   in miles between any two site locations. */
@@ -62,7 +62,7 @@ constexpr auto Distance(const struct site_t& site1, const struct site_t& site2) 
     std::cos(lat1) * std::cos(lat2) * std::cos(lon1 - lon2));
 }
 
-constexpr auto Azimuth(const struct site_t& source, const struct site_t& destination) -> double {
+[[nodiscard]] constexpr auto Azimuth(const struct site_t& source, const struct site_t& destination) noexcept -> double {
     /* This function returns the azimuth (in degrees) to the
      destination as seen from* the location of the source. */
 

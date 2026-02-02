@@ -345,7 +345,7 @@ auto LOS::PlotPropPath(const struct site_t& source, const struct site_t& destina
 			switch (propmodel) {
 			case 1:
 				// Longley Rice ITM
-				point_to_point_ITM(source.alt * METERS_PER_FOOT,
+				ITWOM3::point_to_point_ITM(source.alt * METERS_PER_FOOT,
 						   destination.alt *
 						   METERS_PER_FOOT,
 						   LR.eps_dielect,
@@ -396,7 +396,7 @@ auto LOS::PlotPropPath(const struct site_t& source, const struct site_t& destina
 				break;
 			case 8:
 				// ITWOM 3.0
-				point_to_point(source.alt * METERS_PER_FOOT,
+				ITWOM3::point_to_point(source.alt * METERS_PER_FOOT,
 					       destination.alt *
 					       METERS_PER_FOOT, LR.eps_dielect,
 					       LR.sgm_conductivity,
@@ -431,7 +431,7 @@ auto LOS::PlotPropPath(const struct site_t& source, const struct site_t& destina
 
 
 			default:
-				point_to_point_ITM(source.alt * METERS_PER_FOOT,
+				ITWOM3::point_to_point_ITM(source.alt * METERS_PER_FOOT,
 						   destination.alt *
 						   METERS_PER_FOOT,
 						   LR.eps_dielect,

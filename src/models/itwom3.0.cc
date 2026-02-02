@@ -53,12 +53,11 @@
 
 #include "../common.h"
 #include "itm_math.hh"
-#include "itm_types.hh"
 #include "itwom3.0.hh"
 
 static constexpr double THIRD = 1.0/3.0;
 
-auto saalos(double d, prop_type & prop) -> double
+[[nodiscard]] auto saalos(double d, const prop_type & prop) -> double
 {
 	// Check for early return
 	if ((d == 0.0) || (prop.hg[1] > prop.cch)) {
@@ -211,7 +210,7 @@ auto saalos(double d, prop_type & prop) -> double
 	return arte;
 }
 
-auto adiff(double d, prop_type & prop, propa_type & propa) -> double
+[[nodiscard]] auto adiff(double d, const prop_type & prop, const propa_type & propa) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	static thread_local double wd1 = 0.0;
@@ -289,7 +288,7 @@ auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 	return adiffv;
 }
 
-auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
+[[nodiscard]] auto adiff2(double d, prop_type & prop, const propa_type & propa) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	static thread_local double wd1 = 0.0;
@@ -581,7 +580,7 @@ auto adiff2(double d, prop_type & prop, propa_type & propa) -> double
 	return adiffv2;
 }
 
-auto ascat(double d, prop_type & prop, propa_type & propa) -> double
+[[nodiscard]] auto ascat(double d, const prop_type & prop, const propa_type & propa) -> double
 {
 	static thread_local double ad = 0.0;
 	static thread_local double rr = 0.0;
@@ -688,7 +687,7 @@ void qlrps(double fmhz, double zsys, double en0, int ipol, double eps,
 
 }
 
-auto alos(double d, prop_type & prop, propa_type & propa) -> double
+[[nodiscard]] auto alos(double d, const prop_type & prop, const propa_type & propa) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	static thread_local double wls = 0.0;
@@ -732,7 +731,7 @@ auto alos(double d, prop_type & prop, propa_type & propa) -> double
 	return alosv;
 }
 
-auto alos2(double d, prop_type & prop) -> double
+[[nodiscard]] auto alos2(double d, prop_type & prop) -> double
 {
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	double drh = 0.0;
@@ -867,7 +866,7 @@ void qlra(const std::array<int, 2>& kst, int klimx, int mdvarx, prop_type & prop
 	}
 }
 
-void lrprop(double d, prop_type & prop, propa_type & propa)
+auto ITWOM3::lrprop(double d, prop_type & prop) -> propa_type
 {
 	/* PaulM_lrprop used for ITM */
 	static thread_local bool wlos = false;
@@ -876,6 +875,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 	static thread_local double xae = 0.0;
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	double q = 0.0;
+	struct propa_type propa;
 
 	if (prop.mdp != 0) {
 		propa.dls[0] = std::sqrt(2.0 * prop.he[0] / prop.gme);
@@ -1062,9 +1062,10 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 	}
 
 	prop.aref = std::max(prop.aref, 0.0);
+	return propa;
 }
 
-void lrprop2(double d, prop_type & prop, propa_type & propa)
+auto ITWOM3::lrprop2(double d, prop_type & prop) -> propa_type
 {
 	/* ITWOM_lrprop2 */
 	static thread_local bool wlos = false;
@@ -1073,6 +1074,7 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 	static thread_local double xae = 0.0;
 	const std::complex < double >prop_zgnd(prop.zgndreal, prop.zgndimag);
 	double q = 0.0;
+	struct propa_type propa;
 
 	const double iw = prop.tiw;
 	const double pd1 = prop.dist;
@@ -1316,9 +1318,10 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 		}
 	}
 	prop.aref = std::max(prop.aref, 0.0);
+	return propa;
 }
 
-auto avar(double zzt, double zzl, double zzc, prop_type & prop,
+[[nodiscard]] auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	    propv_type & propv) -> double
 {
 	static thread_local int kdv;
@@ -1650,7 +1653,7 @@ void qlrpfl(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 		propv.lvar = 5;
 	}
 
-	lrprop(0.0, prop, propa);
+	propa = ITWOM3::lrprop(0.0, prop);
 }
 
 void qlrpfl2(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
@@ -1762,14 +1765,14 @@ void qlrpfl2(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 		propv.lvar = 5;
 	}
 
-	lrprop2(0.0, prop, propa);
+	propa = ITWOM3::lrprop2(0.0, prop);
 }
 
 //***************************************************************************************
 //* Point-To-Point Mode Calculations 
 //***************************************************************************************
 
-void point_to_point_ITM(double tht_m, double rht_m, double eps_dielect,
+void ITWOM3::point_to_point_ITM(double tht_m, double rht_m, double eps_dielect,
 			double sgm_conductivity, double eno_ns_surfref,
 			double frq_mhz, int radio_climate, int pol,
 			double conf, double rel, std::span<double> elev,
@@ -1868,7 +1871,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	errnum = prop.kwx;
 }
 
-void point_to_point(double tht_m, double rht_m, double eps_dielect,
+void ITWOM3::point_to_point(double tht_m, double rht_m, double eps_dielect,
 		    double sgm_conductivity, double eno_ns_surfref,
 		    double frq_mhz, int radio_climate, int pol, double conf,
 		    double rel, std::span<double> elev,
@@ -2221,7 +2224,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 //* Area Mode Calculations                               *
 //********************************************************
 
-auto area(int64_t ModVar, double deltaH, double tht_m, double rht_m,
+[[nodiscard]] auto area(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 	  double dist_km, int TSiteCriteria, int RSiteCriteria,
 	  double eps_dielect, double sgm_conductivity, double eno_ns_surfref,
 	  double enc_ncc_clcref, double clutter_height, double clutter_density,
@@ -2251,7 +2254,6 @@ auto area(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 
 	prop_type prop = {};
 	propv_type propv = {};
-	propa_type propa = {};
 	const std::array<int, 2> kst = {TSiteCriteria, RSiteCriteria};
 
 	const double zt = itm_math::qerfi(pctTime / 100.0);
@@ -2279,13 +2281,13 @@ auto area(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 		propv.lvar = 1;
 	}
 
-	lrprop2(dist_km * 1000.0, prop, propa);
+	auto _ = ITWOM3::lrprop2(dist_km * 1000.0, prop);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	// TODO: do we want to throw this? errnum = prop.kwx;
 	return fs + avar(zt, zl, zc, prop, propv);
 }
 
-auto ITMAreadBLoss(int64_t ModVar, double deltaH, double tht_m, double rht_m,
+[[nodiscard]] auto ITMAreadBLoss(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 		     double dist_km, int TSiteCriteria, int RSiteCriteria,
 		     double eps_dielect, double sgm_conductivity,
 		     double eno_ns_surfref, double enc_ncc_clcref,
@@ -2300,7 +2302,7 @@ auto ITMAreadBLoss(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 	     frq_mhz, radio_climate, pol, pctTime, pctLoc, pctConf);
 }
 
-constexpr auto ITWOMVersion() -> double
+[[nodiscard]] constexpr auto ITWOMVersion() noexcept -> double
 {
 	return 3.0;
 }

@@ -1276,7 +1276,7 @@ auto Output::PathReport(struct site_t source, struct site_t destination, std::st
 			switch (propmodel) {
 			case 1:
 				// Longley Rice ITM
-				point_to_point_ITM(source.alt * METERS_PER_FOOT,
+				ITWOM3::point_to_point_ITM(source.alt * METERS_PER_FOOT,
 						   destination.alt *
 						   METERS_PER_FOOT,
 						   LR.eps_dielect,
@@ -1319,7 +1319,7 @@ auto Output::PathReport(struct site_t source, struct site_t destination, std::st
 				break;
 			case 8:
 				// ITWOM 3.0
-				point_to_point(source.alt * METERS_PER_FOOT,
+				ITWOM3::point_to_point(source.alt * METERS_PER_FOOT,
 					       destination.alt *
 					       METERS_PER_FOOT, LR.eps_dielect,
 					       LR.sgm_conductivity,
@@ -1339,7 +1339,7 @@ auto Output::PathReport(struct site_t source, struct site_t destination, std::st
 				break;
 
 			default:
-				point_to_point_ITM(source.alt * METERS_PER_FOOT,
+				ITWOM3::point_to_point_ITM(source.alt * METERS_PER_FOOT,
 						   destination.alt *
 						   METERS_PER_FOOT,
 						   LR.eps_dielect,
