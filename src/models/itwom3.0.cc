@@ -60,170 +60,155 @@ static constexpr double THIRD = 1.0/3.0;
 
 auto saalos(double d, prop_type & prop) -> double
 {
-	double saalosv = 0.0;
-
-	if ((d != 0.0) && (prop.hg[1] <= prop.cch)) {
-		double rsp = 0.0;
-		double tsp = 1.0;
-		double arte = 0.0;
-		double tvsr = 0.0;
-		double q = 0.0;
-
-		const double pd = d;
-		const double pdk = pd * 0.001;
-		double d1a = pd;
-		/* at first, hone is transmitter antenna height 
-		   relative to receive site ground level. */
-		double hone = prop.tgh + prop.tsgh - (prop.rch[1] - prop.hg[1]);
-
-		if (prop.tgh > prop.cch) {	/* for TX ant above all clutter height */
-			double cttc = 0.0;
-			double crpc = 0.0;
-			double ssnps = 0.0;
-			const double ensa = 1 + prop.ens * 0.000001;
-			const double encca = 1 + prop.encc * 0.000001;
-			double dp = pd;
-			double tic = 0.0;
-
-			for (int j = 0; j < 5; ++j) {
-				const double tde = dp / EARTHRADIUS_M;
-				const double hc = (prop.cch + EARTHRADIUS_M) * (1 - std::cos(tde));
-				const double dx = (prop.cch + EARTHRADIUS_M) * std::sin(tde);
-				const double ucrpc = std::hypot((hone - prop.cch + hc), dx);
-				const double ctip = (hone - prop.cch + hc) / ucrpc;
-				const double tip = std::acos(ctip);
-				tic = std::max(0.0, tip + tde);
-				const double stic = std::sin(tic);
-				const double sta = (ensa / encca) * stic;
-				const double ttc = std::asin(sta);
-				cttc = std::sqrt(1 - (std::sin(ttc)) * (std::sin(ttc)));
-				crpc = (prop.cch - prop.hg[1]) / cttc;
-				if (crpc >= dp) {
-					crpc = dp - 1 / dp;
-				}
-
-				ssnps = HALFPI - tic;
-				d1a = (crpc * std::sin(ttc)) / (1 - 1 / EARTHRADIUS_M);
-				dp = pd - d1a;
-
-			}
-
-			const double ctic = std::cos(tic);
-
-			/* if the ucrpc path touches the canopy before reaching the
-			   end of the ucrpc, the entry point moves toward the
-			   transmitter, extending the crpc and d1a. Estimating the d1a: */
-
-			if (ssnps <= 0.0) {
-				d1a = std::min(0.1 * pd, 600.0);
-				crpc = d1a;
-				/* hone must be redefined as being barely above
-				   the canopy height with respect to the receiver
-				   canopy height, which despite the earth curvature
-				   is at or above the transmitter antenna height. */
-				hone = prop.cch + 1;
-				rsp = .997;
-				tsp = 1 - rsp;
-			} else {
-
-				if (prop.ptx >= 1) {	/* polarity ptx is vertical or circular */
-					q = ((ensa * cttc -
-					      encca * ctic) / (ensa * cttc +
-							       encca * ctic));
-					rsp = q * q;
-					tsp = 1 - rsp;
-
-					if (prop.ptx == 2) {	/* polarity is circular - new */
-						q = ((ensa * ctic -
-						      encca * cttc) / (ensa *
-								       ctic +
-								       encca *
-								       cttc));
-						rsp =
-						    ((ensa * cttc -
-						      encca * ctic) / (ensa *
-								       cttc +
-								       encca *
-								       ctic));
-						rsp = (q * q + rsp * rsp) * 0.5;
-						tsp = 1 - rsp;
-					}
-				} else {	/* ptx is 0, horizontal, or undefined */
-
-					q = ((ensa * ctic -
-					      encca * cttc) / (ensa * ctic +
-							       encca * cttc));
-					rsp = q * q;
-					tsp = 1 - rsp;
-				}
-			}
-			/* tvsr is defined as tx ant height above receiver ant height */
-			tvsr = std::max(0.0, prop.tgh + prop.tsgh - prop.rch[1]);
-
-			if (d1a < 50.0) {
-				arte = 0.0195 * crpc - 20 * std::log10(tsp);
-			}
-
-			else {
-				if (d1a < 225.0) {
-
-					if (tvsr > 1000.0) {
-						q = d1a * (0.03 *
-							   std::exp(-0.14 * pdk));
-					} else {
-						q = d1a * (0.07 *
-							   std::exp(-0.17 * pdk));
-					}
-
-					arte =
-					    q + (0.7 * pdk -
-						 std::max(0.01,
-						       std::log10(prop.wn * 47.7) -
-						       2)) * (prop.hg[1] /
-							      hone);
-				}
-
-				else {
-					q = 0.00055 * (pdk) +
-					    std::log10(pdk) * (0.041 -
-							  0.0017 * std::sqrt(hone) +
-							  0.019);
-
-					arte =
-					    d1a * q -
-					    (18 * std::log10(rsp)) /
-					    (std::exp(hone / 37.5));
-
-					const double zi = 1.5 * std::sqrt(hone - prop.cch);
-
-					if (pdk > zi) {
-						q = (pdk - zi) * 10.2 *
-						    ((std::sqrt(std::max(0.01, std::log10(prop.wn * 47.7) - 2.0))) / (100 - zi));
-					} else {
-						q = ((zi - pdk) / zi) * (-20.0 * std::max(0.01, std::log10(prop.wn * 47.7) - 2.0)) / std::sqrt(hone);
-					}
-					arte = arte + q;
-
-				}
-			}
-		} else {	/* for TX at or below clutter height */
-
-			q = (prop.cch - prop.tgh) * (2.06943 -
-						     1.56184 * std::exp(1 /
-								   prop.cch -
-								   prop.tgh));
-			q = q + (17.98 -
-				 0.84224 * (prop.cch -
-					    prop.tgh)) * std::exp(-0.00000061 * pd);
-			arte = q + 1.34795 * 20 * std::log10(pd + 1.0);
-			arte =
-			    arte -
-			    (std::max(0.01, std::log10(prop.wn * 47.7) - 2)) *
-			    (prop.hg[1] / prop.tgh);
-		}
-		saalosv = arte;
+	// Check for early return
+	if ((d == 0.0) || (prop.hg[1] > prop.cch)) {
+		return 0.0;
 	}
-	return saalosv;
+
+	double arte = 0.0;
+	double tvsr = 0.0;
+	double q = 0.0;
+
+	const double pd = d;
+	const double pdk = pd * 0.001;
+	double d1a = pd;
+	/* at first, hone is transmitter antenna height
+		relative to receive site ground level. */
+	double hone = prop.tgh + prop.tsgh - (prop.rch[1] - prop.hg[1]);
+
+	if (prop.tgh <= prop.cch) {	/* for TX at or below clutter height */
+		q = (prop.cch - prop.tgh) * (2.06943 - 1.56184 * std::exp(1 /
+			prop.cch - prop.tgh));
+		q = q + (17.98 - 0.84224 * (prop.cch - prop.tgh)) * std::exp(-0.00000061 * pd);
+		arte = q + 1.34795 * 20 * std::log10(pd + 1.0);
+		arte = arte -
+			(std::max(0.01, std::log10(prop.wn * 47.7) - 2)) *
+			(prop.hg[1] / prop.tgh);
+		return arte;
+	}
+
+	/* for TX ant above all clutter height */
+	double rsp = 0.0;
+	double tsp = 0.0;
+	double cttc = 0.0;
+	double crpc = 0.0;
+	double ssnps = 0.0;
+	const double ensa = 1 + prop.ens * 0.000001;
+	const double encca = 1 + prop.encc * 0.000001;
+	double dp = pd;
+	double tic = 0.0;
+
+	for (int j = 0; j < 5; ++j) {
+		const double tde = dp / EARTHRADIUS_M;
+		const double hc = (prop.cch + EARTHRADIUS_M) * (1 - std::cos(tde));
+		const double dx = (prop.cch + EARTHRADIUS_M) * std::sin(tde);
+		const double ucrpc = std::hypot((hone - prop.cch + hc), dx);
+		const double ctip = (hone - prop.cch + hc) / ucrpc;
+		const double tip = std::acos(ctip);
+		tic = std::sin(std::max(0.0, tip + tde));
+		const double stic = std::sin(tic);
+		const double sta = (ensa / encca) * stic;
+		const double ttc = std::asin(sta);
+		cttc = std::sqrt(1 - (std::sin(ttc)) * (std::sin(ttc)));
+		crpc = (prop.cch - prop.hg[1]) / cttc;
+		if (crpc >= dp) {
+			crpc = dp - 1 / dp;
+		}
+
+		ssnps = HALFPI - tic;
+		d1a = (crpc * std::sin(ttc)) / (1 - 1 / EARTHRADIUS_M);
+		dp = pd - d1a;
+	}
+
+	const double ctic = std::cos(tic);
+
+	/* if the ucrpc path touches the canopy before reaching the
+		end of the ucrpc, the entry point moves toward the
+		transmitter, extending the crpc and d1a. Estimating the d1a: */
+
+	if (ssnps <= 0.0) {
+		d1a = std::min(0.1 * pd, 600.0);
+		crpc = d1a;
+		/* hone must be redefined as being barely above
+			the canopy height with respect to the receiver
+			canopy height, which despite the earth curvature
+			is at or above the transmitter antenna height. */
+		hone = prop.cch + 1;
+		rsp = .997;
+		tsp = 1 - rsp;
+	} else {
+
+		switch (prop.ptx) {
+		case 1: {	/* polarity ptx is vertical */
+			q = ((ensa * cttc - encca * ctic) / (ensa * cttc + encca * ctic));
+			rsp = q * q;
+			tsp = 1 - rsp;
+			break;
+		}
+		case 2: {	/* polarity is circular - new */
+			q = ((ensa * ctic - encca * cttc) / (ensa * ctic + encca * cttc));
+			rsp =
+				((ensa * cttc - encca * ctic) / (ensa * cttc + encca * ctic));
+			rsp = (q * q + rsp * rsp) * 0.5;
+			tsp = 1 - rsp;
+			break;
+		}
+		default:{	/* ptx is 0, horizontal, or undefined */
+			q = ((ensa * ctic - encca * cttc) / (ensa * ctic + encca * cttc));
+			rsp = q * q;
+			tsp = 1 - rsp;
+			break;
+		}
+		}
+	}
+	/* tvsr is defined as tx ant height above receiver ant height */
+	tvsr = std::max(0.0, prop.tgh + prop.tsgh - prop.rch[1]);
+
+	if (d1a < 50.0) {
+		arte = 0.0195 * crpc - 20 * std::log10(tsp);
+	}
+
+	else if (d1a < 225.0) {
+
+		if (tvsr > 1000.0) {
+			q = d1a * (0.03 *
+					std::exp(-0.14 * pdk));
+		} else {
+			q = d1a * (0.07 *
+					std::exp(-0.17 * pdk));
+		}
+
+		arte =
+			q + (0.7 * pdk -
+				std::max(0.01,
+					std::log10(prop.wn * 47.7) -
+					2)) * (prop.hg[1] /
+						hone);
+	}
+
+	else {
+		q = 0.00055 * (pdk) +
+			std::log10(pdk) * (0.041 -
+					0.0017 * std::sqrt(hone) +
+					0.019);
+
+		arte =
+			d1a * q -
+			(18 * std::log10(rsp)) /
+			(std::exp(hone / 37.5));
+
+		const double zi = 1.5 * std::sqrt(hone - prop.cch);
+
+		if (pdk > zi) {
+			q = (pdk - zi) * 10.2 *
+				((std::sqrt(std::max(0.01, std::log10(prop.wn * 47.7) - 2.0))) / (100 - zi));
+		} else {
+			q = ((zi - pdk) / zi) * (-20.0 * std::max(0.01, std::log10(prop.wn * 47.7) - 2.0)) / std::sqrt(hone);
+		}
+		arte = arte + q;
+
+	}
+	return arte;
 }
 
 auto adiff(double d, prop_type & prop, propa_type & propa) -> double
@@ -259,12 +244,22 @@ auto adiff(double d, prop_type & prop, propa_type & propa) -> double
 		aht = 20.0;
 		xht = 0.0;
 
-		for (int j = 0; j < 2; ++j) {
+		// Unrolled loop for j in [0,2)
+		{
 			/* a=0.5*pow(prop.dl[j],2.0)/prop.he[j]; */
-			const double a = 0.5 * (prop.dl[j] * prop.dl[j]) / prop.he[j];
+			const double a = 0.5 * (prop.dl[0] * prop.dl[0]) / prop.he[0];
 			const double wa = std::cbrt(a * prop.wn);
 			const double pk = qk / wa;
-			q = (1.607 - pk) * 151.0 * wa * prop.dl[j] / a;
+			q = (1.607 - pk) * 151.0 * wa * prop.dl[0] / a;
+			xht += q;
+			aht += itm_math::fht(q, pk);
+		}
+		{
+			/* a=0.5*pow(prop.dl[j],2.0)/prop.he[j]; */
+			const double a = 0.5 * (prop.dl[1] * prop.dl[1]) / prop.he[1];
+			const double wa = std::cbrt(a * prop.wn);
+			const double pk = qk / wa;
+			q = (1.607 - pk) * 151.0 * wa * prop.dl[1] / a;
 			xht += q;
 			aht += itm_math::fht(q, pk);
 		}
@@ -987,8 +982,7 @@ void lrprop(double d, prop_type & prop, propa_type & propa)
 
 					if (propa.ak1 < 0.0) {
 						propa.ak1 = 0.0;
-						propa.ak2 =
-						    std::fdim(a2, a0) / q;
+						propa.ak2 = std::fdim(a2, a0) / q;
 
 						if (propa.ak2 == 0.0) {
 							propa.ak1 = propa.emd;
@@ -1126,11 +1120,9 @@ void lrprop2(double d, prop_type & prop, propa_type & propa)
 			prop.kwx = 4;
 		}
 
-		for (int j = 0; j < 2; j++) {
-
-			if (prop.hg[j] < 0.5 || prop.hg[j] > 3000.0) {
-				prop.kwx = 4;
-			}
+		if (prop.hg[0] < 0.5 || prop.hg[0] > 3000.0
+			|| prop.hg[1] < 0.5 || prop.hg[1] > 3000.0) {
+			prop.kwx = 4;
 		}
 
 		dmin = std::abs(prop.he[0] - prop.he[1]) / 200e-3;
@@ -1330,10 +1322,40 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	    propv_type & propv) -> double
 {
 	static thread_local int kdv;
-	static thread_local double dexa, de, vmd, vs0, sgl, sgtm, sgtp, sgtd, tgtd,
-	    gm, gp, cv1, cv2, yv1, yv2, yv3, csm1, csm2, ysm1, ysm2,
-	    ysm3, csp1, csp2, ysp1, ysp2, ysp3, csd1, zd, cfm1, cfm2,
-	    cfm3, cfp1, cfp2, cfp3;
+	static thread_local double dexa;
+	static thread_local double de;
+	static thread_local double vmd;
+	static thread_local double vs0;
+	static thread_local double sgl;
+	static thread_local double sgtm;
+	static thread_local double sgtp;
+	static thread_local double sgtd;
+	static thread_local double tgtd;
+	static thread_local double gm;
+	static thread_local double gp;
+	static thread_local double cv1;
+	static thread_local double cv2;
+	static thread_local double yv1;
+	static thread_local double yv2;
+	static thread_local double yv3;
+	static thread_local double csm1;
+	static thread_local double csm2;
+	static thread_local double ysm1;
+	static thread_local double ysm2;
+	static thread_local double ysm3;
+	static thread_local double csp1;
+	static thread_local double csp2;
+	static thread_local double ysp1;
+	static thread_local double ysp2;
+	static thread_local double ysp3;
+	static thread_local double csd1;
+	static thread_local double zd;
+	static thread_local double cfm1;
+	static thread_local double cfm2;
+	static thread_local double cfm3;
+	static thread_local double cfp1;
+	static thread_local double cfp2;
+	static thread_local double cfp3;
 
 	constexpr std::array<double, 7> bv1 = { -9.67, -0.62, 1.26, -9.21, -0.62, -0.39, 3.15 };
 	constexpr std::array<double, 7> bv2 = { 12.7, 9.19, 15.5, 9.05, 9.19, 2.86, 857.9 };
@@ -1515,35 +1537,38 @@ auto avar(double zzt, double zzl, double zzc, prop_type & prop,
 	const double temp1 = sgt * zt;
 	const double temp2 = sgl * zl;
 
-	const double vs = vs0 + (temp1 * temp1) / (rt + zc * zc) + (temp2 * temp2) / (rl +
-									 zc *
-									 zc);
+	const double vs = vs0 + (temp1 * temp1) / (rt + zc * zc) + (temp2 * temp2) / (rl + zc * zc);
 
 	double yr = 0.0;
-	if (kdv == 0) {
+	switch(kdv) {
+	case 0: {
 		yr = 0.0;
 		propv.sgc = std::sqrt(sgt * sgt + sgl * sgl + vs);
+		break;
 	}
 
-	else if (kdv == 1) {
+	case 1: {
 		yr = sgt * zt;
 		propv.sgc = std::sqrt(sgl * sgl + vs);
+		break;
 	}
 
-	else if (kdv == 2) {
+	case 2: {
 		yr = std::hypot(sgt, sgl) * zt;
 		propv.sgc = std::sqrt(vs);
+		break;
 	}
 
-	else {
+	default: {
 		yr = sgt * zt + sgl * zl;
 		propv.sgc = std::sqrt(vs);
+	}
 	}
 
 	double avarv = prop.aref - vmd - yr - propv.sgc * zc;
 
 	if (avarv < 0.0) {
-		avarv = avarv * (29.0 - avarv) / (29.0 - 10.0 * avarv);
+		avarv *= (29.0 - avarv) / (29.0 - 10.0 * avarv);
 	}
 
 	return avarv;

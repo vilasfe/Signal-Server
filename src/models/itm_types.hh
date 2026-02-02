@@ -34,7 +34,7 @@ struct prop_type {
     int rpl;
     int kwx;
     int mdp;
-    int ptx;
+    int ptx; // transmit polarity: 0 = h, 1 = v, 2 = circular (TODO: should this be an enum?)
     int los;
 };
 
