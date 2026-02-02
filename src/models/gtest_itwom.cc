@@ -213,15 +213,13 @@ namespace {
             353.06313624678637, 352.7228663239072, 350.0735861182517,
             356.8596401028275, 197.03137960582666};
 
-        double xa = 0;
-        double xb = 0;
-        itm_math::z1sq1(std::span<double>(setup_z), 0, 144, xa, xb);
+        auto [xa, xb] = itm_math::z1sq1(std::span<double>(setup_z), 0, 144);
 
         // TODO: Rounded to make tests pass
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);
 
-        itm_math::z1sq2(std::span<double>(setup_z), 0, 144, xa, xb);
+        std::tie(xa, xb) = itm_math::z1sq2(std::span<double>(setup_z), 0, 144);
 
         EXPECT_NEAR(xa, 57.3924, 2); // 1e-4);
         EXPECT_NEAR(xb, 408.1239, 2); // 1e-4);

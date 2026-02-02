@@ -209,8 +209,7 @@ namespace itm_math {
     // them, and third through end elements the profile data) between horizontal locations
     // x1 and x2.  Returns the interpolated heights at location 0 and the end of the
     // profile.
-    // TODO: Make this return z0 and zn as a pair or binding
-    constexpr void z1sq1(std::span<double> z, const double &x1, const double &x2, double &z0, double &zn)
+    constexpr auto z1sq1(std::span<double> z, const double &x1, const double &x2) -> std::pair<double, double>
     {
         /* Used only with ITM 1.2.2 */
         const double xn = z[0];
@@ -247,11 +246,10 @@ namespace itm_math {
         a /= xa;
         b = b * 12.0 / ((xa * xa + 2.0) * xa);
 
-        z0 = a - b * xb;
-        zn = a + b * (xn - xb);
+        return {a - b * xb, a + b * (xn - xb)};
     }
 
-    constexpr void z1sq2(std::span<double>z, const double &x1, const double &x2, double &z0, double &zn)
+    constexpr auto z1sq2(std::span<double>z, const double &x1, const double &x2) -> std::pair<double, double>
     {
         /* corrected for use with ITWOM */
 
@@ -284,8 +282,7 @@ namespace itm_math {
 
         a /= (xa + 2);
         b = b / bn;
-        z0 = a - (b * xb);
-        zn = a + (b * (xn - xb));
+        return {a - (b * xb), a + (b * (xn - xb))};
     }
 
     // Use the terrain profile pfl1 to find delta h, interdecile range of elevations between
@@ -321,7 +318,7 @@ namespace itm_math {
             xa += xb;
         }
 
-        itm_math::z1sq1(std::span<double>(s.get(), s[0]+2), 0.0, sn, xa, xb);
+        std::tie(xa, xb) = itm_math::z1sq1(std::span<double>(s.get(), s[0]+2), 0.0, sn);
         xb = (xb - xa) / sn;
 
         for (int j = 0; j < n; j++) {
@@ -371,7 +368,7 @@ namespace itm_math {
             xc = xc + xb;
         }
 
-        itm_math::z1sq2(std::span<double>(s.get(), s[0]+2), 0.0, sn, xa, xb);
+        std::tie(xa, xb) = itm_math::z1sq2(std::span<double>(s.get(), s[0]+2), 0.0, sn);
         xb = (xb - xa) / sn;
 
         for (int j = 0; j < n; j++) {

@@ -1576,7 +1576,7 @@ void qlrpfl(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 	prop.dh = itm_math::d1thx(pfl, xl[0], xl[1]);
 
 	if (prop.dl[0] + prop.dl[1] > 1.5 * prop.dist) {
-		itm_math::z1sq1(pfl, xl[0], xl[1], za, zb);
+		std::tie(za, zb) = itm_math::z1sq1(pfl, xl[0], xl[1]);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -1613,8 +1613,8 @@ void qlrpfl(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 	}
 
 	else {
-		itm_math::z1sq1(pfl, xl[0], 0.9 * prop.dl[0], za, q);
-		itm_math::z1sq1(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+		std::tie(za, q) = itm_math::z1sq1(pfl, xl[0], 0.9 * prop.dl[0]);
+		std::tie(q, zb) = itm_math::z1sq1(pfl, prop.dist - 0.9 * prop.dl[1], xl[1]);
 		prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 		prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 	}
@@ -1660,15 +1660,15 @@ void qlrpfl2(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 	if ((np < 1) || (pfl[1] > 150.0)) {
 		/* for TRANSHORIZON; diffraction over a mutual horizon, or for one or more obstructions */
 		if (dlb < 1.5 * prop.dist) {
-			itm_math::z1sq2(pfl, xl[0], 0.9 * prop.dl[0], za, q);
-			itm_math::z1sq2(pfl, prop.dist - 0.9 * prop.dl[1], xl[1], q, zb);
+			std::tie(za, q) = itm_math::z1sq2(pfl, xl[0], 0.9 * prop.dl[0]);
+			std::tie(q, zb) = itm_math::z1sq2(pfl, prop.dist - 0.9 * prop.dl[1], xl[1]);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 		}
 
 		/* for a Line-of-Sight path */
 		else {
-			itm_math::z1sq2(pfl, xl[0], xl[1], za, zb);
+			std::tie(za, zb) = itm_math::z1sq2(pfl, xl[0], xl[1]);
 			prop.he[0] = prop.hg[0] + std::fdim(pfl[2], za);
 			prop.he[1] = prop.hg[1] + std::fdim(pfl[np + 2], zb);
 
@@ -1714,7 +1714,7 @@ void qlrpfl2(std::span<double> pfl, int klimx, int mdvarx, prop_type & prop,
 		double rae2 = 0.0;
 
 		if (prop.dist > 550.0) {
-			itm_math::z1sq2(pfl, rad, prop.dist, rae1, rae2);
+			std::tie(rae1, rae2) = itm_math::z1sq2(pfl, rad, prop.dist);
 		} else {
 			rae1 = 0.0;
 			rae2 = 0.0;

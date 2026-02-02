@@ -117,7 +117,7 @@ void LOS::rangePropagation(std::shared_ptr<propagationRange> v)
 			PlotLOSPath(v->source, edge, v->mask_value);
 		}
 		else {
-			PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
+			auto _ = PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
 		}
 
 		++y;
