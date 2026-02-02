@@ -1780,9 +1780,9 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 
 *****************************************************************************/
 {
-	prop_type prop;
-	propv_type propv;
-	propa_type propa;
+	prop_type prop {};
+	propv_type propv {};
+	propa_type propa {};
 	double zsys = 0;
 	/* double dkm, xkm; */
 
@@ -1794,7 +1794,7 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	prop.mdp = -1;
 	const double zc = itm_math::qerfi(conf);
 	const double zr = itm_math::qerfi(rel);
-	long np = static_cast<long>(elev[0]);
+	const auto np = static_cast<int64_t>(elev[0]);
 	/* dkm=(elev[1]*elev[0])/1000.0; */
 	/* xkm=elev[1]/1000.0; */
 	const double eno = eno_ns_surfref;
@@ -1802,10 +1802,10 @@ Note that point_to_point has become point_to_point_ITM for use as the old ITM
 	double q = enso;
 
 	if (q <= 0.0) {
-		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);	/* added (long) to correct */
-		const long jb = np - ja + 6;
+		const auto ja = static_cast<int64_t>(3.0 + 0.1 * elev[0]);	/* added (long) to correct */
+		const int64_t jb = np - ja + 6;
 
-		for (long i = ja - 1; i < jb; ++i) {
+		for (auto i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
 		}
 
@@ -1921,7 +1921,7 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	prop.thenr = 0.0;
 	const double zc = itm_math::qerfi(conf);
 	const double zr = itm_math::qerfi(rel);
-	const long np = static_cast<long>(elev[0]);
+	const auto np = static_cast<int64_t>(elev[0]);
 	/* dkm=(elev[1]*elev[0])/1000.0; */
 	/* xkm=elev[1]/1000.0; */
 	const double eno = eno_ns_surfref;
@@ -1939,10 +1939,10 @@ void point_to_point(double tht_m, double rht_m, double eps_dielect,
 	prop.dhd = 0.0;		/* delta_h_diff preset */
 
 	if (q <= 0.0) {
-		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);
-		const long jb = np - ja + 6;
+		const auto ja = static_cast<int64_t>(3.0 + 0.1 * elev[0]);
+		const int64_t jb = np - ja + 6;
 
-		for (long i = ja - 1; i < jb; ++i) {
+		for (auto i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
 		}
 
@@ -2045,7 +2045,7 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	const double ztime = itm_math::qerfi(timepct);
 	const double zloc = itm_math::qerfi(locpct);
 	const double zconf = itm_math::qerfi(confpct);
-	const long np = static_cast<long>(elev[0]);
+	const auto np = static_cast<int64_t>(elev[0]);
 	/* dkm = (elev[1] * elev[0]) / 1000.0; */
 	/* xkm = elev[1] / 1000.0; */
 	const double eno = eno_ns_surfref;
@@ -2060,8 +2060,8 @@ void point_to_pointMDH_two(double tht_m, double rht_m, double eps_dielect,
 	mode_var = 1;		/* int mode_var set for FCC ILLR */
 
 	if (q <= 0.0) {
-		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);	/* to match addition of (long) */
-		const long jb = np - ja + 6;
+		const auto ja = static_cast<int64_t>(3.0 + 0.1 * elev[0]);	/* to match addition of (long) */
+		const int64_t jb = np - ja + 6;
 		for (long i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
 		}
@@ -2143,7 +2143,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	prop.thenr = 0.0;
 	const double zc = itm_math::qerfi(conf);
 	const double zr = itm_math::qerfi(rel);
-	const long np = static_cast<long>(elev[0]);
+	const auto np = static_cast<int64_t>(elev[0]);
 	/* dkm = (elev[1] * elev[0]) / 1000.0; */
 	/* xkm = elev[1] / 1000.0; */
 	const double eno = eno_ns_surfref;
@@ -2157,9 +2157,9 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	prop.cd = 1.00;		/* double clutter_density */
 
 	if (q <= 0.0) {
-		const long ja = static_cast<long>(3.0 + 0.1 * elev[0]);	/* to match KD2BD addition of (long)  */
-		const long jb = np - ja + 6;
-		for (long i = ja - 1; i < jb; ++i) {
+		const auto ja = static_cast<int64_t>(3.0 + 0.1 * elev[0]);	/* to match KD2BD addition of (long)  */
+		const int64_t jb = np - ja + 6;
+		for (int64_t i = ja - 1; i < jb; ++i) {
 			zsys += elev[i];
 		}
 		zsys /= (jb - ja + 1);
@@ -2167,7 +2167,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 	}
 	propv.mdvar = 12;
 	qlrps(frq_mhz, zsys, q, pol, eps_dielect, sgm_conductivity, prop);
-	qlrpfl2(elev.subspan(0, elev[0]+2), propv.klim, propv.mdvar, prop, propa, propv);
+	qlrpfl2(elev.subspan(0, static_cast<size_t>(elev[0]+2)), propv.klim, propv.mdvar, prop, propa, propv);
 	const double fs = 32.45 + 20.0 * std::log10(frq_mhz) + 20.0 * std::log10(prop.dist / 1000.0);
 	deltaH = prop.dh;
 	q = prop.dist - propa.dla;
@@ -2196,7 +2196,7 @@ void point_to_pointDH(double tht_m, double rht_m, double eps_dielect,
 //* Area Mode Calculations                               *
 //********************************************************
 
-auto area(long ModVar, double deltaH, double tht_m, double rht_m,
+auto area(int64_t ModVar, double deltaH, double tht_m, double rht_m,
 	  double dist_km, int TSiteCriteria, int RSiteCriteria,
 	  double eps_dielect, double sgm_conductivity, double eno_ns_surfref,
 	  double enc_ncc_clcref, double clutter_height, double clutter_density,
@@ -2245,8 +2245,8 @@ auto area(long ModVar, double deltaH, double tht_m, double rht_m,
 	prop.dhd = delta_h_diff;
 	prop.ens = eno;
 	prop.kwx = 0;
-	const long ivar = ModVar;
-	const long ipol = static_cast<long>(pol);
+	const int64_t ivar = ModVar;
+	const auto ipol = static_cast<int64_t>(pol);
 	qlrps(frq_mhz, 0.0, eno, ipol, eps, sgm, prop);
 	qlra(kst, propv.klim, ivar, prop, propv);
 

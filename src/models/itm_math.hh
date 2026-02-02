@@ -153,11 +153,11 @@ namespace itm_math {
         const double temp = 1.0 / r;
         const double x = temp * temp;
 
-        double h0fv = 4.343 * std::log((a[it - 1] * x + b[it - 1]) * x + 1.0);
+        double h0fv = 4.343 * std::log((a[it - 1] * x + b[it - 1]) * x + 1.0); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
 
         if (q != 0.0) {
             h0fv =
-            (1.0 - q) * h0fv + q * 4.343 * std::log((a[it] * x + b[it]) * x + 1.0);
+            (1.0 - q) * h0fv + q * 4.343 * std::log((a[it] * x + b[it]) * x + 1.0); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
         }
 
         return h0fv;
