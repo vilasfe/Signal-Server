@@ -85,15 +85,14 @@ add_executable(gtestmodels)
 target_sources(gtestmodels
     PRIVATE
         models/gtest_itwom.cc
+        test_main.cc
 )
 
-target_link_libraries(gtestmodels PUBLIC
+target_link_libraries(gtestmodels PRIVATE
     libsignalserver
     GTest::gtest
-    GTest::gtest_main
 )
 
-add_test(NAME models_test COMMAND gtestmodels)
-
 include(GoogleTest)
+enable_testing()
 gtest_discover_tests(gtestmodels)
